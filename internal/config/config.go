@@ -33,7 +33,7 @@ const (
 func LoadEnv() {
 	var err = godotenv.Load()
 	if err != nil {
-		log.Fatal("Error loading .env file")
+		log.Debug("No .env file found")
 	}
 }
 
