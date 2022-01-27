@@ -2,7 +2,6 @@ package metadata
 
 import (
 	"github.com/Mangatsu/server/pkg/library"
-	"github.com/Mangatsu/server/pkg/types/model"
 	"testing"
 )
 
@@ -81,14 +80,15 @@ func TestParseX(t *testing.T) {
 		t.Error("parsed gallery didn't match the expected result")
 	}
 
-	var wantTags [3]model.Tag
-	wantTags[0] = model.Tag{Namespace: "parody", Name: "Magical Girls"}
-	wantTags[1] = model.Tag{Namespace: "female", Name: "swimsuit"}
-	wantTags[2] = model.Tag{Namespace: "female", Name: "yuri"}
+	wantTags := map[string]string{}
+	wantTags["Magical Girls"] = "parody"
+	wantTags["swimsuit"] = "female"
+	wantTags["yuri"] = "female"
 
-	for i, gotTag := range gotTags {
-		if gotTag.Namespace != wantTags[i].Namespace || gotTag.Name != wantTags[i].Name {
-			t.Error("parsed tags didn't match expected results")
+	for _, gotTag := range gotTags {
+
+		if wantTags[gotTag.Name] != gotTag.Namespace {
+			t.Error("parsed tags didn't match expected results: ", wantTags[gotTag.Namespace], " - ", gotTag.Name)
 		}
 	}
 
