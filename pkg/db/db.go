@@ -2,7 +2,7 @@ package db
 
 import (
 	"database/sql"
-	"github.com/Luukuton/Mangatsu/internal/config"
+	"github.com/Mangatsu/server/internal/config"
 	"github.com/pressly/goose/v3"
 	log "github.com/sirupsen/logrus"
 	"os"

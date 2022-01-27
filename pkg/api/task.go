@@ -2,9 +2,9 @@ package api
 
 import (
 	"fmt"
-	"github.com/Luukuton/Mangatsu/pkg/db"
-	"github.com/Luukuton/Mangatsu/pkg/library"
-	"github.com/Luukuton/Mangatsu/pkg/metadata"
+	"github.com/Mangatsu/server/pkg/db"
+	"github.com/Mangatsu/server/pkg/library"
+	"github.com/Mangatsu/server/pkg/metadata"
 	"net/http"
 	"strings"
 )

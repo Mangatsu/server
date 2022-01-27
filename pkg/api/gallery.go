@@ -2,10 +2,10 @@ package api
 
 import (
 	"encoding/json"
-	"github.com/Luukuton/Mangatsu/internal/config"
-	"github.com/Luukuton/Mangatsu/pkg/db"
-	"github.com/Luukuton/Mangatsu/pkg/library"
-	"github.com/Luukuton/Mangatsu/pkg/types/model"
+	"github.com/Mangatsu/server/internal/config"
+	"github.com/Mangatsu/server/pkg/db"
+	"github.com/Mangatsu/server/pkg/library"
+	"github.com/Mangatsu/server/pkg/types/model"
 	"github.com/gorilla/mux"
 	"net/http"
 )

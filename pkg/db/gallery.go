@@ -1,8 +1,8 @@
 package db
 
 import (
-	"github.com/Luukuton/Mangatsu/pkg/types/model"
-	. "github.com/Luukuton/Mangatsu/pkg/types/table"
+	"github.com/Mangatsu/server/pkg/types/model"
+	. "github.com/Mangatsu/server/pkg/types/table"
 	. "github.com/go-jet/jet/v2/sqlite"
 	"github.com/google/uuid"
 	_ "github.com/mattn/go-sqlite3"

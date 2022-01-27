@@ -1,4 +1,4 @@
-module github.com/Luukuton/Mangatsu
+module github.com/Mangatsu/server
 
 go 1.17
 
@@ -13,6 +13,7 @@ require (
 	github.com/joho/godotenv v1.4.0
 	github.com/mattn/go-sqlite3 v1.14.10
 	github.com/mholt/archiver/v4 v4.0.0-alpha.3
+	github.com/pressly/goose/v3 v3.5.1
 	github.com/rs/cors v1.8.2
 	github.com/sirupsen/logrus v1.8.1
 	golang.org/x/crypto v0.0.0-20220112180741-5e0467b6c7ce
@@ -26,12 +27,10 @@ require (
 	github.com/google/go-cmp v0.5.6 // indirect
 	github.com/klauspost/compress v1.14.1 // indirect
 	github.com/klauspost/pgzip v1.2.5 // indirect
-	github.com/kr/pretty v0.2.1 // indirect
 	github.com/nwaples/rardecode/v2 v2.0.0-beta.2 // indirect
 	github.com/pierrec/lz4/v4 v4.1.12 // indirect
 	github.com/pkg/errors v0.9.1 // indirect
 	github.com/pmezard/go-difflib v1.0.0 // indirect
-	github.com/pressly/goose/v3 v3.5.1 // indirect
 	github.com/stretchr/testify v1.7.0 // indirect
 	github.com/therootcompany/xz v1.0.1 // indirect
 	github.com/ulikunitz/xz v0.5.10 // indirect

@@ -1,8 +1,8 @@
 package metadata
 
 import (
-	"github.com/Luukuton/Mangatsu/pkg/library"
-	"github.com/Luukuton/Mangatsu/pkg/types/model"
+	"github.com/Mangatsu/server/pkg/library"
+	"github.com/Mangatsu/server/pkg/types/model"
 	"testing"
 )
 

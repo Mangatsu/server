@@ -2,7 +2,7 @@ package library
 
 import (
 	"errors"
-	"github.com/Luukuton/Mangatsu/internal/config"
+	"github.com/Mangatsu/server/internal/config"
 	"github.com/mholt/archiver/v4"
 	log "github.com/sirupsen/logrus"
 	"io"
