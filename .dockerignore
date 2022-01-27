@@ -1,0 +1,21 @@
+# IDE, editors
+/.idea
+
+# data
+/devarchive
+/data
+/.env
+mangatsu-server.exe
+mangatsu-server
+
+# testing
+/test.http
+/coverage.out
+
+/.dockerignore
+.gitignore
+/docs
+/.env.example
+README.md
+
+/cmd/mangatsu-web

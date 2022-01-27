@@ -1,0 +1,14 @@
+# IDE, editors
+/.idea
+
+# data
+/data/mangatsu.sqlite
+/devarchive
+/data/cache
+/.env
+mangatsu-server.exe
+mangatsu-server
+
+# testing
+/test.http
+/coverage.out
