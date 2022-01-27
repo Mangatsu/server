@@ -43,6 +43,8 @@ services:
       - NODE_ENV=production
       # URL to the backend server above.
       - NEXT_MANGATSU_API_URL=https://api.example.com
+      # Hostname or the domain where images are hosted. Usually the same as the domain in the API URL.
+      - NEXT_MANGATSU_IMAGE_HOSTNAME=api.example.com
       # URL to this frontend server.
       - NEXTAUTH_URL=https://mangatsu.example.com
       # URL to this frontend server. Change this to something else.
