@@ -6,6 +6,7 @@ mangatsu.sqlite
 /devarchive
 /data/cache
 /.env
+docker-compose.yml
 
 # testing
 test.http
