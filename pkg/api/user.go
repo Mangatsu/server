@@ -3,8 +3,8 @@ package api
 import (
 	"encoding/json"
 	"fmt"
-	"github.com/Luukuton/Mangatsu/internal/config"
-	"github.com/Luukuton/Mangatsu/pkg/db"
+	"github.com/Mangatsu/server/internal/config"
+	"github.com/Mangatsu/server/pkg/db"
 	"github.com/gorilla/mux"
 	log "github.com/sirupsen/logrus"
 	"net/http"

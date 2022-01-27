@@ -3,9 +3,9 @@ package api
 import (
 	"database/sql"
 	"encoding/json"
-	"github.com/Luukuton/Mangatsu/internal/config"
-	"github.com/Luukuton/Mangatsu/pkg/db"
-	"github.com/Luukuton/Mangatsu/pkg/types/model"
+	"github.com/Mangatsu/server/internal/config"
+	"github.com/Mangatsu/server/pkg/db"
+	"github.com/Mangatsu/server/pkg/types/model"
 	"github.com/golang-jwt/jwt/v4"
 	"math"
 	"net/http"
