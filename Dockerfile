@@ -1,6 +1,7 @@
 FROM golang:1.17-alpine as build
 
-WORKDIR /usr/app
+RUN mkdir /usr/app/
+WORKDIR /usr/app/
 COPY . .
 
 # Unit tests
@@ -17,4 +18,4 @@ WORKDIR /home/mangatsu/app
 COPY --from=build /go/bin/mangatsu-server /home/mangatsu/app/mangatsu-server
 
 EXPOSE 5000
-CMD [ "sh", "-c", "home/mangatsu/app/mangatsu-server" ]
+CMD [ "sh", "-c", "/home/mangatsu/app/mangatsu-server" ]
