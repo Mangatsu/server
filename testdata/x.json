@@ -1,0 +1,84 @@
+{
+  "gallery_info": {
+    "title": "(C99) [doujin circle (some artist)] very lewd title (Magical Girls) [DL]",
+    "title_original": "(C99) [同人サークル (とあるアーティスト)] とてもエッチなタイトル (魔法少女) [DL版]",
+    "link": "https://exh.org/g/1/abc",
+    "category": "doujinshi",
+    "tags": {
+      "parody": [
+        "Magical Girls"
+      ],
+      "female": [
+        "swimsuit",
+        "yuri"
+      ]
+    },
+    "language": "Japanese",
+    "translated": false,
+    "upload_date": [
+      2021,
+      12,
+      31,
+      12,
+      0,
+      0
+    ],
+    "source": {
+      "site": "exh",
+      "gid": 1,
+      "token": "abc",
+      "parent_gallery": null,
+      "newer_versions": []
+    }
+  },
+  "gallery_info_full": {
+    "gallery": {
+      "gid": 1,
+      "token": "abc"
+    },
+    "title": "(C99) [doujin circle (some artist)] very lewd title (Magical Girls) [DL]",
+    "title_original": "(C99) [同人サークル (とあるアーティスト)] とてもエッチなタイトル (魔法少女) [DL版]",
+    "date_uploaded": 1640944800000,
+    "category": "doujinshi",
+    "uploader": "example",
+    "rating": {
+      "average": 4.91,
+      "count": 300
+    },
+    "parent": null,
+    "newer_versions": [],
+    "image_count": 30,
+    "images_resized": false,
+    "total_file_size_approx": 11639011,
+    "visible": true,
+    "visible_reason": "",
+    "language": "Japanese",
+    "translated": false,
+    "tags": {
+      "parody": [
+        "Magical Girls"
+      ],
+      "character": [
+        "magical girl"
+      ],
+      "group": [
+        "doujin circle"
+      ],
+      "artist": [
+        "some artist"
+      ],
+      "female": [
+        "swimsuit",
+        "tanlines",
+        "yuri"
+      ],
+      "misc": [
+        "group"
+      ]
+    },
+    "tags_have_namespace": true,
+    "source": "html",
+    "source_site": "exh",
+    "date_generated": 1622908495000
+  }
+}

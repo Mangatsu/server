@@ -1,0 +1,142 @@
+package api
+
+import (
+	"encoding/json"
+	"fmt"
+	"github.com/Luukuton/Mangatsu/internal/config"
+	"github.com/Luukuton/Mangatsu/pkg/db"
+	"github.com/gorilla/mux"
+	"github.com/rs/cors"
+	log "github.com/sirupsen/logrus"
+	"net/http"
+	"time"
+)
+
+type loginResponse struct {
+	Token string
+}
+
+type ServerInfo struct {
+	APIVersion    int32
+	ServerVersion string
+	Visibility    string
+	Registrations bool
+}
+
+func returnInfo(w http.ResponseWriter, _ *http.Request) {
+	result := ServerInfo{
+		APIVersion:    1,
+		ServerVersion: "0.1.0",
+		Visibility:    config.CurrentVisibility(),
+		Registrations: config.RegistrationsEnabled(),
+	}
+
+	w.Header().Set("Content-Type", "application/json;charset=UTF-8")
+	err := json.NewEncoder(w).Encode(result)
+	if err != nil {
+		errorHandler(w, http.StatusInternalServerError, "")
+		return
+	}
+}
+
+// Returns statistics as JSON.
+func returnStatistics(w http.ResponseWriter, r *http.Request) {
+	if access, _ := hasAccess(w, r, db.NoRole); !access {
+		return
+	}
+
+	fmt.Fprintf(w, `{ "message": "Statistics not implemented" }`)
+}
+
+// Returns the root path as JSON.
+func returnRoot(w http.ResponseWriter, _ *http.Request) {
+	fmt.Fprintf(w, `{ "message": "Latest Mangatsu API available at /api/v1" }`)
+}
+
+// Handles errors. Argument msg is only used with 400 and 500.
+func errorHandler(w http.ResponseWriter, status int, msg string) {
+	switch status {
+	case http.StatusNotFound:
+		w.WriteHeader(status)
+		fmt.Fprintf(w, `{ "code": %d, "message": "not found" }`, status)
+	case http.StatusBadRequest:
+		w.WriteHeader(status)
+		fmt.Fprintf(w, `{ "code": %d, "message": "%s" }`, status, msg)
+	case http.StatusForbidden:
+		w.WriteHeader(status)
+		fmt.Fprintf(w, `{ "code": %d, "message": "forbidden" }`, status)
+	case http.StatusUnauthorized:
+		w.WriteHeader(status)
+		fmt.Fprintf(w, `{ "code": %d, "message": "unauthorized" }`, status)
+	default:
+		w.WriteHeader(http.StatusInternalServerError)
+		fmt.Fprintf(w, `{ "code": %d, "message": "internal server error" }`, http.StatusInternalServerError)
+		log.Error("Error 500: ", msg)
+	}
+}
+
+// Handles HTTP(S) requests.
+func handleRequests() {
+	baseURL := "/api/v1"
+	uuidRegex := "[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}"
+	r := mux.NewRouter().StrictSlash(true)
+
+	r.HandleFunc("/", returnRoot).Methods("GET")
+	r.HandleFunc(baseURL+"/info", returnInfo).Methods("GET")
+	r.HandleFunc(baseURL+"/statistics", returnStatistics).Methods("GET")
+
+	r.HandleFunc(baseURL+"/register", register).Methods("POST")
+	r.HandleFunc(baseURL+"/login", login).Methods("POST")
+	r.HandleFunc(baseURL+"/logout", logout).Methods("POST")
+
+	r.HandleFunc(baseURL+"/users", returnUsers).Methods("GET")
+	r.HandleFunc(baseURL+"/users/{uuid:"+uuidRegex+"}", updateUser).Methods("PUT")
+	r.HandleFunc(baseURL+"/users/{uuid:"+uuidRegex+"}", deleteUser).Methods("DELETE")
+	r.HandleFunc(baseURL+"/users/me/favorites", returnFavoriteGroups).Methods("GET")
+
+	r.HandleFunc(baseURL+"/scan", scanLibraries).Methods("GET")
+	r.HandleFunc(baseURL+"/thumbnails", generateThumbnails).Methods("GET")
+	r.HandleFunc(baseURL+"/meta", findMetadata).Methods("GET")
+
+	r.HandleFunc(baseURL+"/categories", returnCategories).Methods("GET")
+	r.HandleFunc(baseURL+"/series", returnSeries).Methods("GET")
+	r.HandleFunc(baseURL+"/tags", returnTags).Methods("GET")
+	r.HandleFunc(baseURL+"/tags/{namespace}/{name}", returnTag).Methods("GET")
+
+	r.HandleFunc(baseURL+"/galleries", returnGalleries).Methods("GET")
+	r.HandleFunc(baseURL+"/galleries/random", returnRandomGallery).Methods("GET")
+	r.HandleFunc(baseURL+"/galleries/{uuid:"+uuidRegex+"}", returnGallery).Methods("GET")
+	r.HandleFunc(baseURL+"/galleries/{uuid:"+uuidRegex+"}/progress/{progress:[0-9]+}", updateProgress).Methods("POST")
+	r.HandleFunc(baseURL+"/galleries/{uuid:"+uuidRegex+"}/favorite/{name}", setFavorite).Methods("POST")
+
+	r.PathPrefix("/cache/").Handler(http.StripPrefix("/cache/", http.FileServer(http.Dir(config.BuildCachePath()))))
+
+	// General 404
+	r.NotFoundHandler = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		errorHandler(w, http.StatusNotFound, "")
+	})
+
+	handler := cors.New(cors.Options{
+		AllowedOrigins: []string{"*"},
+		AllowedMethods: []string{
+			http.MethodGet, http.MethodPost, http.MethodDelete, http.MethodPut, http.MethodOptions,
+		},
+		AllowedHeaders: []string{
+			"Accept", "Content-Type", "Content-Length", "Accept-Encoding", "X-CSRF-Token", "Authorization",
+		},
+		AllowCredentials: true,
+	}).Handler(r)
+	srv := &http.Server{
+		Handler:      handler,
+		Addr:         config.GetAddress() + ":" + config.GetPort(),
+		WriteTimeout: 15 * time.Second,
+		ReadTimeout:  15 * time.Second,
+	}
+
+	log.Info(srv.ListenAndServe())
+}
+
+// LaunchAPI starts handling API requests.
+func LaunchAPI() {
+	handleRequests()
+}
