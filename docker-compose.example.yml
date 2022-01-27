@@ -2,28 +2,29 @@ version: '3.8'
 
 services:
   backend:
+    hostname: mtsuserver
     image: luukuton/mangatsu-server:latest
     user: 1000:1000 # should be owner of volumes. For data dir, both read and write is required. For libraries only read is required.
     ports:
-      - '5000:5000' # container:host
+      - '5050:5050' # container:host
     environment:
       # Credentials for the initial admin user. Change these.
-      - MTSU_INITIAL_ADMIN_NAME=admin
-      - MTSU_INITIAL_ADMIN_PW=s3cr3t
+      MTSU_INITIAL_ADMIN_NAME: admin
+      MTSU_INITIAL_ADMIN_PW: admin321
       # Make sure that the paths match containerpaths below in the volumes section!
       # Format: <freeform|structured><ID>;<INTERNAL_PATH>;;<freeform|structured><ID>;<INTERNAL_PATH> ...
-      - MTSU_BASE_PATHS=freeform1;/library1;;structured2;/library2
+      MTSU_BASE_PATHS: freeform1;/library1;;structured2;/library2
       # Modes: public, restricted, private
-      - MTSU_VISIBILITY=private
+      MTSU_VISIBILITY: private
       # Password for restricted mode.
-      - MTSU_RESTRICTED_PASSWORD=secretpassword
+      MTSU_RESTRICTED_PASSWORD: secretpassword
       # Allow registrations?
-      - MTSU_REGISTRATIONS=false
-      - MTSU_JWT_SECRET=9Wag7sMvKl3aF6K5lwIg6TI42ia2f6BstZAVrdJIq8Mp38lnl7UzQMC1qjKyZCBzHFGbbqsA0gKcHqDuyXQAhWoJ0lcx4K5q
+      MTSU_REGISTRATIONS: false
+      MTSU_JWT_SECRET: 9Wag7sMvKl3aF6K5lwIg6TI42ia2f6BstZAVrdJIq8Mp38lnl7UzQMC1qjKyZCBzHFGbbqsA0gKcHqDuyXQAhWoJ0lcx4K5q
       # Usually the following three don't need changing as they are the container's internal hostname, port and data path.
-      - MTSU_HOSTNAME=localhost
-      - MTSU_PORT=5050
-      - MTSU_DATA_PATH=data
+      MTSU_HOSTNAME: mtsuserver
+      MTSU_PORT: 5050
+      MTSU_DATA_PATH: /data
     # Above environmental variables can also be loaded from a file:
     #env_file:
     #  - ./.env
@@ -36,22 +37,23 @@ services:
     restart: always
 
   frontend:
+    hostname: mtsuweb
     image: luukuton/mangatsu-web:latest
     ports:
       - '3000:3000' # container:host
     environment:
-      - NODE_ENV=production
+      NODE_ENV: production
       # URL to the backend server above.
-      - NEXT_MANGATSU_API_URL=https://api.example.com
+      NEXT_PUBLIC_MANGATSU_API_URL: http://mangatsu.example.com:5050
       # Hostname or the domain where images are hosted. Usually the same as the domain in the API URL.
-      - NEXT_MANGATSU_IMAGE_HOSTNAME=api.example.com
+      NEXT_MANGATSU_IMAGE_HOSTNAME: mangatsu.example.com
       # URL to this frontend server.
-      - NEXTAUTH_URL=https://mangatsu.example.com
+      NEXTAUTH_URL: http://mangatsu.example.com:3000
       # URL to this frontend server. Change this to something else.
-      - SECRET=zb4DyuqELIfi8X0XRMa52yV9y6d011YTyyHBtczhYeHbzsquYnsr7Q9OkHNoLd6HvFqz4vvrCPcINol7sIEfLG6pY4D0KSHo
+      SECRET: zb4DyuqELIfi8X0XRMa52yV9y6d011YTyyHBtczhYeHbzsquYnsr7Q9OkHNoLd6HvFqz4vvrCPcINol7sIEfLG6pY4D0KSHo
       # Secret to sign JWTs in the frontend. Change this to something else.
       # Can be generated with the command 'jose newkey -s 256 -t oct -a HS512' (https://www.npmjs.com/package/node-jose-tools)
-      - JWT_SIGNING_PRIVATE_KEY={"kty":"oct","kid":"bbdunoB1J71jPATtgJAseZnx36LB4ant1OfH6ysV78M","alg":"HS512","k":"axdN1SbiVxMIPJYapyHOpGuo7KcE_mkT6_bugy5xxG8"}
+      JWT_SIGNING_PRIVATE_KEY: '{"kty":"oct","kid":"bbdunoB1J71jPATtgJAseZnx36LB4ant1OfH6ysV78M","alg":"HS512","k":"axdN1SbiVxMIPJYapyHOpGuo7KcE_mkT6_bugy5xxG8"}'
     # Above environmental variables can also be loaded from a file:
     #env_file:
     #  - ./.env.web

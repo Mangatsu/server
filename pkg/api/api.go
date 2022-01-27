@@ -126,6 +126,7 @@ func handleRequests() {
 		},
 		AllowCredentials: true,
 	}).Handler(r)
+
 	srv := &http.Server{
 		Handler:      handler,
 		Addr:         config.GetAddress() + ":" + config.GetPort(),
@@ -133,6 +134,7 @@ func handleRequests() {
 		ReadTimeout:  15 * time.Second,
 	}
 
+	log.Info("Starting API on: ", config.GetAddress(), ":", config.GetPort())
 	log.Info(srv.ListenAndServe())
 }
 
