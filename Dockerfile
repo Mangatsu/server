@@ -6,7 +6,7 @@ COPY . .
 # Unit tests
 RUN apk add build-base && go test ./...
 
-RUN GOOS=linux GOARCH=amd64 go build -ldflags="-w -s" -o /go/bin/mangatsu-server
+RUN GOOS=linux GOARCH=amd64 go build -ldflags="-w -s" -o /go/bin/mangatsu-server github.com/Mangatsu/server/cmd/mangatsu-server
 
 FROM alpine
 
