@@ -32,5 +32,4 @@ jobs:
 
     - name: Image digests
       run: |
-        echo ${{ steps.docker_build_backend.outputs.digest }}
-        echo ${{ steps.docker_build_frontend.outputs.digest }}
+        echo ${{ steps.docker_mangatsu_server.outputs.digest }}
