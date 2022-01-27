@@ -5,17 +5,17 @@
 /devarchive
 /data
 /.env
-mangatsu-server.exe
-mangatsu-server
 
 # testing
 /test.http
 /coverage.out
 
+# other
+/.github
+/docker-compose.example.yml
+/Dockerfile
 /.dockerignore
-.gitignore
+/.gitignore
 /docs
 /.env.example
-README.md
-
-/cmd/mangatsu-web
+/README.md

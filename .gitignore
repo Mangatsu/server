@@ -2,13 +2,11 @@
 /.idea
 
 # data
-/data/mangatsu.sqlite
+mangatsu.sqlite
 /devarchive
 /data/cache
 /.env
-mangatsu-server.exe
-mangatsu-server
 
 # testing
-/test.http
-/coverage.out
+test.http
+coverage.out
