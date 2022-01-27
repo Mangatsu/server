@@ -16,6 +16,7 @@ USER mangatsu
 WORKDIR /home/mangatsu/app
 
 COPY --from=build /go/bin/mangatsu-server /home/mangatsu/app/mangatsu-server
+COPY --from=build /usr/app/pkg/db/migrations /home/mangatsu/app/pkg/db/migrations
 
-EXPOSE 5000
+EXPOSE 5050
 CMD [ "sh", "-c", "/home/mangatsu/app/mangatsu-server" ]
