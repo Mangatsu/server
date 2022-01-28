@@ -50,7 +50,7 @@ func returnStatistics(w http.ResponseWriter, r *http.Request) {
 
 // Returns the root path as JSON.
 func returnRoot(w http.ResponseWriter, _ *http.Request) {
-	fmt.Fprintf(w, `{ "message": "Latest Mangatsu API available at /api/v1" }`)
+	fmt.Fprintf(w, `{ "message": "Mangatsu API available at /api" }`)
 }
 
 // Handles errors. Argument msg is only used with 400 and 500.
@@ -82,7 +82,7 @@ func handleRequests() {
 	r := mux.NewRouter().StrictSlash(true)
 
 	r.HandleFunc("/", returnRoot).Methods("GET")
-	r.HandleFunc(baseURL+"/info", returnInfo).Methods("GET")
+	r.HandleFunc("/api", returnInfo).Methods("GET")
 	r.HandleFunc(baseURL+"/statistics", returnStatistics).Methods("GET")
 
 	r.HandleFunc(baseURL+"/register", register).Methods("POST")
