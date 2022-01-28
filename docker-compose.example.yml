@@ -15,6 +15,10 @@ services:
       # Make sure that the paths match containerpaths below in the volumes section!
       # Format: <freeform|structured><ID>;<INTERNAL_PATH>;;<freeform|structured><ID>;<INTERNAL_PATH> ...
       MTSU_BASE_PATHS: freeform1;/library1;;structured2;/library2
+      # Max size of the cache where galleries are extracted from the library in MB. Can overflow a bit especially if set too low.
+      MTSU_CACHE_SIZE: 10000
+      # Time to live for the cache in seconds. 604800 = 1 week.
+      MTSU_CACHE_TTL: 604800
       # Modes: public, restricted, private
       MTSU_VISIBILITY: private
       # Password for restricted mode.
@@ -23,6 +27,8 @@ services:
       MTSU_REGISTRATIONS: 'false'
       # Secret to sign JWTs with. Change this to something else!
       MTSU_JWT_SECRET: 9Wag7sMvKl3aF6K5lwIg6TI42ia2f6BstZAVrdJIq8Mp38lnl7UzQMC1qjKyZCBzHFGbbqsA0gKcHqDuyXQAhWoJ0lcx4K5q
+      # Log level: error, warn, info, debug, trace
+      MTSU_LOG_LEVEL: warn
       # Usually the following three envs don't need changing as they are the container's internal hostname, port and data path.
       # In case of port conflict, change the port here and the first one above in the ports section.
       MTSU_HOSTNAME: mtsuserver
