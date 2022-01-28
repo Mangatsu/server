@@ -1,6 +1,7 @@
 package library
 
 import (
+	"github.com/Mangatsu/server/internal/config"
 	"github.com/mholt/archiver/v4"
 	log "github.com/sirupsen/logrus"
 	"io"
@@ -8,6 +9,24 @@ import (
 	"os"
 	"path/filepath"
 )
+
+func InitCache() {
+	cachePath := config.BuildCachePath()
+	if !PathExists(cachePath) {
+		err := os.Mkdir(cachePath, os.ModePerm)
+		if err != nil {
+			log.Error(err)
+		}
+	}
+
+	thumbnailsPath := config.BuildCachePath("thumbnails")
+	if !PathExists(thumbnailsPath) {
+		err := os.Mkdir(thumbnailsPath, os.ModePerm)
+		if err != nil {
+			log.Error(err)
+		}
+	}
+}
 
 func ExtractPDF() {
 	// TODO: Add support for PDF files, Probably with https://github.com/gen2brain/go-fitz

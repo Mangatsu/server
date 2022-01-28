@@ -4,11 +4,13 @@ import (
 	"github.com/Mangatsu/server/internal/config"
 	"github.com/Mangatsu/server/pkg/api"
 	"github.com/Mangatsu/server/pkg/db"
+	"github.com/Mangatsu/server/pkg/library"
 	log "github.com/sirupsen/logrus"
 )
 
 func main() {
 	config.LoadEnv()
+	library.InitCache()
 	db.Initdb()
 	db.EnsureLatestVersion()
 
