@@ -12,10 +12,9 @@
 
 # other
 /.github
-/docker-compose.example.yml
 /Dockerfile
 /.dockerignore
 /.gitignore
 /docs
-/.env.example
+/example.env
 /README.md

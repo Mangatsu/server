@@ -1,22 +1,22 @@
 # Contributing 
 
-### 🚧 Building
+### 🚧 Building and running
+- Copy example.env as .env and change the values according to your needs.
 - Build `go build`
-- Initialize development database: `goose -dir db/migrations sqlite3 ./data/data.sqlite up`
-- Run `backend` on Linux or `backend.exe` on Windows
+- (Optional) Manually initialize development database: `goose -dir db/migrations sqlite3 ./data/data.sqlite up`
+- Run `backend` (`backend.exe` on Windows)
 
 ### 💾 Database migrations
-```
-goose -dir db/migrations sqlite3 ./data.sqlite up
-jet -dsn="file:///full/path/to/data.sqlite" -path=types  
-```
+- Migrations: `goose -dir db/migrations sqlite3 ./data.sqlite up`
+- Automatic models and types: `jet -dsn="file:///full/path/to/data.sqlite" -path=types` based on the db schema
 
 ### 🔬 Testing
 - Test: `go test ./... -v  -coverprofile "coverage.out"` to test
 - Show coverage report: `go tool cover -html "coverage.out"`
 
 ### 📝 Generating docs
-- Coming soon
+- Run `godoc -http=localhost:8080`
+- Go to `http://localhost:8080/pkg/#thirdparty`
 
 ## Requirements
 - Go 1.7+

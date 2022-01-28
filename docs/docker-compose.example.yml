@@ -4,12 +4,14 @@ services:
   backend:
     hostname: mtsuserver
     image: luukuton/mangatsu-server:latest
-    user: 1000:1000 # should be owner of volumes. For data dir, both read and write is required. For libraries only read is required.
+    user: 1000:1000 # should have access to the volumes. For data dir, both read and write is required. For libraries only read is required.
     ports:
       - '5050:5050' # container:host
     restart: always
     environment:
-      # Credentials for the initial admin user. Change these.
+      # Log level: error, warn, info, debug, trace
+      MTSU_LOG_LEVEL: warn
+      # Credentials for the initial admin user. Changing them is recommended.
       MTSU_INITIAL_ADMIN_NAME: admin
       MTSU_INITIAL_ADMIN_PW: admin321
       # Make sure that the paths match containerpaths below in the volumes section!
@@ -17,18 +19,16 @@ services:
       MTSU_BASE_PATHS: freeform1;/library1;;structured2;/library2
       # Max size of the cache where galleries are extracted from the library in MB. Can overflow a bit especially if set too low.
       MTSU_CACHE_SIZE: 10000
-      # Time to live for the cache in seconds. 604800 = 1 week.
+      # Time to live for the cache in seconds (604800 = 1 week).
       MTSU_CACHE_TTL: 604800
       # Modes: public, restricted, private
       MTSU_VISIBILITY: private
       # Password for restricted mode.
       MTSU_RESTRICTED_PASSWORD: secretpassword
-      # Allow registrations?
+      # Allow registrations? Remember apostrophes around the value.
       MTSU_REGISTRATIONS: 'false'
-      # Secret to sign JWTs with. Change this to something else!
+      # Secret to sign JWTs for login sessions in the backend. Recommended to change.
       MTSU_JWT_SECRET: 9Wag7sMvKl3aF6K5lwIg6TI42ia2f6BstZAVrdJIq8Mp38lnl7UzQMC1qjKyZCBzHFGbbqsA0gKcHqDuyXQAhWoJ0lcx4K5q
-      # Log level: error, warn, info, debug, trace
-      MTSU_LOG_LEVEL: warn
       # Usually the following three envs don't need changing as they are the container's internal hostname, port and data path.
       # In case of port conflict, change the port here and the first one above in the ports section.
       MTSU_HOSTNAME: mtsuserver
@@ -60,7 +60,7 @@ services:
       NEXTAUTH_URL: https://mangatsu.example.com
       # URL to this frontend server. Change this to something else!
       SECRET: zb4DyuqELIfi8X0XRMa52yV9y6d011YTyyHBtczhYeHbzsquYnsr7Q9OkHNoLd6HvFqz4vvrCPcINol7sIEfLG6pY4D0KSHo
-      # Secret to sign JWTs in the frontend. Change this to something else!
+      # Secret to sign JWTs in the web client. Recommended to change.
       # Can be generated with the command 'jose newkey -s 256 -t oct -a HS512' (https://www.npmjs.com/package/node-jose-tools)
       JWT_SIGNING_PRIVATE_KEY: '{"kty":"oct","kid":"bbdunoB1J71jPATtgJAseZnx36LB4ant1OfH6ysV78M","alg":"HS512","k":"axdN1SbiVxMIPJYapyHOpGuo7KcE_mkT6_bugy5xxG8"}'
       # If some other container is already using the same port, you can use this to avoid conflicts. Remember to change the first port in 3030:3030 too.
