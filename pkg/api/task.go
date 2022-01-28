@@ -59,6 +59,7 @@ func findMetadata(w http.ResponseWriter, r *http.Request) {
 	if len(sources) > 0 {
 		response := strings.Join(sources, ",")
 		fmt.Fprintf(w, `{ "message": "Started parsing given sources: `+response+`" }`)
+		return
 	}
 
 	errorHandler(w, http.StatusBadRequest, "No sources specified.")
