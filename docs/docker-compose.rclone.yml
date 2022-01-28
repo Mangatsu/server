@@ -1,0 +1,53 @@
+version: '3.8'
+
+services:
+  backend:
+    hostname: mtsuserver
+    image: luukuton/mangatsu-server:latest
+    user: 1000:1000
+    ports:
+      - '5050:5050' # container:host
+    restart: always
+    environment:
+      MTSU_LOG_LEVEL: warn
+      MTSU_INITIAL_ADMIN_NAME: admin
+      MTSU_INITIAL_ADMIN_PW: admin321
+      MTSU_BASE_PATHS: freeform1;/archive
+      MTSU_CACHE_SIZE: 10000
+      MTSU_CACHE_TTL: 604800
+      MTSU_VISIBILITY: private
+      MTSU_RESTRICTED_PASSWORD: secretpassword
+      MTSU_REGISTRATIONS: 'false'
+      MTSU_JWT_SECRET: 9Wag7sMvKl3aF6K5lwIg6TI42ia2f6BstZAVrdJIq8Mp38lnl7UzQMC1qjKyZCBzHFGbbqsA0gKcHqDuyXQAhWoJ0lcx4K5q
+      MTSU_HOSTNAME: mtsuserver
+      MTSU_PORT: 5050
+      MTSU_DATA_PATH: /data
+    volumes:
+      - "/path/to/data:/data"
+      - "rclonevol:/archive:ro"
+
+  frontend:
+    hostname: mtsuweb
+    image: luukuton/mangatsu-web:latest
+    ports:
+      - '3030:3030' # container:host
+    restart: always
+    environment:
+      NODE_ENV: production
+      NEXT_PUBLIC_MANGATSU_API_URL: https://mangatsu-api.example.com
+      NEXT_MANGATSU_IMAGE_HOSTNAME: mangatsu-api.example.com
+      NEXTAUTH_URL: https://mangatsu.example.com
+      SECRET: zb4DyuqELIfi8X0XRMa52yV9y6d011YTyyHBtczhYeHbzsquYnsr7Q9OkHNoLd6HvFqz4vvrCPcINol7sIEfLG6pY4D0KSHo
+      JWT_SIGNING_PRIVATE_KEY: '{"kty":"oct","kid":"bbdunoB1J71jPATtgJAseZnx36LB4ant1OfH6ysV78M","alg":"HS512","k":"axdN1SbiVxMIPJYapyHOpGuo7KcE_mkT6_bugy5xxG8"}'
+      PORT: 3030
+
+volumes:
+  rclonevol:
+    driver: rclone
+    driver_opts:
+      remote: "manga:/home/user/archive"
+      allow_other: "true"
+      vfs_cache_mode: full
+      vfs_cache_max_age: "720h"
+      vfs-cache-max-size: "50G"
+      read_only: "true"
