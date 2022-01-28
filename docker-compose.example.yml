@@ -7,6 +7,7 @@ services:
     user: 1000:1000 # should be owner of volumes. For data dir, both read and write is required. For libraries only read is required.
     ports:
       - '5050:5050' # container:host
+    restart: always
     environment:
       # Credentials for the initial admin user. Change these.
       MTSU_INITIAL_ADMIN_NAME: admin
@@ -19,9 +20,11 @@ services:
       # Password for restricted mode.
       MTSU_RESTRICTED_PASSWORD: secretpassword
       # Allow registrations?
-      MTSU_REGISTRATIONS: false
+      MTSU_REGISTRATIONS: 'false'
+      # Secret to sign JWTs with. Change this to something else!
       MTSU_JWT_SECRET: 9Wag7sMvKl3aF6K5lwIg6TI42ia2f6BstZAVrdJIq8Mp38lnl7UzQMC1qjKyZCBzHFGbbqsA0gKcHqDuyXQAhWoJ0lcx4K5q
-      # Usually the following three don't need changing as they are the container's internal hostname, port and data path.
+      # Usually the following three envs don't need changing as they are the container's internal hostname, port and data path.
+      # In case of port conflict, change the port here and the first one above in the ports section.
       MTSU_HOSTNAME: mtsuserver
       MTSU_PORT: 5050
       MTSU_DATA_PATH: /data
@@ -30,31 +33,32 @@ services:
     #  - ./.env
     volumes:
       # Change paths below. Add as many volumes as you need. Format: hostpath:containerpath:ro (ro = read-only)
-      # Make sure that the containerpaths match ones above or in the .env file.
+      # Make sure that the containerpaths match the paths above or the ones in the .env file.
       - "/path/to/data:/data"
       - "/path/to/your/library/1:/library1:ro"
       - "/path/to/your/library/2:/library2:ro"
-    restart: always
 
   frontend:
     hostname: mtsuweb
     image: luukuton/mangatsu-web:latest
     ports:
-      - '3000:3000' # container:host
+      - '3030:3030' # container:host
+    restart: always
     environment:
       NODE_ENV: production
       # URL to the backend server above.
-      NEXT_PUBLIC_MANGATSU_API_URL: http://mangatsu.example.com:5050
+      NEXT_PUBLIC_MANGATSU_API_URL: https://mangatsu-api.example.com
       # Hostname or the domain where images are hosted. Usually the same as the domain in the API URL.
-      NEXT_MANGATSU_IMAGE_HOSTNAME: mangatsu.example.com
+      NEXT_MANGATSU_IMAGE_HOSTNAME: mangatsu-api.example.com
       # URL to this frontend server.
-      NEXTAUTH_URL: http://mangatsu.example.com:3000
-      # URL to this frontend server. Change this to something else.
+      NEXTAUTH_URL: https://mangatsu.example.com
+      # URL to this frontend server. Change this to something else!
       SECRET: zb4DyuqELIfi8X0XRMa52yV9y6d011YTyyHBtczhYeHbzsquYnsr7Q9OkHNoLd6HvFqz4vvrCPcINol7sIEfLG6pY4D0KSHo
-      # Secret to sign JWTs in the frontend. Change this to something else.
+      # Secret to sign JWTs in the frontend. Change this to something else!
       # Can be generated with the command 'jose newkey -s 256 -t oct -a HS512' (https://www.npmjs.com/package/node-jose-tools)
       JWT_SIGNING_PRIVATE_KEY: '{"kty":"oct","kid":"bbdunoB1J71jPATtgJAseZnx36LB4ant1OfH6ysV78M","alg":"HS512","k":"axdN1SbiVxMIPJYapyHOpGuo7KcE_mkT6_bugy5xxG8"}'
+      # If some other container is already using the same port, you can use this to avoid conflicts. Remember to change the first port in 3030:3030 too.
+      PORT: 3030
     # Above environmental variables can also be loaded from a file:
     #env_file:
     #  - ./.env.web
-    restart: always
