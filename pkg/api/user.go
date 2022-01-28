@@ -80,6 +80,7 @@ func login(w http.ResponseWriter, r *http.Request) {
 	err = json.NewEncoder(w).Encode(loginResponse{Token: token})
 	if err != nil {
 		errorHandler(w, http.StatusInternalServerError, "")
+		return
 	}
 }
 
@@ -163,6 +164,7 @@ func returnUsers(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
+// deleteUser deletes a user from the database. Only for admins.
 func deleteUser(w http.ResponseWriter, r *http.Request) {
 	access, _ := hasAccess(w, r, db.Admin)
 	if !access {
@@ -194,6 +196,7 @@ func returnFavoriteGroups(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
+// setFavorite sets a personal favorite group for a gallery.
 func setFavorite(w http.ResponseWriter, r *http.Request) {
 	access, userUUID := hasAccess(w, r, db.Viewer)
 	if !access {
