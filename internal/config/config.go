@@ -86,7 +86,7 @@ func ParseBasePaths() []Library {
 
 func GetInitialAdmin() (string, string) {
 	username := os.Getenv("MTSU_INITIAL_ADMIN_NAME")
-	password := os.Getenv("MTSU_INITIAL_ADMIN_PASSWORD")
+	password := os.Getenv("MTSU_INITIAL_ADMIN_PW")
 	if username == "" {
 		username = "admin"
 	}
