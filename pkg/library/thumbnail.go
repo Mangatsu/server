@@ -2,6 +2,7 @@ package library
 
 import (
 	"bytes"
+	"errors"
 	"fmt"
 	"github.com/Mangatsu/server/internal/config"
 	"github.com/Mangatsu/server/pkg/db"
@@ -124,17 +125,17 @@ func readArchiveImages(archivePath string, galleryUUID string, onlyCover bool) {
 				log.Error("Couldn't save cover thumbnail to db: ", err)
 				return err
 			}
-		} else {
-			generatedCount++
+			return errors.New("terminate walk")
 		}
+		generatedCount++
 
 		return nil
 	})
-	if err != nil {
+	if err != nil && err.Error() != "terminate walk" {
 		log.Debug("Error walking dir: ", err)
 	}
 	if !onlyCover {
-		log.Infof("Generated %d page thumbnails for gallery: %s", generatedCount, galleryUUID)
+		log.Infof("%d non-cover thumbnails generated for gallery: %s", generatedCount, galleryUUID)
 	}
 }
 
