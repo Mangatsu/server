@@ -242,6 +242,7 @@ func ParseX() {
 		log.Error("Libraries could not be retrieved to parse x JSON files: ", err)
 		return
 	}
+
 	for _, galleryLibrary := range libraries {
 		for _, gallery := range galleryLibrary.Galleries {
 			fullPath := config.BuildLibraryPath(galleryLibrary.Path, gallery.ArchivePath)
@@ -258,7 +259,7 @@ func ParseX() {
 				internal = true
 			}
 
-			if metaData == nil {
+			if !internal {
 				metaData, metaPath = matchExternalMeta(fullPath, galleryLibrary.Path)
 			}
 
@@ -278,7 +279,7 @@ func ParseX() {
 		}
 	}
 
-	// Fuzzy parsing for leftover archives.
+	// Fuzzy parsing for all archives that didn't have an exact match.
 	for _, noMatch := range archivesNoMatch {
 		onlyDir := filepath.Dir(noMatch.fullPath)
 		files, err := ioutil.ReadDir(onlyDir)

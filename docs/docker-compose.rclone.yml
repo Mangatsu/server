@@ -15,6 +15,7 @@ services:
       MTSU_BASE_PATHS: freeform1;/archive
       MTSU_CACHE_SIZE: 10000
       MTSU_CACHE_TTL: 604800
+      MTSU_DISABLE_CACHE_SERVER: 'false'
       MTSU_VISIBILITY: private
       MTSU_RESTRICTED_PASSPHRASE: secretpassword
       MTSU_REGISTRATIONS: 'false'

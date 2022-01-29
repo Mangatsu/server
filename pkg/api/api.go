@@ -117,7 +117,9 @@ func handleRequests() {
 	r.HandleFunc(baseURL+"/galleries/{uuid:"+uuidRegex+"}/progress/{progress:[0-9]+}", updateProgress).Methods("POST")
 	r.HandleFunc(baseURL+"/galleries/{uuid:"+uuidRegex+"}/favorite/{name}", setFavorite).Methods("POST")
 
-	r.PathPrefix("/cache/").Handler(http.StripPrefix("/cache/", http.FileServer(http.Dir(config.BuildCachePath()))))
+	if !config.CacheServerDisabled() {
+		r.PathPrefix("/cache/").Handler(http.StripPrefix("/cache/", http.FileServer(http.Dir(config.BuildCachePath()))))
+	}
 
 	// General 404
 	r.NotFoundHandler = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
