@@ -63,11 +63,7 @@ func TestParseX(t *testing.T) {
 	}
 
 	archivePath := "(C99) [同人サークル (とあるアーティスト)] とてもエッチなタイトル (魔法少女) [DL版].zip"
-	gotGallery, gotTags, gotExternal, err := convertExh(exhGallery, archivePath, "info.json", true)
-	if err != nil {
-		t.Error("Error converting Exh format:", err)
-		return
-	}
+	gotGallery, gotTags, gotExternal := convertExh(exhGallery, archivePath, "info.json", true)
 
 	if gotGallery.Title != "(C99) [doujin circle (some artist)] very lewd title (Magical Girls) [DL]" ||
 		*gotGallery.TitleNative != "(C99) [同人サークル (とあるアーティスト)] とてもエッチなタイトル (魔法少女) [DL版]" ||
