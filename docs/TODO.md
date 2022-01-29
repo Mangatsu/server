@@ -1,7 +1,7 @@
 # 📝 TODO
 
 ## Short term / Priority
-- [ ] Allow disabling internal file server to allow for external file serving (like NGINX)
+- [x] Allow disabling internal file server to allow for external file serving (like NGINX)
 - [ ] Tagging galleries to personal favorite groups in the Web app
 - [ ] Allow admins to edit gallery metadata
 - [ ] Better plain file support and general improvements for the scanner and tagger
