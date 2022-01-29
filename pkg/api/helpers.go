@@ -106,7 +106,6 @@ func hasAccess(w http.ResponseWriter, r *http.Request, role db.Role) (bool, *str
 	if err == nil && credentials.Username != "" && credentials.Password != "" {
 		access, userUUID, _ := loginHelper(w, *credentials, role)
 		if !access {
-			errorHandler(w, http.StatusUnauthorized, "")
 			return false, nil
 		}
 		return access, userUUID
@@ -123,6 +122,7 @@ func hasAccess(w http.ResponseWriter, r *http.Request, role db.Role) (bool, *str
 		access := *credentials.Passphrase == config.RestrictedPassphrase()
 		if !access {
 			errorHandler(w, http.StatusUnauthorized, "")
+			return false, nil
 		}
 		return access, nil
 	}

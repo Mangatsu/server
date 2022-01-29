@@ -1,7 +1,6 @@
 package api
 
 import (
-	"encoding/json"
 	"github.com/Mangatsu/server/internal/config"
 	"github.com/Mangatsu/server/pkg/db"
 	"github.com/Mangatsu/server/pkg/library"
@@ -33,20 +32,15 @@ type MetadataResult struct {
 	Library model.Library `json:"-"`
 }
 
-type GalleriesResult struct {
-	Data  []MetadataResult `json:"Data"`
-	Count int32            `json:"Count"`
-}
-
 type GalleryResult struct {
-	Meta  MetadataResult `json:"Meta"`
-	Files []string       `json:"Files"`
-	Count int32          `json:"Count"`
+	Meta  MetadataResult
+	Files []string
+	Count int
 }
 
 type GenericStringResult struct {
-	Data  []string `json:"Data"`
-	Count int32    `json:"Count"`
+	Data  []string
+	Count int
 }
 
 // returnGalleries returns galleries as JSON.
@@ -57,31 +51,26 @@ func returnGalleries(w http.ResponseWriter, r *http.Request) {
 	}
 
 	queryParams := parseQueryParams(r)
-	galleries := db.GetGalleries(queryParams, true, userUUID)
+	galleries, err := db.GetGalleries(queryParams, true, userUUID)
+	if handleResult(w, galleries, err, false) {
+		return
+	}
 
 	var galleriesResult []MetadataResult
-	if len(galleries) == 0 {
-		galleriesResult = []MetadataResult{}
-	} else {
+	count := len(galleries)
+	if count > 0 {
 		for _, gallery := range galleries {
 			galleriesResult = append(galleriesResult, convertMetadata(gallery))
 		}
 	}
 
-	result := GalleriesResult{
+	resultToJSON(w, struct {
+		Data  []MetadataResult
+		Count int
+	}{
 		Data:  galleriesResult,
-		Count: int32(len(galleries)),
-	}
-
-	//w.Header().Set("Access-Control-Allow-Origin", "*")
-	//w.Header().Set("Access-Control-Allow-Methods", "POST, GET, OPTIONS, PUT, DELETE")
-	//w.Header().Set("Access-Control-Allow-Headers", "Accept, Content-Type, Content-Length, Accept-Encoding, X-CSRF-Token, Authorization")
-	w.Header().Set("Content-Type", "application/json;charset=UTF-8")
-	err := json.NewEncoder(w).Encode(result)
-	if err != nil {
-		errorHandler(w, http.StatusInternalServerError, "")
-		return
-	}
+		Count: count,
+	})
 }
 
 // returnGallery returns one gallery as JSON.
@@ -94,9 +83,8 @@ func returnGallery(w http.ResponseWriter, r *http.Request) {
 	params := mux.Vars(r)
 	galleryUUID := params["uuid"]
 
-	galleries := db.GetGallery(&galleryUUID, userUUID)
-	if len(galleries) == 0 {
-		errorHandler(w, http.StatusNotFound, "")
+	galleries, err := db.GetGallery(&galleryUUID, userUUID)
+	if handleResult(w, galleries, err, false) {
 		return
 	}
 
@@ -105,18 +93,12 @@ func returnGallery(w http.ResponseWriter, r *http.Request) {
 		config.BuildLibraryPath(gallery.Library.Path, gallery.ArchivePath),
 		gallery.UUID,
 	)
-	result := GalleryResult{
+
+	resultToJSON(w, GalleryResult{
 		Meta:  gallery,
 		Files: files,
 		Count: count,
-	}
-
-	w.Header().Set("Content-Type", "application/json;charset=UTF-8")
-	err := json.NewEncoder(w).Encode(result)
-	if err != nil {
-		errorHandler(w, http.StatusInternalServerError, "")
-		return
-	}
+	})
 }
 
 // returnRandomGallery returns one random gallery as JSON in the same way as returnGallery.
@@ -126,9 +108,9 @@ func returnRandomGallery(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	galleries := db.GetGallery(nil, userUUID)
-	if len(galleries) == 0 {
-		galleries = []db.CombinedMetadata{}
+	galleries, err := db.GetGallery(nil, userUUID)
+	if handleResult(w, galleries, err, false) {
+		return
 	}
 
 	gallery := convertMetadata(galleries[0])
@@ -136,39 +118,12 @@ func returnRandomGallery(w http.ResponseWriter, r *http.Request) {
 		config.BuildLibraryPath(gallery.Library.Path, gallery.ArchivePath),
 		gallery.UUID,
 	)
-	result := GalleryResult{
+
+	resultToJSON(w, GalleryResult{
 		Meta:  gallery,
 		Files: files,
 		Count: count,
-	}
-
-	w.Header().Set("Content-Type", "application/json;charset=UTF-8")
-	err := json.NewEncoder(w).Encode(result)
-	if err != nil {
-		errorHandler(w, http.StatusInternalServerError, "")
-		return
-	}
-}
-
-// returnTag Returns one tag with galleries associated with it as JSON.
-func returnTag(w http.ResponseWriter, r *http.Request) {
-	if access, _ := hasAccess(w, r, db.NoRole); !access {
-		return
-	}
-
-	params := mux.Vars(r)
-	tags := db.GetTag(params["namespace"], params["name"])
-	if tags == nil || len(tags) == 0 {
-		errorHandler(w, http.StatusNotFound, "")
-		return
-	}
-
-	w.Header().Set("Content-Type", "application/json;charset=UTF-8")
-	err := json.NewEncoder(w).Encode(tags)
-	if err != nil {
-		errorHandler(w, http.StatusInternalServerError, "")
-		return
-	}
+	})
 }
 
 // returnTags returns all tags as JSON.
@@ -177,13 +132,12 @@ func returnTags(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	tags := db.GetTags()
-	w.Header().Set("Content-Type", "application/json;charset=UTF-8")
-	err := json.NewEncoder(w).Encode(tags)
-	if err != nil {
-		errorHandler(w, http.StatusInternalServerError, "")
+	tags, err := db.GetTags()
+	if handleResult(w, tags, err, true) {
 		return
 	}
+
+	resultToJSON(w, tags)
 }
 
 // returnCategories returns all public categories as JSON.
@@ -192,36 +146,30 @@ func returnCategories(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	categories := db.GetCategories()
-	response := GenericStringResult{
-		Data:  categories,
-		Count: int32(len(categories)),
-	}
-
-	w.Header().Set("Content-Type", "application/json;charset=UTF-8")
-	err := json.NewEncoder(w).Encode(response)
-	if err != nil {
-		errorHandler(w, http.StatusInternalServerError, "")
+	categories, err := db.GetCategories()
+	if handleResult(w, categories, err, true) {
 		return
 	}
+
+	resultToJSON(w, GenericStringResult{
+		Data:  categories,
+		Count: len(categories),
+	})
 }
 
-// returnSeries returns all public categories as JSON.
+// returnSeries returns all series as JSON.
 func returnSeries(w http.ResponseWriter, r *http.Request) {
 	if access, _ := hasAccess(w, r, db.NoRole); !access {
 		return
 	}
 
-	series := db.GetSeries()
-	response := GenericStringResult{
-		Data:  series,
-		Count: int32(len(series)),
-	}
-
-	w.Header().Set("Content-Type", "application/json;charset=UTF-8")
-	err := json.NewEncoder(w).Encode(response)
-	if err != nil {
-		errorHandler(w, http.StatusInternalServerError, "")
+	series, err := db.GetSeries()
+	if handleResult(w, series, err, true) {
 		return
 	}
+
+	resultToJSON(w, GenericStringResult{
+		Data:  series,
+		Count: len(series),
+	})
 }

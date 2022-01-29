@@ -2,7 +2,6 @@ package library
 
 import (
 	"bytes"
-	"errors"
 	"fmt"
 	"github.com/Mangatsu/server/internal/config"
 	"github.com/Mangatsu/server/pkg/db"
@@ -29,7 +28,12 @@ func GenerateThumbnails(pages bool, force bool) {
 // thumbnailWalker walks through the database and generates thumbnails for covers or pages depending on onlyCover param.
 // If force is set to false, already existing directories will be skipped.
 func thumbnailWalker(onlyCover bool) {
-	libraries := db.GetLibraries()
+	libraries, err := db.GetLibraries()
+	if err != nil {
+		log.Error("Could not get libraries for thumbnail generation: ", err)
+		return
+	}
+
 	for _, library := range libraries {
 		for _, gallery := range library.Galleries {
 			galleryThumbnailPath := config.BuildCachePath("thumbnails", gallery.UUID)
@@ -41,10 +45,7 @@ func thumbnailWalker(onlyCover bool) {
 				}
 			}
 
-			log.Info("Generating thumbnails for gallery: " + gallery.UUID)
-
 			fullPath := config.BuildLibraryPath(library.Path, gallery.ArchivePath)
-
 			readArchiveImages(fullPath, gallery.UUID, onlyCover)
 		}
 	}
@@ -71,6 +72,7 @@ func readArchiveImages(archivePath string, galleryUUID string, onlyCover bool) {
 	}
 
 	cover := true
+	generatedCount := 0
 	err = fs.WalkDir(fsys, ".", func(s string, d fs.DirEntry, err error) error {
 		if err != nil {
 			return err
@@ -83,9 +85,8 @@ func readArchiveImages(archivePath string, galleryUUID string, onlyCover bool) {
 			cacheInnerDir := config.BuildCachePath("thumbnails", galleryUUID, d.Name())
 			if !PathExists(cacheInnerDir) {
 				log.Info("Creating thumbnail dir: " + cacheInnerDir)
-				err = os.Mkdir(cacheInnerDir, os.ModePerm)
-				if err != nil {
-					log.Error("Error creating inner dir for cache", err)
+				if err = os.Mkdir(cacheInnerDir, os.ModePerm); err != nil {
+					log.Error("Couldn't create thumbnail dir: ", err)
 					return err
 				}
 			}
@@ -111,25 +112,29 @@ func readArchiveImages(archivePath string, galleryUUID string, onlyCover bool) {
 
 		err = generateThumbnail(galleryUUID, imgName, content, onlyCover)
 		if err != nil {
-			log.Error("Error generating thumbnail for", d.Name())
+			log.Error("Couldn't generate thumbnail for", d.Name())
 			return err
 		}
 
 		if onlyCover {
-			if err == nil {
-				log.Info("Cover thumbnail generated: ", d.Name())
-				db.SetThumbnail(galleryUUID, imgName+".webp")
-				if err != nil {
-					log.Error("Error saving thumbnail to db")
-				}
+			webpName := imgName + ".webp"
+			log.Info("Cover thumbnail generated: ", webpName)
+
+			if err := db.SetThumbnail(galleryUUID, webpName); err != nil {
+				log.Error("Couldn't save cover thumbnail to db: ", err)
+				return err
 			}
-			return errors.New("terminate walk")
+		} else {
+			generatedCount++
 		}
 
 		return nil
 	})
-	if err != nil && err.Error() != "terminate walk" {
-		log.Error("Error walking dir: ", err)
+	if err != nil {
+		log.Debug("Error walking dir: ", err)
+	}
+	if !onlyCover {
+		log.Infof("Generated %d page thumbnails for gallery: %s", generatedCount, galleryUUID)
 	}
 }
 
@@ -137,7 +142,7 @@ func readArchiveImages(archivePath string, galleryUUID string, onlyCover bool) {
 func generateThumbnail(galleryUUID string, thumbnailPath string, imgBytes []byte, large bool) error {
 	srcImage, _, err := image.Decode(bytes.NewReader(imgBytes))
 	if err != nil {
-		log.Error("Decode: ", err)
+		log.Debugf("Could not decode img %s. Message: %s", thumbnailPath, err)
 		return err
 	}
 
@@ -150,14 +155,14 @@ func generateThumbnail(galleryUUID string, thumbnailPath string, imgBytes []byte
 
 	var buf bytes.Buffer
 	if err = webp.Encode(&buf, dstImage, &webp.Options{Lossless: false, Quality: 75}); err != nil {
-		log.Error("Encode: ", err)
+		log.Debugf("Could not encode img %s. Message: %s", thumbnailPath, err)
 		return err
 	}
 
 	// webp
 	err = os.WriteFile(config.BuildCachePath("thumbnails", galleryUUID, thumbnailPath+".webp"), buf.Bytes(), 0666)
 	if err != nil {
-		log.Error("Writing thumbnail: ", err)
+		log.Debugf("Couldn't write thumbnail %s. Message: %s", thumbnailPath, err)
 	}
 
 	// TODO: test how long it takes to generate webp thumbnails compared to jpg + size differences

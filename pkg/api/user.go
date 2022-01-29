@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"github.com/Mangatsu/server/internal/config"
 	"github.com/Mangatsu/server/pkg/db"
+	"github.com/Mangatsu/server/pkg/types/model"
 	"github.com/gorilla/mux"
 	log "github.com/sirupsen/logrus"
 	"net/http"
@@ -76,38 +77,38 @@ func login(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	w.Header().Set("Content-Type", "application/json;charset=UTF-8")
-	err = json.NewEncoder(w).Encode(loginResponse{Token: token})
-	if err != nil {
-		errorHandler(w, http.StatusInternalServerError, "")
-		return
-	}
+	resultToJSON(w, struct {
+		Token string
+	}{
+		Token: token,
+	})
 }
 
 func logout(w http.ResponseWriter, r *http.Request) {
 	authorization := strings.Split(r.Header.Get("Authorization"), " ")
-	if len(authorization) == 2 {
-		claims, ok, _, err := parseJWT(authorization[1])
-		if err != nil || !ok {
-			errorHandler(w, http.StatusUnauthorized, "")
-			return
-		}
-
-		err = db.Logout(claims.ID, claims.Subject)
-		if err != nil {
-			w.WriteHeader(http.StatusGone)
-			fmt.Fprintf(w, `{ "code": %d, "message": "gone" }`, http.StatusGone)
-			return
-		}
+	if len(authorization) != 2 {
+		errorHandler(w, http.StatusBadRequest, "")
+		return
 	}
+
+	claims, ok, _, err := parseJWT(authorization[1])
+	if err != nil || !ok {
+		errorHandler(w, http.StatusUnauthorized, "")
+		return
+	}
+	if err = db.Logout(claims.ID, claims.Subject); err != nil {
+		w.WriteHeader(http.StatusGone)
+		fmt.Fprintf(w, `{ "code": %d, "message": "gone" }`, http.StatusGone)
+		return
+	}
+
 	fmt.Fprint(w, `{ "message": "successfully logged out" }`)
 }
 
 // updateUser can be used to update role, password or username of users. Role can only be changed by admins.
 func updateUser(w http.ResponseWriter, r *http.Request) {
 	userForm := &db.UserForm{}
-	err := json.NewDecoder(r.Body).Decode(userForm)
-	if err != nil {
+	if err := json.NewDecoder(r.Body).Decode(userForm); err != nil {
 		errorHandler(w, http.StatusBadRequest, "")
 		return
 	}
@@ -135,7 +136,7 @@ func updateUser(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 
-	if err = db.UpdateUser(userUUID, userForm); err != nil {
+	if err := db.UpdateUser(userUUID, userForm); err != nil {
 		errorHandler(w, http.StatusInternalServerError, "")
 		return
 	}
@@ -151,17 +152,17 @@ func returnUsers(w http.ResponseWriter, r *http.Request) {
 	}
 
 	users, err := db.GetUsers()
-	if err != nil {
-		errorHandler(w, http.StatusInternalServerError, "")
+	if handleResult(w, users, err, true) {
 		return
 	}
 
-	w.Header().Set("Content-Type", "application/json;charset=UTF-8")
-	err = json.NewEncoder(w).Encode(users)
-	if err != nil {
-		errorHandler(w, http.StatusInternalServerError, "")
-		return
-	}
+	resultToJSON(w, struct {
+		Data  []model.User
+		Count int
+	}{
+		Data:  users,
+		Count: len(users),
+	})
 }
 
 // deleteUser deletes a user from the database. Only for admins.
@@ -187,13 +188,15 @@ func returnFavoriteGroups(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	favoriteGroups := db.GetFavoriteGroups(*userUUID)
-	w.Header().Set("Content-Type", "application/json;charset=UTF-8")
-	err := json.NewEncoder(w).Encode(favoriteGroups)
-	if err != nil {
-		errorHandler(w, http.StatusInternalServerError, "")
+	favoriteGroups, err := db.GetFavoriteGroups(*userUUID)
+	if handleResult(w, favoriteGroups, err, true) {
 		return
 	}
+
+	resultToJSON(w, GenericStringResult{
+		Data:  favoriteGroups,
+		Count: len(favoriteGroups),
+	})
 }
 
 // setFavorite sets a personal favorite group for a gallery.
@@ -209,12 +212,10 @@ func setFavorite(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	err := db.SetFavoriteGroup(params["name"], params["uuid"], *userUUID)
-	if err != nil {
+	if err := db.SetFavoriteGroup(params["name"], params["uuid"], *userUUID); err != nil {
 		errorHandler(w, http.StatusInternalServerError, "")
 		return
 	}
-
 	fmt.Fprintf(w, `{ "message": "favorite group updated" }`)
 }
 
@@ -231,9 +232,7 @@ func updateProgress(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	err = db.UpdateProgress(int32(progress), params["uuid"], *userUUID)
-
-	if err != nil {
+	if err = db.UpdateProgress(int32(progress), params["uuid"], *userUUID); err != nil {
 		errorHandler(w, http.StatusInternalServerError, "")
 		return
 	}

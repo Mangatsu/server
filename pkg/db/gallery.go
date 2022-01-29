@@ -15,11 +15,6 @@ type CombinedMetadata struct {
 
 	Tags []model.Tag
 
-	//Tags []struct {
-	//	Namespace string
-	//	Name      string
-	//} `alias:"tag.*" sql:"primary_key=GalleryUUID"`
-
 	Reference struct {
 		ExhToken *string
 		ExhGid   *int32
@@ -37,7 +32,7 @@ type CombinedMetadata struct {
 
 type MappedTags struct {
 	Data  map[string][]string `json:"Data"`
-	Count int32
+	Count int
 }
 
 type Categories struct {
@@ -76,24 +71,17 @@ const (
 
 // NewGallery creates a new gallery
 func NewGallery(archivePath string, libraryID int32, title string) error {
-	now := time.Now()
 	galleryUUID, err := uuid.NewRandom()
 	if err != nil {
-		log.Error(err)
 		return err
 	}
 
-	// TODO: title
-	insertGalleryStmt := Gallery.
+	now := time.Now()
+	stmt := Gallery.
 		INSERT(Gallery.UUID, Gallery.ArchivePath, Gallery.Title, Gallery.LibraryID, Gallery.CreatedAt, Gallery.UpdatedAt).
 		VALUES(galleryUUID.String(), archivePath, title, libraryID, now, now)
 
-	_, err = insertGalleryStmt.Exec(db())
-	if err != nil {
-		log.Error(err)
-		return err
-	}
-
+	_, err = stmt.Exec(db())
 	return err
 }
 
@@ -103,15 +91,17 @@ func UpdateGallery(gallery model.Gallery, tags []model.Tag, reference model.Refe
 	var tagIDs []int32
 	var err error
 	if len(tags) > 0 {
-		tagIDs, err = NewTags(tags)
-		if err != nil {
+		if tagIDs, err = NewTags(tags); err != nil {
 			return err
 		}
 	}
 
 	now := time.Now()
-
 	tx, err := db().Begin()
+	if err != nil {
+		return err
+	}
+	defer rollbackTx(tx)
 
 	// Update gallery
 	galleryModel := model.Gallery{
@@ -149,14 +139,11 @@ func UpdateGallery(gallery model.Gallery, tags []model.Tag, reference model.Refe
 		Gallery.UpdatedAt,
 	).MODEL(galleryModel).WHERE(Gallery.ArchivePath.EQ(String(gallery.ArchivePath))).RETURNING(Gallery.UUID)
 	var galleries []model.Gallery
-	err = updateGalleryStmt.Query(tx, &galleries)
-	if err != nil {
-		log.Error(err)
+	if err = updateGalleryStmt.Query(tx, &galleries); err != nil {
 		return err
 	}
 
 	if len(galleries) == 0 {
-		log.Debug("No gallery modified")
 		return nil
 	}
 
@@ -164,12 +151,11 @@ func UpdateGallery(gallery model.Gallery, tags []model.Tag, reference model.Refe
 	if len(tagIDs) > 0 {
 		for _, tagID := range tagIDs {
 			insertTagGalleryStmt := GalleryTag.
-				INSERT(GalleryTag.TagID, GalleryTag.GalleryUUID).VALUES(tagID, galleries[0].UUID).
+				INSERT(GalleryTag.TagID, GalleryTag.GalleryUUID).
+				VALUES(tagID, galleries[0].UUID).
 				ON_CONFLICT(GalleryTag.TagID, GalleryTag.GalleryUUID).DO_NOTHING()
 
-			_, err = insertTagGalleryStmt.Exec(tx)
-			if err != nil {
-				log.Error(err)
+			if _, err = insertTagGalleryStmt.Exec(tx); err != nil {
 				return err
 			}
 		}
@@ -191,34 +177,26 @@ func UpdateGallery(gallery model.Gallery, tags []model.Tag, reference model.Refe
 		MODEL(newReference).
 		ON_CONFLICT(Reference.GalleryUUID).
 		DO_UPDATE(SET(Reference.GalleryUUID.SET(Reference.EXCLUDED.GalleryUUID)))
-	_, err = insertExtStmt.Exec(tx)
-	if err != nil {
-		log.Error(err)
+	if _, err = insertExtStmt.Exec(tx); err != nil {
 		return err
 	}
 
 	// Commit transaction. Rollback on error.
 	err = tx.Commit()
-	if err != nil {
-		log.Error(err)
-	}
-
 	return err
 }
 
 // NewTags creates tags from the given list.
 func NewTags(tags []model.Tag) ([]int32, error) {
 	var tagIDs []int32
-
 	for _, tag := range tags {
 		selectStmt := Tag.
 			SELECT(Tag.ID).FROM(Tag).
 			WHERE(Tag.Namespace.EQ(String(tag.Namespace)).AND(Tag.Name.EQ(String(tag.Name))))
 
 		var existingTags []model.Tag
-		err := selectStmt.Query(db(), &existingTags)
-		if err != nil {
-			log.Error("error selecting tags, aborting: ", err)
+		if err := selectStmt.Query(db(), &existingTags); err != nil {
+			log.Debug("Could not select tags, aborting: ", err)
 			return nil, err
 		}
 
@@ -233,15 +211,10 @@ func NewTags(tags []model.Tag) ([]int32, error) {
 			continue
 		}
 
-		insertStmt := Tag.
-			INSERT(Tag.Namespace, Tag.Name).VALUES(tag.Namespace, tag.Name).
-			RETURNING(Tag.ID)
-
+		insertStmt := Tag.INSERT(Tag.Namespace, Tag.Name).VALUES(tag.Namespace, tag.Name).RETURNING(Tag.ID)
 		var insertedTags []model.Tag
-
-		err = insertStmt.Query(db(), &insertedTags)
-		if err != nil {
-			log.Error("error inserting tags, aborting: ", err)
+		if err := insertStmt.Query(db(), &insertedTags); err != nil {
+			log.Debug("Could not insert tags, aborting: ", err)
 			return nil, err
 		}
 
@@ -253,82 +226,58 @@ func NewTags(tags []model.Tag) ([]int32, error) {
 
 // NewGalleryPref creates initializes user preferences for a gallery.
 func NewGalleryPref(galleryUUID string, userUUID string) error {
-	insertStmt := GalleryPref.
+	stmt := GalleryPref.
 		INSERT(GalleryPref.GalleryUUID, GalleryPref.UserUUID, GalleryPref.UpdatedAt).
 		VALUES(galleryUUID, userUUID, time.Now()).
 		ON_CONFLICT(GalleryPref.GalleryUUID, GalleryPref.UserUUID).DO_NOTHING()
 
-	_, err := insertStmt.Exec(db())
-	if err != nil {
-		log.Error(err)
-		return err
-	}
-
+	_, err := stmt.Exec(db())
 	return err
 }
 
 // UpdateProgress sets the reading progress of a gallery for a user.
 func UpdateProgress(progress int32, galleryUUID string, userUUID string) error {
-	updateStmt := GalleryPref.
+	stmt := GalleryPref.
 		UPDATE(GalleryPref.Progress, GalleryPref.UpdatedAt).
 		SET(progress, time.Now()).
 		WHERE(GalleryPref.UserUUID.EQ(String(userUUID)).AND(GalleryPref.GalleryUUID.EQ(String(galleryUUID))))
 
-	_, err := updateStmt.Exec(db())
-	if err != nil {
-		log.Error(err)
-		return err
-	}
-
+	_, err := stmt.Exec(db())
 	return err
 }
 
 // SetFavoriteGroup sets a favorite group for a gallery.
 func SetFavoriteGroup(favoriteGroup string, galleryUUID string, userUUID string) error {
 	now := time.Now()
-	insertStmt := GalleryPref.
+	stmt := GalleryPref.
 		INSERT(GalleryPref.GalleryUUID, GalleryPref.UserUUID, GalleryPref.FavoriteGroup, GalleryPref.UpdatedAt).
 		VALUES(galleryUUID, userUUID, favoriteGroup, now).
 		ON_CONFLICT(GalleryPref.GalleryUUID, GalleryPref.UserUUID).
 		WHERE(GalleryPref.UserUUID.EQ(String(userUUID)).AND(GalleryPref.GalleryUUID.EQ(String(galleryUUID)))).
 		DO_UPDATE(
 			SET(GalleryPref.FavoriteGroup.SET(String(favoriteGroup)),
-				// For some reason, 'time.Now()' couldn't be used here in the same way as above.
+				// For some reason, Time couldn't be used here in the same way as other statements.
 				GalleryPref.UpdatedAt.SET(DateTime(now.Year(), now.Month(), now.Day(), now.Hour(), now.Minute(), now.Second()))),
 		)
 
-	//updateStmt := GalleryPref.
-	//	UPDATE(GalleryPref.Category, GalleryPref.UpdatedAt).
-	//	SET(categoryName, time.Now()).
-	//	WHERE(GalleryPref.UserUUID.EQ(String(userUUID)).AND(GalleryPref.GalleryUUID.EQ(String(galleryUUID))))
-
-	_, err := insertStmt.Exec(db())
-	if err != nil {
-		log.Error(err)
-		return err
-	}
-
+	_, err := stmt.Exec(db())
 	return err
 }
 
 // SetThumbnail saves the filename of the thumbnail for the gallery.
-func SetThumbnail(uuid string, thumbnail string) {
+func SetThumbnail(uuid string, thumbnail string) error {
 	now := time.Now()
 	galleryModel := model.Gallery{Thumbnail: &thumbnail, UpdatedAt: now}
-	updateGalleryStmt := Gallery.UPDATE(Gallery.Thumbnail, Gallery.UpdatedAt).
+	stmt := Gallery.UPDATE(Gallery.Thumbnail, Gallery.UpdatedAt).
 		MODEL(galleryModel).
 		WHERE(Gallery.UUID.EQ(String(uuid)))
 
-	_, err := updateGalleryStmt.Exec(db())
-	if err != nil {
-		log.Error(err)
-		return
-	}
+	_, err := stmt.Exec(db())
+	return err
 }
 
 // GetGalleries returns galleries based on the given filters.
-func GetGalleries(filters Filters, hidden bool, userUUID *string) []CombinedMetadata {
-
+func GetGalleries(filters Filters, hidden bool, userUUID *string) ([]CombinedMetadata, error) {
 	// Constructing conditions
 	conditions := Bool(true)
 
@@ -446,28 +395,23 @@ func GetGalleries(filters Filters, hidden bool, userUUID *string) []CombinedMeta
 	}
 
 	// Show RAW SQL-query for debugging
-	//println(galleriesStmt.DebugSql())
+	// println(galleriesStmt.DebugSql())
 
 	var galleries []CombinedMetadata
 	err := galleriesStmt.Query(db(), &galleries)
-	if err != nil {
-		return nil
-	}
-
-	return galleries
+	return galleries, err
 }
 
 // GetGallery returns a gallery based on the given UUID. If no UUID is given, a random gallery is returned.
-func GetGallery(galleryUUID *string, userUUID *string) []CombinedMetadata {
+func GetGallery(galleryUUID *string, userUUID *string) ([]CombinedMetadata, error) {
 	if userUUID != nil && galleryUUID != nil {
-		err := NewGalleryPref(*galleryUUID, *userUUID)
-		if err != nil {
-			log.Error("Error adding user gallery entry: ", err)
-			return nil
+		if err := NewGalleryPref(*galleryUUID, *userUUID); err != nil {
+			log.Debug("Could not add user gallery entry: ", err)
+			return nil, err
 		}
 	}
 
-	// TODO: LIMIT(1) with subquery before JOINs?
+	// TODO: LIMIT(1) with subquery before JOINs for even better performance?
 	joins := Gallery.
 		LEFT_JOIN(GalleryTag, GalleryTag.GalleryUUID.EQ(Gallery.UUID)).
 		LEFT_JOIN(Tag, Tag.ID.EQ(GalleryTag.TagID)).
@@ -514,55 +458,34 @@ func GetGallery(galleryUUID *string, userUUID *string) []CombinedMetadata {
 	}
 
 	var galleries []CombinedMetadata
-	err := stmt.Query(db(), &galleries)
-	if err != nil {
-		log.Error("Error getting gallery: ", err)
-		return nil
+	if err := stmt.Query(db(), &galleries); err != nil {
+		log.Debug("Could not get gallery: ", err)
+		return nil, err
 	}
 
 	if len(galleries) == 0 {
-		return nil
+		return nil, nil
 	}
 
 	// If random gallery, add to user gallery now after SELECT.
 	if userUUID != nil && galleryUUID == nil {
-		err := NewGalleryPref(galleries[0].UUID, *userUUID)
-		if err != nil {
-			log.Error("Error adding user gallery entry: ", err)
-			return nil
+		if err := NewGalleryPref(galleries[0].UUID, *userUUID); err != nil {
+			log.Debug("Could not add user gallery entry: ", err)
+			return nil, err
 		}
 	}
 
-	return galleries
-}
-
-// GetTag returns galleries based on the given tag.
-func GetTag(namespace string, name string) []model.Gallery {
-	stmt := SELECT(Gallery.AllColumns).
-		FROM(Gallery.
-			LEFT_JOIN(GalleryTag, GalleryTag.GalleryUUID.EQ(Gallery.UUID)).
-			LEFT_JOIN(Tag, Tag.ID.EQ(GalleryTag.TagID))).
-		WHERE(Tag.Namespace.EQ(String(namespace)).AND(Tag.Name.EQ(String(name))))
-
-	var galleries []model.Gallery
-	err := stmt.Query(db(), &galleries)
-	if err != nil {
-		log.Error(err)
-		return nil
-	}
-
-	return galleries
+	return galleries, nil
 }
 
 // GetTags returns all tags.
-func GetTags() MappedTags {
+func GetTags() (MappedTags, error) {
 	stmt := SELECT(Tag.Namespace, Tag.Name).FROM(Tag)
 
 	var tags []model.Tag
 	err := stmt.Query(db(), &tags)
 	if err != nil {
-		log.Error(err)
-		return MappedTags{Data: map[string][]string{}, Count: 0}
+		return MappedTags{Data: map[string][]string{}, Count: 0}, err
 	}
 
 	tagMap := map[string][]string{}
@@ -570,35 +493,25 @@ func GetTags() MappedTags {
 		tagMap[tag.Namespace] = append(tagMap[tag.Namespace], tag.Name)
 	}
 
-	return MappedTags{Data: tagMap, Count: int32(len(tags))}
+	return MappedTags{Data: tagMap, Count: len(tags)}, err
 }
 
 // GetCategories returns all public categories.
-func GetCategories() []string {
+func GetCategories() ([]string, error) {
 	stmt := SELECT(Gallery.Category).DISTINCT().FROM(Gallery.Table)
-
 	var categories []string
-	err := stmt.Query(db(), &categories)
-	if err != nil {
-		log.Error(err)
-		return nil
-	}
 
-	return categories
+	err := stmt.Query(db(), &categories)
+	return categories, err
 }
 
 // GetSeries returns all series.
-func GetSeries() []string {
+func GetSeries() ([]string, error) {
 	stmt := SELECT(Gallery.Series).DISTINCT().FROM(Gallery.Table)
-
 	var series []string
-	err := stmt.Query(db(), &series)
-	if err != nil {
-		log.Error(err)
-		return nil
-	}
 
-	return series
+	err := stmt.Query(db(), &series)
+	return series, err
 }
 
 // NeedsUpdate returns true if the gallery needs to be updated. Currently, only the timestamp is checked.

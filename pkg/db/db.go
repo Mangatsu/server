@@ -5,7 +5,6 @@ import (
 	"github.com/Mangatsu/server/internal/config"
 	"github.com/pressly/goose/v3"
 	log "github.com/sirupsen/logrus"
-	"os"
 )
 
 var database *sql.DB
@@ -27,14 +26,19 @@ func db() *sql.DB {
 func EnsureLatestVersion() {
 	err := goose.SetDialect("sqlite3")
 	if err != nil {
-		log.Error("Invalid DB driver", "driver", "sqlite3", err)
-		os.Exit(1)
+		log.Fatal("Invalid DB driver", "driver", "sqlite3", err)
 	}
 
 	err = goose.Run("up", db(), "./pkg/db/migrations")
 	if err != nil {
-		log.Error("Failed to apply new migrations", err)
-		os.Exit(1)
+		log.Fatal("Failed to apply new migrations", err)
+	}
+}
+
+func rollbackTx(tx *sql.Tx) {
+	err := tx.Rollback()
+	if err != nil {
+		log.Debug("Failed to rollback transaction", err)
 	}
 }
 

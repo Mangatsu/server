@@ -31,9 +31,9 @@ func readAll(fsys fs.FS, filename string) ([]byte, error) {
 	return io.ReadAll(archive)
 }
 
-func readCache(dst string, uuid string) ([]string, int32) {
+func readCache(dst string, uuid string) ([]string, int) {
 	var files []string
-	count := int32(0)
+	count := 0
 
 	cacheWalk := func(s string, d fs.DirEntry, err error) error {
 		if err != nil {
@@ -91,7 +91,7 @@ func ReadArchiveInternalMeta(archivePath string) ([]byte, string) {
 	return content, filename
 }
 
-func ReadGallery(archivePath string, uuid string) ([]string, int32) {
+func ReadGallery(archivePath string, uuid string) ([]string, int) {
 	dst := config.BuildCachePath(uuid)
 	if _, err := os.Stat(dst); os.IsNotExist(err) {
 		return UniversalExtract(dst, archivePath)
