@@ -16,8 +16,8 @@ import (
 type Credentials struct {
 	Username    string  `json:"username"`
 	Password    string  `json:"password"`
+	Passphrase  string  `json:"passphrase"`
 	Role        *string `json:"role"`
-	Passphrase  *string `json:"passphrase"`
 	ExpiresIn   *int64  `json:"expires_in"`
 	SessionName *string `json:"session_name"`
 }
@@ -66,22 +66,33 @@ func login(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	access, userUUID, role := loginHelper(w, *credentials, db.Role(0))
-	if !access {
+	if credentials.Username != "" && credentials.Password != "" {
+		access, userUUID, role := loginHelper(w, *credentials, db.Role(0))
+		if !access {
+			return
+		}
+		token, err := newJWT(*userUUID, "", credentials.ExpiresIn, credentials.SessionName, role)
+		if err != nil {
+			errorHandler(w, http.StatusInternalServerError, "")
+			return
+		}
+
+		resultToJSON(w, struct {
+			Token string
+		}{
+			Token: token,
+		})
+		return
+	} else if credentials.Passphrase == config.RestrictedPassphrase() {
+		resultToJSON(w, struct {
+			Token string
+		}{
+			Token: credentials.Passphrase,
+		})
 		return
 	}
 
-	token, err := newJWT(*userUUID, "", credentials.ExpiresIn, credentials.SessionName, role)
-	if err != nil {
-		errorHandler(w, http.StatusInternalServerError, "")
-		return
-	}
-
-	resultToJSON(w, struct {
-		Token string
-	}{
-		Token: token,
-	})
+	errorHandler(w, http.StatusBadRequest, "")
 }
 
 func logout(w http.ResponseWriter, r *http.Request) {
