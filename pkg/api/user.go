@@ -192,6 +192,54 @@ func deleteUser(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
+// returnSessions returns all sessions of the user.
+func returnSessions(w http.ResponseWriter, r *http.Request) {
+	access, userUUID := hasAccess(w, r, db.Viewer)
+	if !access {
+		return
+	}
+	if userUUID == nil {
+		errorHandler(w, http.StatusBadRequest, "")
+		return
+	}
+
+	sessions, err := db.GetSessions(*userUUID)
+	if handleResult(w, sessions, err, true) {
+		return
+	}
+
+	resultToJSON(w, struct {
+		Data  []model.Session
+		Count int
+	}{
+		Data:  sessions,
+		Count: len(sessions),
+	})
+}
+
+// deleteSession deletes user's session from the database.
+func deleteSession(w http.ResponseWriter, r *http.Request) {
+	access, userUUID := hasAccess(w, r, db.Viewer)
+	if !access {
+		return
+	}
+	if userUUID == nil {
+		errorHandler(w, http.StatusBadRequest, "")
+		return
+	}
+
+	credentials := &struct{ SessionID string }{}
+	if err := json.NewDecoder(r.Body).Decode(credentials); err != nil {
+		errorHandler(w, http.StatusBadRequest, "")
+		return
+	}
+
+	if err := db.DeleteSession(credentials.SessionID, *userUUID); err != nil {
+		errorHandler(w, http.StatusBadRequest, "")
+		return
+	}
+}
+
 // returnFavoriteGroups returns all user's favorite groups as JSON.
 func returnFavoriteGroups(w http.ResponseWriter, r *http.Request) {
 	access, userUUID := hasAccess(w, r, db.Viewer)

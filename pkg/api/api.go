@@ -100,6 +100,8 @@ func handleRequests() {
 	r.HandleFunc(baseURL+"/users/{uuid:"+uuidRegex+"}", updateUser).Methods("PUT")
 	r.HandleFunc(baseURL+"/users/{uuid:"+uuidRegex+"}", deleteUser).Methods("DELETE")
 	r.HandleFunc(baseURL+"/users/me/favorites", returnFavoriteGroups).Methods("GET")
+	r.HandleFunc(baseURL+"/users/me/sessions", returnSessions).Methods("GET")
+	r.HandleFunc(baseURL+"/users/me/sessions", deleteSession).Methods("DELETE")
 
 	r.HandleFunc(baseURL+"/scan", scanLibraries).Methods("GET")
 	r.HandleFunc(baseURL+"/thumbnails", generateThumbnails).Methods("GET")

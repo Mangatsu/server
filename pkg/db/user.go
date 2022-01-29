@@ -229,6 +229,14 @@ func DeleteUser(userUUID string) error {
 	return err
 }
 
+// GetSessions returns all sessions of a user.
+func GetSessions(userUUID string) ([]model.Session, error) {
+	stmt := Session.SELECT(Session.AllColumns).WHERE(Session.UserUUID.EQ(String(userUUID)))
+	var sessions []model.Session
+	err := stmt.Query(db(), &sessions)
+	return sessions, err
+}
+
 // DeleteSession removes a session based on the session ID and user UUID.
 func DeleteSession(id string, userUUID string) error {
 	stmt := Session.DELETE().WHERE(Session.ID.EQ(String(id)).AND(Session.UserUUID.EQ(String(userUUID))))
