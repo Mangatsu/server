@@ -1,7 +1,6 @@
 package api
 
 import (
-	"database/sql"
 	"encoding/json"
 	"github.com/Mangatsu/server/internal/config"
 	"github.com/Mangatsu/server/pkg/db"
@@ -89,15 +88,22 @@ func convertMetadata(metadata db.CombinedMetadata) MetadataResult {
 // hasAccess handles access based on the Visibility option. Role restricts access to the specified role.
 // NoRole (0) allows access to anonymous users if the Visibility is Public or Restricted (passphrase required).
 func hasAccess(w http.ResponseWriter, r *http.Request, role db.Role) (bool, *string) {
-	// JWT/session auth
+	// JWT/session auth or passphrase auth
 	authorization := strings.Fields(r.Header.Get("Authorization"))
-	if len(authorization) == 2 {
+	validAuthHeader := len(authorization) == 2
+	if validAuthHeader {
 		access, userUUID := verifyJWT(authorization[1], role)
-		if !access {
-			errorHandler(w, http.StatusUnauthorized, "")
-			return false, nil
+		if access {
+			return access, userUUID
 		}
-		return access, userUUID
+		if config.CurrentVisibility() == config.Restricted && config.CurrentVisibility() == config.Restricted && role == 0 {
+			anonymousAccess := authorization[1] == config.RestrictedPassphrase()
+			if anonymousAccess {
+				return anonymousAccess, nil
+			}
+		}
+		errorHandler(w, http.StatusUnauthorized, "")
+		return false, nil
 	}
 
 	// Username & password auth
@@ -111,24 +117,8 @@ func hasAccess(w http.ResponseWriter, r *http.Request, role db.Role) (bool, *str
 		return access, userUUID
 	}
 
-	// Anonymous access with passphrase. Deny if action requires any role.
-	if role > 0 {
-		errorHandler(w, http.StatusUnauthorized, "")
-		return false, nil
-	}
-
-	// Simple global passphrase auth
-	if config.CurrentVisibility() == config.Restricted && credentials.Passphrase != nil {
-		access := *credentials.Passphrase == config.RestrictedPassphrase()
-		if !access {
-			errorHandler(w, http.StatusUnauthorized, "")
-			return false, nil
-		}
-		return access, nil
-	}
-
 	// If public, anonymous access without passphrase is allowed
-	if config.CurrentVisibility() == config.Public {
+	if config.CurrentVisibility() == config.Public && role == 0 {
 		return true, nil
 	}
 
@@ -140,11 +130,6 @@ func hasAccess(w http.ResponseWriter, r *http.Request, role db.Role) (bool, *str
 func loginHelper(w http.ResponseWriter, credentials Credentials, requiredRole db.Role) (bool, *string, *int32) {
 	userUUID, role, err := db.Login(credentials.Username, credentials.Password, requiredRole)
 	if err != nil || userUUID == nil {
-		// If an entry with the username doesn't exist, send 401 status
-		if err == sql.ErrNoRows {
-			errorHandler(w, http.StatusUnauthorized, "")
-			return false, nil, nil
-		}
 		errorHandler(w, http.StatusUnauthorized, "")
 		return false, nil, nil
 	}
@@ -200,6 +185,9 @@ func parseJWT(tokenString string) (CustomClaims, bool, *jwt.Token, error) {
 		func(token *jwt.Token) (interface{}, error) { return []byte(config.JWTSecret()), nil },
 		jwt.WithValidMethods([]string{jwt.SigningMethodHS256.Name}),
 	)
+	if err != nil {
+		return CustomClaims{}, false, nil, err
+	}
 
 	claims, ok := token.Claims.(*CustomClaims)
 	return *claims, ok, token, err
