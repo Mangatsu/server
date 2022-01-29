@@ -10,7 +10,7 @@ func ReadJSON(jsonFile string) ([]byte, error) {
 	jsonFileBytes, err := os.ReadFile(jsonFile)
 
 	if err != nil {
-		log.Error("Error in reading json file: ", err)
+		log.Debug("Error in reading json file: ", err)
 		return nil, err
 	}
 

@@ -37,7 +37,7 @@ const (
 
 // GetUser returns a user from the database.
 func GetUser(name string) ([]model.User, error) {
-	userStmt := SELECT(
+	stmt := SELECT(
 		User.AllColumns,
 	).FROM(
 		User.Table,
@@ -46,18 +46,13 @@ func GetUser(name string) ([]model.User, error) {
 	)
 
 	var user []model.User
-	err := userStmt.Query(db(), &user)
-	if err != nil {
-		log.Error(err)
-		return nil, err
-	}
-
+	err := stmt.Query(db(), &user)
 	return user, err
 }
 
 // GetUsers returns users from the database.
 func GetUsers() ([]model.User, error) {
-	userStmt := SELECT(
+	stmt := SELECT(
 		User.UUID,
 		User.Username,
 		User.Role,
@@ -68,29 +63,19 @@ func GetUsers() ([]model.User, error) {
 	)
 
 	var users []model.User
-	err := userStmt.Query(db(), &users)
-	if err != nil {
-		log.Error(err)
-		return nil, err
-	}
-
+	err := stmt.Query(db(), &users)
 	return users, err
 }
 
 // GetFavoriteGroups returns user's favorite groups.
-func GetFavoriteGroups(userUUID string) FavoriteGroups {
-	userStmt := SELECT(GalleryPref.FavoriteGroup).DISTINCT().
+func GetFavoriteGroups(userUUID string) ([]string, error) {
+	stmt := SELECT(GalleryPref.FavoriteGroup).DISTINCT().
 		FROM(GalleryPref.Table).
 		WHERE(GalleryPref.UserUUID.EQ(String(userUUID)))
 
 	var favoriteGroups []string
-	err := userStmt.Query(db(), &favoriteGroups)
-	if err != nil {
-		log.Error(err)
-		return FavoriteGroups{Data: []string{}}
-	}
-
-	return FavoriteGroups{Data: favoriteGroups}
+	err := stmt.Query(db(), &favoriteGroups)
+	return favoriteGroups, err
 }
 
 // Register registers a new user.
@@ -100,7 +85,6 @@ func Register(username string, password string, role int64) error {
 	if err != nil {
 		return err
 	}
-
 	userUUID, err := uuid.NewRandom()
 	if err != nil {
 		return err
@@ -111,11 +95,7 @@ func Register(username string, password string, role int64) error {
 		VALUES(userUUID.String(), username, hashedPassword, role, now, now)
 
 	_, err = insertUser.Exec(db())
-	if err != nil {
-		return err
-	}
-
-	return nil
+	return err
 }
 
 // Login logs the user in and returns the UUID of the user.
@@ -149,8 +129,7 @@ func Logout(sessionUUID string, userUUID string) error {
 // NewSession creates a new session for a user.
 func NewSession(userUUID string, expiresIn *int64, sessionName *string) (string, error) {
 	x := make([]byte, 32)
-	_, err := io.ReadFull(rand.Reader, x)
-	if err != nil {
+	if _, err := io.ReadFull(rand.Reader, x); err != nil {
 		return "", err
 	}
 	sessionID := base64.URLEncoding.EncodeToString(x)
@@ -164,12 +143,8 @@ func NewSession(userUUID string, expiresIn *int64, sessionName *string) (string,
 		INSERT(Session.ID, Session.UserUUID, Session.Name, Session.ExpiresAt).
 		VALUES(sessionID, userUUID, sessionName, expiresIn)
 
-	_, err = stmt.Exec(db())
-	if err != nil {
-		return "", err
-	}
-
-	return sessionID, nil
+	_, err := stmt.Exec(db())
+	return sessionID, err
 }
 
 // VerifySession verifies a session by checking if it exists based on the session ID and user UUID.
@@ -182,7 +157,7 @@ func VerifySession(id string, userUUID string) bool {
 	var sessions []model.Session
 	err := stmt.Query(db(), &sessions)
 	if err != nil {
-		log.Error(err)
+		log.Debug("Error verifying session: ", err)
 		return false
 	}
 
@@ -194,6 +169,11 @@ func UpdateUser(userUUID string, userForm *UserForm) error {
 	now := time.Now()
 
 	tx, err := db().Begin()
+	if err != nil {
+		return err
+	}
+	defer rollbackTx(tx)
+
 	if userForm.Role != nil {
 		role, err := strconv.ParseInt(*userForm.Role, 10, 8)
 		if err != nil {
@@ -205,8 +185,7 @@ func UpdateUser(userUUID string, userForm *UserForm) error {
 			UPDATE(User.Role, User.UpdatedAt).
 			SET(role, now).
 			WHERE(User.UUID.EQ(String(userUUID)))
-		_, err = updateUserStmt.Exec(tx)
-		if err != nil {
+		if _, err = updateUserStmt.Exec(tx); err != nil {
 			return err
 		}
 	}
@@ -216,8 +195,7 @@ func UpdateUser(userUUID string, userForm *UserForm) error {
 			UPDATE(User.Username, User.UpdatedAt).
 			SET(userForm.Username, now).
 			WHERE(User.UUID.EQ(String(userUUID)))
-		_, err = updateUserStmt.Exec(tx)
-		if err != nil {
+		if _, err = updateUserStmt.Exec(tx); err != nil {
 			return err
 		}
 	}
@@ -228,18 +206,13 @@ func UpdateUser(userUUID string, userForm *UserForm) error {
 			UPDATE(User.Password, User.UpdatedAt).
 			SET(hashedPassword, now).
 			WHERE(User.UUID.EQ(String(userUUID)))
-		_, err = updateUserStmt.Exec(tx)
-		if err != nil {
+		if _, err = updateUserStmt.Exec(tx); err != nil {
 			return err
 		}
 	}
 
 	// Commit transaction. Rollback on error.
 	err = tx.Commit()
-	if err != nil {
-		log.Error(err)
-	}
-
 	return err
 }
 
@@ -247,22 +220,12 @@ func UpdateUser(userUUID string, userForm *UserForm) error {
 func DeleteUser(userUUID string) error {
 	stmt := User.DELETE().WHERE(User.UUID.EQ(String(userUUID)).AND(User.Role.NOT_EQ(Int8(int8(Admin)))))
 	_, err := stmt.Exec(db())
-	if err != nil {
-		log.Error(err)
-		return err
-	}
-
-	return nil
+	return err
 }
 
 // DeleteSession removes a session based on the session ID and user UUID.
 func DeleteSession(id string, userUUID string) error {
 	stmt := Session.DELETE().WHERE(Session.ID.EQ(String(id)).AND(Session.UserUUID.EQ(String(userUUID))))
 	_, err := stmt.Exec(db())
-	if err != nil {
-		log.Error(err)
-		return err
-	}
-
-	return nil
+	return err
 }

@@ -38,21 +38,20 @@ func Extract7z() {
 
 // UniversalExtract extracts media files from zip, cbz, rar, cbr, tar (all its variants) archives.
 // Plain directories without compression are also supported. For 7zip and PDF see Extract7z and ExtractPDF respectively.
-func UniversalExtract(dst string, archivePath string) ([]string, int32) {
+func UniversalExtract(dst string, archivePath string) ([]string, int) {
 	fsys, err := archiver.FileSystem(archivePath)
 	if err != nil {
 		log.Error("Error opening archive: ", err)
 		return nil, 0
 	}
 
-	err = os.Mkdir(dst, os.ModePerm)
-	if err != nil {
+	if err = os.Mkdir(dst, os.ModePerm); err != nil {
 		log.Error(err)
 		return nil, 0
 	}
 
 	var files []string
-	count := int32(0)
+	count := 0
 
 	err = fs.WalkDir(fsys, ".", func(s string, d fs.DirEntry, err error) error {
 		if err != nil {
@@ -91,9 +90,11 @@ func UniversalExtract(dst string, archivePath string) ([]string, int32) {
 		if _, err := io.Copy(dstFile, fileInArchive); err != nil {
 			log.Error(err)
 		}
-		err = dstFile.Close()
-		err = fileInArchive.Close()
-		if err != nil {
+
+		if err = dstFile.Close(); err != nil {
+			return err
+		}
+		if err = fileInArchive.Close(); err != nil {
 			return err
 		}
 
@@ -102,7 +103,7 @@ func UniversalExtract(dst string, archivePath string) ([]string, int32) {
 		return nil
 	})
 	if err != nil {
-		log.Error("Error walking dir: ", err)
+		log.Debug("Error walking dir: ", err)
 		return nil, 0
 	}
 

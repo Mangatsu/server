@@ -71,7 +71,7 @@ func unmarshalExhJSON(byteValue []byte) (XMetadata, error) {
 	var gallery XMetadata
 	err := json.Unmarshal(byteValue, &gallery)
 	if err != nil {
-		log.Error("Error in unmarshalling: ", err)
+		log.Error("Error in unmarshalling x metadata: ", err)
 		return XMetadata{}, err
 	}
 
@@ -84,8 +84,7 @@ func convertExh(
 	archivePath string,
 	metaPath string,
 	internal bool,
-) (model.Gallery, []model.Tag, model.Reference, error) {
-
+) (model.Gallery, []model.Tag, model.Reference) {
 	title := archivePath
 	if exhGallery.GalleryInfo.Title == nil {
 		title = path.Base(archivePath)
@@ -122,7 +121,7 @@ func convertExh(
 		Urls:         nil,
 	}
 
-	return newGallery, tags, exh, nil
+	return newGallery, tags, exh
 }
 
 //func needsUpdate(archivePath string) bool {
@@ -156,7 +155,7 @@ func matchExternalMeta(fullArchivePath string, libraryPath string) ([]byte, stri
 
 	metaData, err := library.ReadJSON(externalJSON)
 	if err != nil {
-		log.Error(err)
+		log.Debug("Couldn't read external metadata: ", err)
 		return nil, ""
 	}
 
@@ -193,14 +192,13 @@ func fuzzyMatchExternalMeta(archivePath string, libraryPath string, f fs.FileInf
 
 	exhGallery, err := unmarshalExhJSON(metaData)
 	if err != nil {
-		log.Error("error in exhGallery while unmarshalling: ", err)
+		log.Debug("Couldn't unmarshal exhGallery: ", err)
 		return fuzzyResult, XMetadata{}
 	}
 
 	relativeMetaPath := config.RelativePath(libraryPath, onlyDir+"/"+f.Name())
 	// Skip if the JSON metadata has already been used by another archive.
 	if db.MetaPathFound(relativeMetaPath, libraryPath) {
-		log.Debug("Skipping: ", relativeMetaPath)
 		return FuzzyResult{}, XMetadata{}
 	}
 
@@ -239,7 +237,11 @@ func fuzzyMatchExternalMeta(archivePath string, libraryPath string, f fs.FileInf
 
 // ParseX parses x JSON files (x: https://github.com/dnsev-h/x).
 func ParseX() {
-	libraries := db.GetLibraries()
+	libraries, err := db.GetLibraries()
+	if err != nil {
+		log.Error("Libraries could not be retrieved to parse x JSON files: ", err)
+		return
+	}
 	for _, galleryLibrary := range libraries {
 		for _, gallery := range galleryLibrary.Galleries {
 			fullPath := config.BuildLibraryPath(galleryLibrary.Path, gallery.ArchivePath)
@@ -263,23 +265,15 @@ func ParseX() {
 			if metaData != nil {
 				exhGallery, err := unmarshalExhJSON(metaData)
 				if err != nil {
-					log.Error("Error unmarshalling JSON data: ", err)
+					log.Debug("Couldn't unmarshal JSON: ", err)
 					continue
 				}
 
-				newGallery, tags, external, err := convertExh(exhGallery, gallery.ArchivePath, metaPath, internal)
-				if err != nil {
-					log.Error("Error converting Exh format: ", err)
+				newGallery, tags, external := convertExh(exhGallery, gallery.ArchivePath, metaPath, internal)
+				if err = db.UpdateGallery(newGallery, tags, external); err != nil {
+					log.Debugf("Couldn't tag gallery: %s. Message: %s", gallery.ArchivePath, err)
 					continue
 				}
-
-				err = db.UpdateGallery(newGallery, tags, external)
-				if err != nil {
-					log.Error("Error tagging gallery: ", gallery.ArchivePath)
-					continue
-				}
-
-				log.Debug("Tagged: ", gallery.Title)
 			}
 		}
 	}
@@ -289,18 +283,14 @@ func ParseX() {
 		onlyDir := filepath.Dir(noMatch.fullPath)
 		files, err := ioutil.ReadDir(onlyDir)
 		if err != nil {
-			log.Error("Error metadata files while fuzzy matching: ", err)
+			log.Debug("Couldn't read dir while fuzzy matching: ", err)
 		}
 
 		for _, f := range files {
 			r, exhGallery := fuzzyMatchExternalMeta(noMatch.fullPath, noMatch.libraryPath, f)
 
 			if r.MatchedArchivePath != "" && r.MetaTitleMatch || r.Similarity > 0.70 {
-				gallery, tags, external, err := convertExh(exhGallery, r.MatchedArchivePath, r.RelativeMetaPath, false)
-				if err != nil {
-					log.Error("Error while converting Exh format: ", err)
-					continue
-				}
+				gallery, tags, external := convertExh(exhGallery, r.MatchedArchivePath, r.RelativeMetaPath, false)
 
 				if !r.MetaTitleMatch {
 					permil := int32(math.Round(r.Similarity * 1000))
@@ -309,14 +299,14 @@ func ParseX() {
 
 				err = db.UpdateGallery(gallery, tags, external)
 				if err != nil {
-					log.Error("Error tagging gallery: ", gallery.ArchivePath)
+					log.Debugf("Couldn't tag gallery: %s. Message: %s", gallery.ArchivePath, err)
 					continue
 				}
 
 				if r.MetaTitleMatch {
 					log.Info("Exact match based on meta titles: ", r.MatchedArchivePath)
 				} else {
-					log.Info("Fuzzy match (", fmt.Sprintf("%.2f", r.Similarity), "): ", r.MatchedArchivePath)
+					log.Infof("Fuzzy match (%s): %s", fmt.Sprintf("%.2f", r.Similarity), r.MatchedArchivePath)
 				}
 			}
 		}

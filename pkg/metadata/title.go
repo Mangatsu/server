@@ -29,7 +29,12 @@ type TitleMeta struct {
 // tryNative tries to preserve the native language (usually Japanese) text.
 // overwrite writes over the previous values.
 func ParseTitles(tryNative bool, overwrite bool) {
-	libraries := db.GetLibraries()
+	libraries, err := db.GetLibraries()
+	if err != nil {
+		log.Error("Libraries could not be retrieved to parse titles: ", err)
+		return
+	}
+
 	for _, library := range libraries {
 		for _, gallery := range library.Galleries {
 			hasTitleShort := gallery.TitleShort != nil
@@ -39,8 +44,7 @@ func ParseTitles(tryNative bool, overwrite bool) {
 			hasSeries := gallery.Series != nil
 			hasLanguage := gallery.Language != nil
 
-			if hasRelease && hasCircle && hasArtists && hasSeries && hasLanguage {
-				log.Debug("Skipping: ", gallery.UUID)
+			if !overwrite && hasRelease && hasCircle && hasArtists && hasSeries && hasLanguage {
 				continue
 			}
 
@@ -100,7 +104,7 @@ func ParseTitles(tryNative bool, overwrite bool) {
 
 			err := db.UpdateGallery(gallery, nil, model.Reference{})
 			if err != nil {
-				log.Debug("Error updating gallery: ", gallery.UUID)
+				log.Errorf("Error updating gallery %s based on its title: %s", gallery.UUID, err)
 			}
 		}
 	}
@@ -110,7 +114,6 @@ func ParseTitles(tryNative bool, overwrite bool) {
 // (Release) [Circle (Artist)] Title (Series) [Language] or (Release) [Artist] Title (Series) [Language]
 func ParseTitle(title string) TitleMeta {
 	match := nameRegex.FindStringSubmatch(title)
-
 	return TitleMeta{
 		Released: strings.TrimSpace(match[1]),
 		Circle:   strings.TrimSpace(match[2]),

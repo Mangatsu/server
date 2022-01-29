@@ -1,4 +1,4 @@
-# 📝 Mangatsu Server - Configuration
+## 📝 Mangatsu Server - Configuration
 Usable options inside the **.env** or **docker-compose.yml**:
 
 _~~Struck out~~ values have no effect yet._

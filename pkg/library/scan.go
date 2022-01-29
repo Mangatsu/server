@@ -47,12 +47,17 @@ func walk(libraryPath string, libraryID int32) fs.WalkDirFunc {
 
 func ScanArchives(full bool) {
 	// TODO: full scan
-	libraries := db.GetOnlyLibraries()
+	libraries, err := db.GetOnlyLibraries()
+	if err != nil {
+		log.Error("Error finding libraries to scan: ", err)
+		return
+	}
+
 	for _, library := range libraries {
 		err := filepath.WalkDir(library.Path, walk(library.Path, library.ID))
 		if err != nil {
-			log.Error("Error scanning dir: ", err)
-			return
+			log.Errorf("Skipping library %s as an error occured while scanning it: %s", library.Path, err)
+			continue
 		}
 	}
 }

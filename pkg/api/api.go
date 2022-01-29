@@ -12,31 +12,38 @@ import (
 	"time"
 )
 
-type loginResponse struct {
-	Token string
+func handleResult(w http.ResponseWriter, result interface{}, err error, many bool) bool {
+	if err != nil {
+		log.Debug(err)
+		errorHandler(w, http.StatusInternalServerError, "")
+		return true
+	}
+	if !many && result == nil {
+		errorHandler(w, http.StatusNotFound, "")
+		return true
+	}
+	return false
 }
 
-type ServerInfo struct {
-	APIVersion    int32
-	ServerVersion string
-	Visibility    string
-	Registrations bool
+func resultToJSON(w http.ResponseWriter, result interface{}) {
+	w.Header().Set("Content-Type", "application/json;charset=UTF-8")
+	if err := json.NewEncoder(w).Encode(result); err != nil {
+		errorHandler(w, http.StatusInternalServerError, "")
+	}
 }
 
 func returnInfo(w http.ResponseWriter, _ *http.Request) {
-	result := ServerInfo{
+	resultToJSON(w, struct {
+		APIVersion    int
+		ServerVersion string
+		Visibility    string
+		Registrations bool
+	}{
 		APIVersion:    1,
 		ServerVersion: "0.1.0",
 		Visibility:    config.CurrentVisibility(),
 		Registrations: config.RegistrationsEnabled(),
-	}
-
-	w.Header().Set("Content-Type", "application/json;charset=UTF-8")
-	err := json.NewEncoder(w).Encode(result)
-	if err != nil {
-		errorHandler(w, http.StatusInternalServerError, "")
-		return
-	}
+	})
 }
 
 // Returns statistics as JSON.
@@ -101,7 +108,6 @@ func handleRequests() {
 	r.HandleFunc(baseURL+"/categories", returnCategories).Methods("GET")
 	r.HandleFunc(baseURL+"/series", returnSeries).Methods("GET")
 	r.HandleFunc(baseURL+"/tags", returnTags).Methods("GET")
-	r.HandleFunc(baseURL+"/tags/{namespace}/{name}", returnTag).Methods("GET")
 
 	r.HandleFunc(baseURL+"/galleries", returnGalleries).Methods("GET")
 	r.HandleFunc(baseURL+"/galleries/random", returnRandomGallery).Methods("GET")

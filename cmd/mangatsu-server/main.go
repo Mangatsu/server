@@ -15,7 +15,10 @@ func main() {
 	db.EnsureLatestVersion()
 
 	username, password := config.GetInitialAdmin()
-	users, _ := db.GetUser(username)
+	users, err := db.GetUser(username)
+	if err != nil {
+		log.Error(err)
+	}
 	if users == nil || len(users) == 0 {
 		err := db.Register(username, password, int64(db.Admin))
 		if err != nil {
@@ -25,7 +28,9 @@ func main() {
 
 	// Parse libraries from the environmental and insert/update to the db.
 	libraries := config.ParseBasePaths()
-	db.StorePaths(libraries)
+	if err = db.StorePaths(libraries); err != nil {
+		log.Fatal("Error saving library to db: ", err)
+	}
 
 	// Scan the libraries for metadata and insert/update to the db.
 	//startScan := time.Now()
