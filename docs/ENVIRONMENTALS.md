@@ -20,6 +20,8 @@ _~~Struck out~~ values have no effect yet._
 - **MTSU_DATA_PATH**=../data
     - Location of the data dir which includes the SQLite db and the cache for gallery images and thumbnails. Relative or absolute paths are accepted.
     - Doesn't need changing if using Docker Compose.
+- **MTSU_DISABLE_CACHE_SERVER**=false
+  - True to disable the internal cache server (serves media files and thumbnails). Useful if one wants to use the web server such as NGINX to serve the files.
 - ~~**MTSU_CACHE_SIZE**~~=10000
   - Max size of the cache where galleries are extracted from the library in MB. Can overflow a bit especially if set too low.
 - ~~**MTSU_CACHE_TTL**~~=604800

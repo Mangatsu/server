@@ -17,6 +17,8 @@ services:
       # Make sure that the paths match containerpaths below in the volumes section!
       # Format: <freeform|structured><ID>;<INTERNAL_PATH>;;<freeform|structured><ID>;<INTERNAL_PATH> ...
       MTSU_BASE_PATHS: freeform1;/library1;;structured2;/library2
+      # Disable internal cache server? Remember apostrophes around the value.
+      MTSU_DISABLE_CACHE_SERVER: 'false'
       # Max size of the cache where galleries are extracted from the library in MB. Can overflow a bit especially if set too low.
       MTSU_CACHE_SIZE: 10000
       # Time to live for the cache in seconds (604800 = 1 week).

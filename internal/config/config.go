@@ -112,6 +112,14 @@ func GetPort() string {
 	return value
 }
 
+func CacheServerDisabled() bool {
+	value := os.Getenv("MTSU_DISABLE_CACHE_SERVER")
+	if value == "true" {
+		return true
+	}
+	return false
+}
+
 func RegistrationsEnabled() bool {
 	value := os.Getenv("MTSU_REGISTRATIONS")
 	if value == "true" {
