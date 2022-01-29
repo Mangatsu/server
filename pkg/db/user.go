@@ -188,6 +188,12 @@ func UpdateUser(userUUID string, userForm *UserForm) error {
 		if _, err = updateUserStmt.Exec(tx); err != nil {
 			return err
 		}
+
+		// If role is changed, delete all sessions of the user.
+		deleteSessionsStmt := Session.DELETE().WHERE(Session.UserUUID.EQ(String(userUUID)))
+		if _, err = deleteSessionsStmt.Exec(tx); err != nil {
+			return err
+		}
 	}
 
 	if userForm.Username != nil && *userForm.Username != "" {
