@@ -24,7 +24,7 @@ services:
       # Modes: public, restricted, private
       MTSU_VISIBILITY: private
       # Password for restricted mode.
-      MTSU_RESTRICTED_PASSWORD: secretpassword
+      MTSU_RESTRICTED_PASSPHRASE: secretpassword
       # Allow registrations? Remember apostrophes around the value.
       MTSU_REGISTRATIONS: 'false'
       # Secret to sign JWTs for login sessions in the backend. Recommended to change.

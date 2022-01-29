@@ -16,7 +16,7 @@ services:
       MTSU_CACHE_SIZE: 10000
       MTSU_CACHE_TTL: 604800
       MTSU_VISIBILITY: private
-      MTSU_RESTRICTED_PASSWORD: secretpassword
+      MTSU_RESTRICTED_PASSPHRASE: secretpassword
       MTSU_REGISTRATIONS: 'false'
       MTSU_JWT_SECRET: 9Wag7sMvKl3aF6K5lwIg6TI42ia2f6BstZAVrdJIq8Mp38lnl7UzQMC1qjKyZCBzHFGbbqsA0gKcHqDuyXQAhWoJ0lcx4K5q
       MTSU_HOSTNAME: mtsuserver

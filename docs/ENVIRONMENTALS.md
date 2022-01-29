@@ -47,7 +47,7 @@ _~~Struck out~~ values have no effect yet._
 - **NEXTAUTH_URL**=https://mangatsu.example.com
   - URL to the web client.
 - **SECRET**=zb4DyuqELIfi8X0XRMa52yV9y6d011YTyyHBtczhYeHbzsquYnsr7Q9OkHNoLd6HvFqz4vvrCPcINol7sIEfLG6pY4D0KSHo
-  - A random string used to hash tokens, sign cookies and generate cryptographic keys. Recommended to change.
+  - A random string used to hash tokens, sign cookies and generate cryptographic keys. Recommended to change. Can be generated with `openssl rand -base64 32`.
 - **JWT_SIGNING_PRIVATE_KEY**='{"kty":"oct","kid":"bbdunoB1J71jPATtgJAseZnx36LB4ant1OfH6ysV78M","alg":"HS512","k":"axdN1SbiVxMIPJYapyHOpGuo7KcE_mkT6_bugy5xxG8"}'
   - Secret to sign JWTs in the web client. Recommended to change.
 - **PORT**=3030
