@@ -118,7 +118,7 @@ func hasAccess(w http.ResponseWriter, r *http.Request, role db.Role) (bool, *str
 	}
 
 	// Simple global passphrase auth
-	if config.CurrentVisibility() == config.Restricted {
+	if config.CurrentVisibility() == config.Restricted && credentials.Passphrase != nil {
 		access := *credentials.Passphrase == config.RestrictedPassphrase()
 		if !access {
 			errorHandler(w, http.StatusUnauthorized, "")
