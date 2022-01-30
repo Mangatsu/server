@@ -310,7 +310,8 @@ func GetGalleries(filters Filters, hidden bool, userUUID *string) ([]CombinedMet
 	if filters.SearchTerm != "" {
 		conditions = conditions.AND(Gallery.Title.
 			LIKE(String("%" + filters.SearchTerm + "%")).
-			OR(Gallery.TitleNative.LIKE(String("%" + filters.SearchTerm + "%"))))
+			OR(Gallery.TitleNative.LIKE(String("%" + filters.SearchTerm + "%"))).
+			OR(Gallery.Series.LIKE(String("%" + filters.SearchTerm + "%"))))
 	}
 
 	if filters.Category != "" {
