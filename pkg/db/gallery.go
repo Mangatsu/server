@@ -70,16 +70,23 @@ const (
 )
 
 // NewGallery creates a new gallery
-func NewGallery(archivePath string, libraryID int32, title string) error {
+func NewGallery(archivePath string, libraryID int32, title string, series string) error {
 	galleryUUID, err := uuid.NewRandom()
 	if err != nil {
 		return err
 	}
 
 	now := time.Now()
-	stmt := Gallery.
-		INSERT(Gallery.UUID, Gallery.ArchivePath, Gallery.Title, Gallery.LibraryID, Gallery.CreatedAt, Gallery.UpdatedAt).
-		VALUES(galleryUUID.String(), archivePath, title, libraryID, now, now)
+	var stmt InsertStatement
+	if series != "" {
+		stmt = Gallery.
+			INSERT(Gallery.UUID, Gallery.ArchivePath, Gallery.Title, Gallery.LibraryID, Gallery.Series, Gallery.CreatedAt, Gallery.UpdatedAt).
+			VALUES(galleryUUID.String(), archivePath, title, libraryID, series, now, now)
+	} else {
+		stmt = Gallery.
+			INSERT(Gallery.UUID, Gallery.ArchivePath, Gallery.Title, Gallery.LibraryID, Gallery.CreatedAt, Gallery.UpdatedAt).
+			VALUES(galleryUUID.String(), archivePath, title, libraryID, now, now)
+	}
 
 	_, err = stmt.Exec(db())
 	return err

@@ -82,7 +82,8 @@ func ParseTitles(tryNative bool, overwrite bool) {
 						gallery.Artists = &titleMeta.Artists
 					}
 				}
-				if titleMeta.Series != "" && (!hasSeries || overwrite) {
+				// If structured, no need to set the series again.
+				if library.Layout != config.Structured && titleMeta.Series != "" && (!hasSeries || overwrite) {
 					gallery.Series = &titleMeta.Series
 				}
 				if titleMeta.Language != "" && (!hasLanguage || overwrite) {
@@ -94,12 +95,6 @@ func ParseTitles(tryNative bool, overwrite bool) {
 			if library.Layout == config.Structured && (gallery.Category == nil || *gallery.Category == "") {
 				manga := "manga"
 				gallery.Category = &manga
-			}
-
-			// If structured, set the Series to the first dir name.
-			if library.Layout == config.Structured {
-				dirs := strings.SplitN(gallery.ArchivePath, "/", 2)
-				gallery.Series = &dirs[0]
 			}
 
 			err := db.UpdateGallery(gallery, nil, model.Reference{})
