@@ -1,4 +1,10 @@
-# Contributing 
+# Contributing
+
+## git
+
+Use [Conventional Commits](https://www.conventionalcommits.org/en/v1.0.0/) when making commits.
+
+## Setup
 
 ### 🚧 Building and running
 - Copy example.env as .env and change the values according to your needs.
