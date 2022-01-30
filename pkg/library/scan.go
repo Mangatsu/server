@@ -12,7 +12,7 @@ import (
 	"strings"
 )
 
-func walk(libraryPath string, libraryID int32) fs.WalkDirFunc {
+func walk(libraryPath string, libraryID int32, libraryLayout config.Layout) fs.WalkDirFunc {
 	return func(s string, d fs.DirEntry, err error) error {
 		if err != nil {
 			return err
@@ -30,23 +30,28 @@ func walk(libraryPath string, libraryID int32) fs.WalkDirFunc {
 			return nil
 		}
 
+		series := ""
+		if libraryLayout == config.Structured {
+			dirs := strings.SplitN(relativePath, "/", 2)
+			series = dirs[0]
+		}
+
 		n := strings.LastIndex(d.Name(), path.Ext(d.Name()))
 		title := d.Name()[:n]
 
-		err = db.NewGallery(relativePath, libraryID, title)
+		err = db.NewGallery(relativePath, libraryID, title, series)
 		if err != nil {
 			log.Error("Error adding:", err)
-			return err
+		} else {
+			log.Debug("Added: ", s)
 		}
-
-		log.Debug("Added: ", s)
-
 		return err
 	}
 }
 
 func ScanArchives(full bool) {
-	// TODO: full scan
+	// TODO: Quick scan by only checking directories that have been modified.
+	// Not too important as current implementation is pretty fast already.
 	libraries, err := db.GetOnlyLibraries()
 	if err != nil {
 		log.Error("Error finding libraries to scan: ", err)
@@ -54,7 +59,7 @@ func ScanArchives(full bool) {
 	}
 
 	for _, library := range libraries {
-		err := filepath.WalkDir(library.Path, walk(library.Path, library.ID))
+		err := filepath.WalkDir(library.Path, walk(library.Path, library.ID, config.Layout(library.Layout)))
 		if err != nil {
 			log.Errorf("Skipping library %s as an error occured while scanning it: %s", library.Path, err)
 			continue
