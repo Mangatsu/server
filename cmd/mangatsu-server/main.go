@@ -34,7 +34,7 @@ func main() {
 
 	// Scan the libraries for metadata and insert/update to the db.
 	//startScan := time.Now()
-	//library.ScanArchives(true)
+	// library.ScanArchives()
 	//metadata.ParseX()
 	//metadata.ParseTitles(true, false)
 	//elapsedScan := time.Since(startScan)
