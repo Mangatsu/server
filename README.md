@@ -58,6 +58,8 @@
 - Run `docker-compose up -d` to start the server and web client
 - Update by running `docker-compose down`, `docker-compose pull` and then `docker-compose up -d`
 
+Docker images: [Server](https://hub.docker.com/r/luukuton/mangatsu-server/) & [Web](https://hub.docker.com/r/luukuton/mangatsu-web)
+
 ### 💻 Local setup
 - Copy example.env as .env and change the values according to your needs.
 - Create data and archive directories
