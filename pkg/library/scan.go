@@ -17,12 +17,24 @@ func walk(libraryPath string, libraryID int32, libraryLayout config.Layout) fs.W
 		if err != nil {
 			return err
 		}
-		if d.IsDir() || !ArchiveExtensions.MatchString(d.Name()) {
+
+		if d.IsDir() {
+			return nil
+		}
+
+		isImage := ImageExtensions.MatchString(d.Name())
+		isArchive := ArchiveExtensions.MatchString(d.Name())
+		if !isArchive && !isImage {
 			return nil
 		}
 
 		s = filepath.ToSlash(s)
 		relativePath := config.RelativePath(libraryPath, s)
+
+		// If an image is found, the parent dir will be considered as a gallery.
+		if isImage {
+			relativePath = path.Dir(relativePath)
+		}
 
 		// Skip if already in database
 		if db.ArchivePathFound(relativePath) {
@@ -30,14 +42,20 @@ func walk(libraryPath string, libraryID int32, libraryLayout config.Layout) fs.W
 			return nil
 		}
 
+		// Series name from the dir name if Structured layout
 		series := ""
 		if libraryLayout == config.Structured {
 			dirs := strings.SplitN(relativePath, "/", 2)
 			series = dirs[0]
 		}
 
-		n := strings.LastIndex(d.Name(), path.Ext(d.Name()))
-		title := d.Name()[:n]
+		var title string
+		if isImage {
+			title = path.Base(relativePath)
+		} else {
+			n := strings.LastIndex(d.Name(), path.Ext(d.Name()))
+			title = d.Name()[:n]
+		}
 
 		err = db.NewGallery(relativePath, libraryID, title, series)
 		if err != nil {
@@ -45,11 +63,16 @@ func walk(libraryPath string, libraryID int32, libraryLayout config.Layout) fs.W
 		} else {
 			log.Debug("Added: ", s)
 		}
+
+		if isImage {
+			return fs.SkipDir
+		}
+
 		return err
 	}
 }
 
-func ScanArchives(full bool) {
+func ScanArchives() {
 	// TODO: Quick scan by only checking directories that have been modified.
 	// Not too important as current implementation is pretty fast already.
 	libraries, err := db.GetOnlyLibraries()

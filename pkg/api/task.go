@@ -15,8 +15,8 @@ func scanLibraries(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	fullScan := r.URL.Query().Get("full")
-	go library.ScanArchives(fullScan == "true")
+	// fullScan := r.URL.Query().Get("full")
+	go library.ScanArchives()
 
 	w.Header().Set("Content-Type", "application/json;charset=UTF-8")
 	fmt.Fprintf(w, `{ "message": "Started scanning for new archives." }`)
