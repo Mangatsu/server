@@ -3,6 +3,7 @@ package library
 import (
 	"errors"
 	"github.com/Mangatsu/server/internal/config"
+	"github.com/facette/natsort"
 	"github.com/mholt/archiver/v4"
 	log "github.com/sirupsen/logrus"
 	"io"
@@ -106,6 +107,7 @@ func ReadGallery(archivePath string, uuid string) ([]string, int) {
 
 		return UniversalExtract(dst, archivePath)
 	}
+	natsort.Sort(files)
 
 	return files, count
 }
