@@ -71,7 +71,9 @@ func GetUsers() ([]model.User, error) {
 func GetFavoriteGroups(userUUID string) ([]string, error) {
 	stmt := SELECT(GalleryPref.FavoriteGroup).DISTINCT().
 		FROM(GalleryPref.Table).
-		WHERE(GalleryPref.UserUUID.EQ(String(userUUID)))
+		WHERE(GalleryPref.UserUUID.EQ(String(userUUID)).
+			AND(GalleryPref.FavoriteGroup.IS_NOT_NULL()).
+			AND(GalleryPref.FavoriteGroup.NOT_EQ(String(""))))
 
 	var favoriteGroups []string
 	err := stmt.Query(db(), &favoriteGroups)
