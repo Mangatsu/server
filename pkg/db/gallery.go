@@ -325,8 +325,11 @@ func GetGalleries(filters Filters, hidden bool, userUUID *string) ([]CombinedMet
 	if userUUID != nil && filters.FavoriteGroup != "" {
 		conditions = conditions.AND(EXISTS(SELECT(NULL).
 			FROM(GalleryPref.AS("gp")).
-			WHERE(GalleryPref.FavoriteGroup.EQ(String(filters.FavoriteGroup)))),
-		)
+			WHERE(
+				GalleryPref.AS("gp").GalleryUUID.EQ(Gallery.UUID).
+					AND(GalleryPref.AS("gp").FavoriteGroup.EQ(String(filters.FavoriteGroup))),
+			),
+		))
 	}
 
 	if filters.NSFW == "false" {
