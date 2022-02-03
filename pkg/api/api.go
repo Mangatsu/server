@@ -78,7 +78,7 @@ func errorHandler(w http.ResponseWriter, status int, msg string) {
 	default:
 		w.WriteHeader(http.StatusInternalServerError)
 		fmt.Fprintf(w, `{ "code": %d, "message": "internal server error" }`, http.StatusInternalServerError)
-		log.Error("Error 500: ", msg)
+		log.Error("Internal server error: ", msg)
 	}
 }
 
@@ -114,8 +114,8 @@ func handleRequests() {
 	r.HandleFunc(baseURL+"/galleries", returnGalleries).Methods("GET")
 	r.HandleFunc(baseURL+"/galleries/random", returnRandomGallery).Methods("GET")
 	r.HandleFunc(baseURL+"/galleries/{uuid:"+uuidRegex+"}", returnGallery).Methods("GET")
-	r.HandleFunc(baseURL+"/galleries/{uuid:"+uuidRegex+"}/progress/{progress:[0-9]+}", updateProgress).Methods("POST")
-	r.HandleFunc(baseURL+"/galleries/{uuid:"+uuidRegex+"}/favorite/{name}", setFavorite).Methods("POST")
+	r.HandleFunc(baseURL+"/galleries/{uuid:"+uuidRegex+"}/progress/{progress:[0-9]+}", updateProgress).Methods("PATCH")
+	r.HandleFunc(baseURL+"/galleries/{uuid:"+uuidRegex+"}/favorite/{name}", setFavorite).Methods("PATCH")
 
 	if !config.CacheServerDisabled() {
 		r.PathPrefix("/cache/").Handler(http.StripPrefix("/cache/", http.FileServer(http.Dir(config.BuildCachePath()))))
@@ -129,7 +129,7 @@ func handleRequests() {
 	handler := cors.New(cors.Options{
 		AllowedOrigins: []string{"*"},
 		AllowedMethods: []string{
-			http.MethodGet, http.MethodPost, http.MethodDelete, http.MethodPut, http.MethodOptions,
+			http.MethodOptions, http.MethodGet, http.MethodPost, http.MethodDelete, http.MethodPut, http.MethodPatch,
 		},
 		AllowedHeaders: []string{
 			"Accept", "Content-Type", "Content-Length", "Accept-Encoding", "X-CSRF-Token", "Authorization",
