@@ -116,6 +116,7 @@ func handleRequests() {
 	r.HandleFunc(baseURL+"/galleries/{uuid:"+uuidRegex+"}", returnGallery).Methods("GET")
 	r.HandleFunc(baseURL+"/galleries/{uuid:"+uuidRegex+"}/progress/{progress:[0-9]+}", updateProgress).Methods("PATCH")
 	r.HandleFunc(baseURL+"/galleries/{uuid:"+uuidRegex+"}/favorite/{name}", setFavorite).Methods("PATCH")
+	r.HandleFunc(baseURL+"/galleries/{uuid:"+uuidRegex+"}/favorite", setFavorite).Methods("PATCH")
 
 	if !config.CacheServerDisabled() {
 		r.PathPrefix("/cache/").Handler(http.StripPrefix("/cache/", http.FileServer(http.Dir(config.BuildCachePath()))))
