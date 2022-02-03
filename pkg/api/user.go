@@ -266,7 +266,7 @@ func setFavorite(w http.ResponseWriter, r *http.Request) {
 	}
 
 	params := mux.Vars(r)
-	if params["uuid"] == "" || params["name"] == "" {
+	if params["uuid"] == "" {
 		errorHandler(w, http.StatusBadRequest, "")
 		return
 	}
