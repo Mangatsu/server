@@ -24,12 +24,6 @@ const (
 	Public            = "public"
 )
 
-const (
-	Disabled int8 = iota
-	ExactOnly
-	ExactFuzzy
-)
-
 func LoadEnv() {
 	var err = godotenv.Load()
 	if err != nil {
