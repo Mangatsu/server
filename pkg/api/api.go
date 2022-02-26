@@ -129,6 +129,7 @@ func handleRequests() {
 
 	r.HandleFunc(baseURL+"/galleries", returnGalleries).Methods("GET")
 	r.HandleFunc(baseURL+"/galleries/random", returnRandomGallery).Methods("GET")
+	r.HandleFunc(baseURL+"/galleries/{uuid:"+uuidRegex+"}", updateGallery).Methods("PUT")
 	r.HandleFunc(baseURL+"/galleries/{uuid:"+uuidRegex+"}", returnGallery).Methods("GET")
 	r.HandleFunc(baseURL+"/galleries/{uuid:"+uuidRegex+"}/progress/{progress:[0-9]+}", updateProgress).Methods("PATCH")
 	r.HandleFunc(baseURL+"/galleries/{uuid:"+uuidRegex+"}/favorite/{name}", setFavorite).Methods("PATCH")

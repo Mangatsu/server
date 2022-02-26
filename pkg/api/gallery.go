@@ -1,6 +1,8 @@
 package api
 
 import (
+	"encoding/json"
+	"fmt"
 	"github.com/Mangatsu/server/internal/config"
 	"github.com/Mangatsu/server/pkg/db"
 	"github.com/Mangatsu/server/pkg/library"
@@ -41,6 +43,26 @@ type GalleryResult struct {
 type GenericStringResult struct {
 	Data  []string
 	Count int
+}
+
+type UpdateGalleryForm struct {
+	Title       string
+	TitleNative string
+	TitleShort  string
+	Released    string
+	Circle      string
+	Artists     string
+	Series      string
+	Category    string
+	Language    string
+	Translated  bool
+	Nsfw        bool
+	Hidden      bool
+	ExhToken    string
+	ExhGid      int32
+	AnilistID   int32
+	Urls        string
+	Tags        map[string][]string
 }
 
 // returnGalleries returns galleries as JSON.
@@ -172,4 +194,71 @@ func returnSeries(w http.ResponseWriter, r *http.Request) {
 		Data:  series,
 		Count: len(series),
 	})
+}
+
+// updateGallery updates a gallery and its reference and tags.
+// If tags field is specified and empty, all references to this gallery's tags will be removed.
+// If tags is not specified, no changes to tags will be made.
+func updateGallery(w http.ResponseWriter, r *http.Request) {
+	access, _ := hasAccess(w, r, db.Admin)
+	if !access {
+		return
+	}
+
+	params := mux.Vars(r)
+	galleryUUID := params["uuid"]
+	if galleryUUID == "" {
+		errorHandler(w, http.StatusBadRequest, "")
+		return
+	}
+
+	formData := &UpdateGalleryForm{}
+	if err := json.NewDecoder(r.Body).Decode(formData); err != nil {
+		errorHandler(w, http.StatusBadRequest, "")
+		return
+	}
+
+	newGallery := model.Gallery{
+		UUID:        galleryUUID,
+		Title:       formData.Title,
+		TitleNative: &formData.TitleNative,
+		TitleShort:  &formData.TitleShort,
+		Released:    &formData.Released,
+		Circle:      &formData.Circle,
+		Artists:     &formData.Artists,
+		Series:      &formData.Series,
+		Category:    &formData.Category,
+		Language:    &formData.Language,
+		Translated:  &formData.Translated,
+		Nsfw:        formData.Nsfw,
+		Hidden:      formData.Hidden,
+	}
+
+	newReference := model.Reference{
+		GalleryUUID: galleryUUID,
+		Urls:        &formData.Urls,
+		ExhToken:    &formData.ExhToken,
+		ExhGid:      &formData.ExhGid,
+		AnilistID:   &formData.AnilistID,
+	}
+
+	var tags []model.Tag
+	if formData.Tags != nil {
+		tags = []model.Tag{}
+		for namespace, names := range formData.Tags {
+			for _, name := range names {
+				tag := model.Tag{
+					Namespace: namespace,
+					Name:      name,
+				}
+				tags = append(tags, tag)
+			}
+		}
+	}
+
+	if err := db.UpdateGallery(newGallery, tags, newReference, false); err != nil {
+		errorHandler(w, http.StatusInternalServerError, "")
+		return
+	}
+	fmt.Fprintf(w, `{ "message": "gallery updated" }`)
 }

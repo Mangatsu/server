@@ -93,13 +93,20 @@ func NewGallery(archivePath string, libraryID int32, title string, series string
 }
 
 // UpdateGallery updates a gallery. It also adds tags and references if any.
-func UpdateGallery(gallery model.Gallery, tags []model.Tag, reference model.Reference) error {
-	// Insert tags in a loop if any
+// If internalScan is true, the gallery is matched by its archive path, not UUID.
+func UpdateGallery(gallery model.Gallery, tags []model.Tag, reference model.Reference, internalScan bool) error {
 	var tagIDs []int32
-	var err error
-	if len(tags) > 0 {
-		if tagIDs, err = NewTags(tags); err != nil {
+	if tags != nil {
+		deleteStmt := GalleryTag.DELETE().WHERE(GalleryTag.GalleryUUID.EQ(String(gallery.UUID)))
+		_, err := deleteStmt.Exec(db())
+		if err != nil {
 			return err
+		}
+
+		if len(tags) > 0 {
+			if tagIDs, err = NewTags(tags); err != nil {
+				return err
+			}
 		}
 	}
 
@@ -144,7 +151,14 @@ func UpdateGallery(gallery model.Gallery, tags []model.Tag, reference model.Refe
 		Gallery.ArchiveHash,
 		Gallery.Nsfw,
 		Gallery.UpdatedAt,
-	).MODEL(galleryModel).WHERE(Gallery.ArchivePath.EQ(String(gallery.ArchivePath))).RETURNING(Gallery.UUID)
+	).MODEL(galleryModel)
+
+	if internalScan {
+		updateGalleryStmt = updateGalleryStmt.WHERE(Gallery.ArchivePath.EQ(String(gallery.ArchivePath))).RETURNING(Gallery.UUID)
+	} else {
+		updateGalleryStmt = updateGalleryStmt.WHERE(Gallery.UUID.EQ(String(gallery.UUID))).RETURNING(Gallery.UUID)
+	}
+
 	var galleries []model.Gallery
 	if err = updateGalleryStmt.Query(tx, &galleries); err != nil {
 		return err
@@ -168,24 +182,62 @@ func UpdateGallery(gallery model.Gallery, tags []model.Tag, reference model.Refe
 		}
 	}
 
-	// Insert Reference object
-	newReference := model.Reference{
-		GalleryUUID:  galleries[0].UUID,
-		MetaPath:     reference.MetaPath,
-		MetaInternal: reference.MetaInternal,
-		MetaMatch:    reference.MetaMatch,
-		ExhGid:       reference.ExhGid,
-		ExhToken:     reference.ExhToken,
-		Urls:         reference.Urls,
-	}
+	// Insert reference
+	if internalScan {
+		newReference := model.Reference{
+			GalleryUUID:  galleries[0].UUID,
+			MetaPath:     reference.MetaPath,
+			MetaInternal: reference.MetaInternal,
+			MetaMatch:    reference.MetaMatch,
+			ExhGid:       reference.ExhGid,
+			ExhToken:     reference.ExhToken,
+			Urls:         reference.Urls,
+		}
 
-	insertExtStmt := Reference.
-		INSERT(Reference.AllColumns).
-		MODEL(newReference).
-		ON_CONFLICT(Reference.GalleryUUID).
-		DO_UPDATE(SET(Reference.GalleryUUID.SET(Reference.EXCLUDED.GalleryUUID)))
-	if _, err = insertExtStmt.Exec(tx); err != nil {
-		return err
+		insertRefStmt := Reference.
+			INSERT(Reference.AllColumns).
+			MODEL(newReference).
+			ON_CONFLICT(Reference.GalleryUUID).DO_UPDATE(
+			SET(
+				Reference.MutableColumns.SET(ROW(
+					String(*newReference.MetaPath),
+					Bool(newReference.MetaInternal),
+					Int32(*newReference.MetaMatch),
+					Int32(*newReference.ExhGid),
+					String(*newReference.ExhToken),
+					String(*newReference.Urls),
+				),
+				),
+			),
+		)
+		if _, err = insertRefStmt.Exec(tx); err != nil {
+			return err
+		}
+	} else {
+		newReference := model.Reference{
+			GalleryUUID: galleries[0].UUID,
+			AnilistID:   reference.AnilistID,
+			ExhGid:      reference.ExhGid,
+			ExhToken:    reference.ExhToken,
+			Urls:        reference.Urls,
+		}
+
+		insertRefStmt := Reference.
+			INSERT(Reference.AllColumns).
+			MODEL(newReference).
+			ON_CONFLICT(Reference.GalleryUUID).DO_UPDATE(
+			SET(
+				ColumnList{Reference.ExhGid, Reference.ExhToken, Reference.AnilistID, Reference.Urls}.SET(ROW(
+					Int32(*newReference.ExhGid),
+					String(*newReference.ExhToken),
+					Int32(*newReference.AnilistID),
+					String(*newReference.Urls)),
+				),
+			),
+		)
+		if _, err = insertRefStmt.Exec(tx); err != nil {
+			return err
+		}
 	}
 
 	// Commit transaction. Rollback on error.
@@ -198,7 +250,7 @@ func NewTags(tags []model.Tag) ([]int32, error) {
 	var tagIDs []int32
 	for _, tag := range tags {
 		selectStmt := Tag.
-			SELECT(Tag.ID).FROM(Tag).
+			SELECT(Tag.ID, Tag.Namespace, Tag.Name).FROM(Tag).
 			WHERE(Tag.Namespace.EQ(String(tag.Namespace)).AND(Tag.Name.EQ(String(tag.Name))))
 
 		var existingTags []model.Tag
@@ -209,12 +261,12 @@ func NewTags(tags []model.Tag) ([]int32, error) {
 
 		if len(existingTags) > 0 {
 			tagIDs = append(tagIDs, existingTags[0].ID)
-			for i, tag := range tags {
-				if tag.Namespace == existingTags[0].Namespace && tag.Name == existingTags[0].Name {
-					tags = append(tags[:i], tags[i+1:]...)
-					break
-				}
-			}
+			//for i, tag := range tags {
+			//	if tag.Namespace == existingTags[0].Namespace && tag.Name == existingTags[0].Name {
+			//		tags = append(tags[:i], tags[i+1:]...)
+			//		break
+			//	}
+			//}
 			continue
 		}
 
