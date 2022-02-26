@@ -9,18 +9,34 @@ import (
 	"github.com/rs/cors"
 	log "github.com/sirupsen/logrus"
 	"net/http"
+	"reflect"
 	"time"
 )
 
+// handleResult handles the result and returns if it was successful or not.
+// InternalServerError will be set if any error found. NotFound is set if the result is nil or empty.
 func handleResult(w http.ResponseWriter, result interface{}, err error, many bool) bool {
+	resultType := reflect.TypeOf(result)
 	if err != nil {
 		log.Debug(err)
 		errorHandler(w, http.StatusInternalServerError, "")
 		return true
 	}
-	if !many && result == nil {
-		errorHandler(w, http.StatusNotFound, "")
-		return true
+	if !many {
+		if result == nil {
+			errorHandler(w, http.StatusNotFound, "")
+			return true
+		}
+		if resultType.Kind() == reflect.Slice {
+			if resultType.Kind() == reflect.Ptr {
+				result = reflect.ValueOf(result).Elem().Interface()
+			}
+			list := reflect.ValueOf(result)
+			if list.Len() == 0 {
+				errorHandler(w, http.StatusNotFound, "")
+				return true
+			}
+		}
 	}
 	return false
 }
