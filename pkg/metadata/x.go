@@ -271,7 +271,7 @@ func ParseX() {
 				}
 
 				newGallery, tags, external := convertExh(exhGallery, gallery.ArchivePath, metaPath, internal)
-				if err = db.UpdateGallery(newGallery, tags, external); err != nil {
+				if err = db.UpdateGallery(newGallery, tags, external, true); err != nil {
 					log.Debugf("Couldn't tag gallery: %s. Message: %s", gallery.ArchivePath, err)
 					continue
 				}
@@ -298,7 +298,7 @@ func ParseX() {
 					external.MetaMatch = &permil
 				}
 
-				err = db.UpdateGallery(gallery, tags, external)
+				err = db.UpdateGallery(gallery, tags, external, true)
 				if err != nil {
 					log.Debugf("Couldn't tag gallery: %s. Message: %s", gallery.ArchivePath, err)
 					continue
