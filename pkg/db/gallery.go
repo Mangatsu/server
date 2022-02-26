@@ -261,12 +261,6 @@ func NewTags(tags []model.Tag) ([]int32, error) {
 
 		if len(existingTags) > 0 {
 			tagIDs = append(tagIDs, existingTags[0].ID)
-			//for i, tag := range tags {
-			//	if tag.Namespace == existingTags[0].Namespace && tag.Name == existingTags[0].Name {
-			//		tags = append(tags[:i], tags[i+1:]...)
-			//		break
-			//	}
-			//}
 			continue
 		}
 
