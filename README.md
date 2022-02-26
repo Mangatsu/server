@@ -8,7 +8,7 @@
 > 🌕 Server application for **storing**, **tagging** and **reading** doujinshi, manga, art collections and other galleries with API access and user control. Written in Go.
 > The name, **Mangatsu**, is a play on Japanese words **mangetsu** (満月, full moon) and **manga** (漫画, comic).
 
-### **[📰 CHANGELOG](docs/CHANGELOG.md)** | **[❤ CONTRIBUTING](docs/CONTRIBUTING.md)** | **[🎯 TODO](docs/TODO.md)**
+### **[📰 CHANGELOG](docs/CHANGELOG.md)** | **[❤ CONTRIBUTING](docs/CONTRIBUTING.md)**
 
 ### At experimental stage until version 1.0.0. Expect breaking changes.
 
