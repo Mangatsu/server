@@ -9,7 +9,7 @@ Use [Conventional Commits](https://www.conventionalcommits.org/en/v1.0.0/) when 
 ### 🚧 Building and running
 - Copy example.env as .env and change the values according to your needs.
 - Build `go build`
-- (Optional) Manually initialize development database: `goose -dir db/migrations sqlite3 ./data/data.sqlite up`
+- (Optional) Manually initialize development database: `goose -dir pkg/db/migrations sqlite3 ./data/mangatsu.sqlite up`
 - Run `backend` (`backend.exe` on Windows)
 
 ### 💾 Database migrations
