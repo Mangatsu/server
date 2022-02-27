@@ -119,37 +119,33 @@ func UpdateGallery(gallery model.Gallery, tags []model.Tag, reference model.Refe
 
 	// Update gallery
 	galleryModel := model.Gallery{
-		Title:       gallery.Title,
-		TitleNative: gallery.TitleNative,
-		TitleShort:  gallery.TitleShort,
-		Category:    gallery.Category,
-		Released:    gallery.Released,
-		Circle:      gallery.Circle,
-		Artists:     gallery.Artists,
-		Series:      gallery.Series,
-		Language:    gallery.Language,
-		Translated:  gallery.Translated,
-		ImageCount:  gallery.ImageCount,
-		ArchiveSize: gallery.ArchiveSize,
-		ArchiveHash: gallery.ArchiveHash,
-		Nsfw:        gallery.Nsfw,
-		UpdatedAt:   now,
+		Title:           gallery.Title,
+		TitleNative:     gallery.TitleNative,
+		TitleTranslated: gallery.TitleTranslated,
+		Category:        gallery.Category,
+		Released:        gallery.Released,
+		Series:          gallery.Series,
+		Language:        gallery.Language,
+		Translated:      gallery.Translated,
+		Nsfw:            gallery.Nsfw,
+		ImageCount:      gallery.ImageCount,
+		ArchiveSize:     gallery.ArchiveSize,
+		ArchiveHash:     gallery.ArchiveHash,
+		UpdatedAt:       now,
 	}
 	updateGalleryStmt := Gallery.UPDATE(
 		Gallery.Title,
 		Gallery.TitleNative,
-		Gallery.TitleShort,
+		Gallery.TitleTranslated,
 		Gallery.Category,
 		Gallery.Released,
-		Gallery.Circle,
-		Gallery.Artists,
 		Gallery.Series,
 		Gallery.Language,
 		Gallery.Translated,
+		Gallery.Nsfw,
 		Gallery.ImageCount,
 		Gallery.ArchiveSize,
 		Gallery.ArchiveHash,
-		Gallery.Nsfw,
 		Gallery.UpdatedAt,
 	).MODEL(galleryModel)
 
@@ -536,13 +532,26 @@ func GetGallery(galleryUUID *string, userUUID *string) ([]CombinedMetadata, erro
 }
 
 // GetTags returns all tags.
-func GetTags() (MappedTags, error) {
-	stmt := SELECT(Tag.Namespace, Tag.Name).FROM(Tag)
+func GetTags(galleryUUID *string, mapped bool) (MappedTags, []model.Tag, error) {
+	var stmt SelectStatement
+	if galleryUUID != nil {
+		stmt = stmt.WHERE(GalleryTag.GalleryUUID.EQ(String(*galleryUUID))).
+			FROM(Gallery.
+				LEFT_JOIN(GalleryTag, GalleryTag.GalleryUUID.EQ(Gallery.UUID)).
+				LEFT_JOIN(Tag, Tag.ID.EQ(GalleryTag.TagID)),
+			)
+	} else {
+		stmt = SELECT(Tag.Namespace, Tag.Name).FROM(Tag)
+	}
 
 	var tags []model.Tag
 	err := stmt.Query(db(), &tags)
 	if err != nil {
-		return MappedTags{Data: map[string][]string{}, Count: 0}, err
+		return MappedTags{Data: map[string][]string{}, Count: 0}, nil, err
+	}
+
+	if !mapped {
+		return MappedTags{Data: map[string][]string{}, Count: 0}, tags, err
 	}
 
 	tagMap := map[string][]string{}
@@ -550,7 +559,7 @@ func GetTags() (MappedTags, error) {
 		tagMap[tag.Namespace] = append(tagMap[tag.Namespace], tag.Name)
 	}
 
-	return MappedTags{Data: tagMap, Count: len(tags)}, err
+	return MappedTags{Data: tagMap, Count: len(tags)}, nil, err
 }
 
 // GetCategories returns all public categories.

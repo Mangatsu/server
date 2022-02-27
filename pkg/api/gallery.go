@@ -46,23 +46,21 @@ type GenericStringResult struct {
 }
 
 type UpdateGalleryForm struct {
-	Title       string
-	TitleNative string
-	TitleShort  string
-	Released    string
-	Circle      string
-	Artists     string
-	Series      string
-	Category    string
-	Language    string
-	Translated  bool
-	Nsfw        bool
-	Hidden      bool
-	ExhToken    string
-	ExhGid      int32
-	AnilistID   int32
-	Urls        string
-	Tags        map[string][]string
+	Title           string
+	TitleNative     string
+	TitleTranslated string
+	Released        string
+	Series          string
+	Category        string
+	Language        string
+	Translated      bool
+	Nsfw            bool
+	Hidden          bool
+	ExhToken        string
+	ExhGid          int32
+	AnilistID       int32
+	Urls            string
+	Tags            map[string][]string
 }
 
 // returnGalleries returns galleries as JSON.
@@ -154,7 +152,7 @@ func returnTags(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	tags, err := db.GetTags()
+	tags, _, err := db.GetTags(nil, true)
 	if handleResult(w, tags, err, true) {
 		return
 	}
@@ -219,19 +217,17 @@ func updateGallery(w http.ResponseWriter, r *http.Request) {
 	}
 
 	newGallery := model.Gallery{
-		UUID:        galleryUUID,
-		Title:       formData.Title,
-		TitleNative: &formData.TitleNative,
-		TitleShort:  &formData.TitleShort,
-		Released:    &formData.Released,
-		Circle:      &formData.Circle,
-		Artists:     &formData.Artists,
-		Series:      &formData.Series,
-		Category:    &formData.Category,
-		Language:    &formData.Language,
-		Translated:  &formData.Translated,
-		Nsfw:        formData.Nsfw,
-		Hidden:      formData.Hidden,
+		UUID:            galleryUUID,
+		Title:           formData.Title,
+		TitleNative:     &formData.TitleNative,
+		TitleTranslated: &formData.TitleTranslated,
+		Released:        &formData.Released,
+		Series:          &formData.Series,
+		Category:        &formData.Category,
+		Language:        &formData.Language,
+		Translated:      &formData.Translated,
+		Nsfw:            formData.Nsfw,
+		Hidden:          formData.Hidden,
 	}
 
 	newReference := model.Reference{

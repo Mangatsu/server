@@ -19,7 +19,7 @@ var nameRegex = regexp.MustCompile(
 type TitleMeta struct {
 	Released string
 	Circle   string
-	Artists  string
+	Artists  []string
 	Title    string
 	Series   string
 	Language string
@@ -37,14 +37,20 @@ func ParseTitles(tryNative bool, overwrite bool) {
 
 	for _, library := range libraries {
 		for _, gallery := range library.Galleries {
-			hasTitleShort := gallery.TitleShort != nil
+			_, currentTags, err := db.GetTags(&gallery.UUID, false)
+			if err != nil {
+				log.Error("Tags could not be retrieved when parsing titles: ", err)
+				continue
+			}
+
+			hasTitleTranslated := gallery.TitleTranslated != nil
 			hasRelease := gallery.Released != nil
-			hasCircle := gallery.Circle != nil
-			hasArtists := gallery.Artists != nil
 			hasSeries := gallery.Series != nil
 			hasLanguage := gallery.Language != nil
+			hasCircle := containsTag(currentTags, "circle", nil)
+			hasArtists := containsTag(currentTags, "artist", nil)
 
-			if !overwrite && hasRelease && hasCircle && hasArtists && hasSeries && hasLanguage {
+			if !overwrite && hasRelease && hasSeries && hasLanguage && hasCircle && hasArtists {
 				continue
 			}
 
@@ -66,20 +72,37 @@ func ParseTitles(tryNative bool, overwrite bool) {
 			}
 
 			if !reflect.ValueOf(titleMeta).IsZero() {
-				if titleMeta.Title != "" && (!hasTitleShort || overwrite) {
-					gallery.TitleShort = &titleMeta.Title
+				if titleMeta.Title != "" && (!hasTitleTranslated || overwrite) {
+					gallery.TitleTranslated = &titleMeta.Title
 				}
 				if titleMeta.Released != "" && (!hasRelease || overwrite) {
 					gallery.Released = &titleMeta.Released
 				}
-				if titleMeta.Artists != "" && titleMeta.Circle != "" && (!hasCircle || overwrite) {
-					gallery.Circle = &titleMeta.Circle
+				if len(titleMeta.Artists) != 0 && titleMeta.Circle != "" && (!hasCircle || overwrite) {
+					if !containsTag(currentTags, "circle", &titleMeta.Circle) {
+						currentTags = append(currentTags, model.Tag{
+							Namespace: "circle",
+							Name:      titleMeta.Circle,
+						})
+					}
 				}
-				if titleMeta.Artists != "" && (!hasArtists || overwrite) {
-					if titleMeta.Circle != "" {
-						gallery.Artists = &titleMeta.Circle
+				if len(titleMeta.Artists) != 0 && (!hasArtists || overwrite) {
+					if titleMeta.Circle != "" && len(titleMeta.Artists) == 1 {
+						if !containsTag(currentTags, "circle", &titleMeta.Artists[0]) {
+							currentTags = append(currentTags, model.Tag{
+								Namespace: "circle",
+								Name:      titleMeta.Artists[0],
+							})
+						}
 					} else {
-						gallery.Artists = &titleMeta.Artists
+						for _, artist := range titleMeta.Artists {
+							if !containsTag(currentTags, "circle", &artist) {
+								currentTags = append(currentTags, model.Tag{
+									Namespace: "artist",
+									Name:      artist,
+								})
+							}
+						}
 					}
 				}
 				// If structured, no need to set the series again.
@@ -97,7 +120,7 @@ func ParseTitles(tryNative bool, overwrite bool) {
 				gallery.Category = &manga
 			}
 
-			err := db.UpdateGallery(gallery, nil, model.Reference{}, true)
+			err = db.UpdateGallery(gallery, currentTags, model.Reference{}, true)
 			if err != nil {
 				log.Errorf("Error updating gallery %s based on its title: %s", gallery.UUID, err)
 			}
@@ -109,12 +132,32 @@ func ParseTitles(tryNative bool, overwrite bool) {
 // (Release) [Circle (Artist)] Title (Series) [Language] or (Release) [Artist] Title (Series) [Language]
 func ParseTitle(title string) TitleMeta {
 	match := nameRegex.FindStringSubmatch(title)
+	var artists []string
+	if match[3] != "" {
+		if strings.Contains(match[3], ", ") {
+			artists = strings.Split(strings.TrimSpace(match[3]), ", ")
+		} else if strings.Contains(match[3], "、") {
+			artists = strings.Split(strings.TrimSpace(match[3]), "、")
+		} else {
+			artists = append(artists, strings.TrimSpace(match[3]))
+		}
+	}
+
 	return TitleMeta{
 		Released: strings.TrimSpace(match[1]),
 		Circle:   strings.TrimSpace(match[2]),
-		Artists:  strings.TrimSpace(match[3]),
+		Artists:  strings.Split(strings.TrimSpace(match[3]), ", "),
 		Title:    strings.TrimSpace(match[4]),
 		Series:   strings.TrimSpace(match[5]),
 		Language: strings.TrimSpace(match[6]),
 	}
+}
+
+func containsTag(tags []model.Tag, namespace string, name *string) bool {
+	for _, tag := range tags {
+		if tag.Namespace == namespace && (name == nil || tag.Name == *name) {
+			return true
+		}
+	}
+	return false
 }

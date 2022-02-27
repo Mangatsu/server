@@ -17,27 +17,25 @@ type galleryTable struct {
 	sqlite.Table
 
 	//Columns
-	UUID        sqlite.ColumnString
-	LibraryID   sqlite.ColumnInteger
-	ArchivePath sqlite.ColumnString
-	Title       sqlite.ColumnString
-	TitleNative sqlite.ColumnString
-	TitleShort  sqlite.ColumnString
-	Released    sqlite.ColumnString
-	Circle      sqlite.ColumnString
-	Artists     sqlite.ColumnString
-	Series      sqlite.ColumnString
-	Category    sqlite.ColumnString
-	Language    sqlite.ColumnString
-	Translated  sqlite.ColumnBool
-	ImageCount  sqlite.ColumnInteger
-	ArchiveSize sqlite.ColumnInteger
-	ArchiveHash sqlite.ColumnString
-	Thumbnail   sqlite.ColumnString
-	Nsfw        sqlite.ColumnBool
-	Hidden      sqlite.ColumnBool
-	CreatedAt   sqlite.ColumnTimestamp
-	UpdatedAt   sqlite.ColumnTimestamp
+	UUID            sqlite.ColumnString
+	LibraryID       sqlite.ColumnInteger
+	ArchivePath     sqlite.ColumnString
+	Title           sqlite.ColumnString
+	TitleNative     sqlite.ColumnString
+	TitleTranslated sqlite.ColumnString
+	Category        sqlite.ColumnString
+	Series          sqlite.ColumnString
+	Released        sqlite.ColumnString
+	Language        sqlite.ColumnString
+	Translated      sqlite.ColumnBool
+	Nsfw            sqlite.ColumnBool
+	Hidden          sqlite.ColumnBool
+	ImageCount      sqlite.ColumnInteger
+	ArchiveSize     sqlite.ColumnInteger
+	ArchiveHash     sqlite.ColumnString
+	Thumbnail       sqlite.ColumnString
+	CreatedAt       sqlite.ColumnTimestamp
+	UpdatedAt       sqlite.ColumnTimestamp
 
 	AllColumns     sqlite.ColumnList
 	MutableColumns sqlite.ColumnList
@@ -68,56 +66,52 @@ func newGalleryTable(schemaName, tableName, alias string) *GalleryTable {
 
 func newGalleryTableImpl(schemaName, tableName, alias string) galleryTable {
 	var (
-		UUIDColumn        = sqlite.StringColumn("uuid")
-		LibraryIDColumn   = sqlite.IntegerColumn("library_id")
-		ArchivePathColumn = sqlite.StringColumn("archive_path")
-		TitleColumn       = sqlite.StringColumn("title")
-		TitleNativeColumn = sqlite.StringColumn("title_native")
-		TitleShortColumn  = sqlite.StringColumn("title_short")
-		ReleasedColumn    = sqlite.StringColumn("released")
-		CircleColumn      = sqlite.StringColumn("circle")
-		ArtistsColumn     = sqlite.StringColumn("artists")
-		SeriesColumn      = sqlite.StringColumn("series")
-		CategoryColumn    = sqlite.StringColumn("category")
-		LanguageColumn    = sqlite.StringColumn("language")
-		TranslatedColumn  = sqlite.BoolColumn("translated")
-		ImageCountColumn  = sqlite.IntegerColumn("image_count")
-		ArchiveSizeColumn = sqlite.IntegerColumn("archive_size")
-		ArchiveHashColumn = sqlite.StringColumn("archive_hash")
-		ThumbnailColumn   = sqlite.StringColumn("thumbnail")
-		NsfwColumn        = sqlite.BoolColumn("nsfw")
-		HiddenColumn      = sqlite.BoolColumn("hidden")
-		CreatedAtColumn   = sqlite.TimestampColumn("created_at")
-		UpdatedAtColumn   = sqlite.TimestampColumn("updated_at")
-		allColumns        = sqlite.ColumnList{UUIDColumn, LibraryIDColumn, ArchivePathColumn, TitleColumn, TitleNativeColumn, TitleShortColumn, ReleasedColumn, CircleColumn, ArtistsColumn, SeriesColumn, CategoryColumn, LanguageColumn, TranslatedColumn, ImageCountColumn, ArchiveSizeColumn, ArchiveHashColumn, ThumbnailColumn, NsfwColumn, HiddenColumn, CreatedAtColumn, UpdatedAtColumn}
-		mutableColumns    = sqlite.ColumnList{LibraryIDColumn, ArchivePathColumn, TitleColumn, TitleNativeColumn, TitleShortColumn, ReleasedColumn, CircleColumn, ArtistsColumn, SeriesColumn, CategoryColumn, LanguageColumn, TranslatedColumn, ImageCountColumn, ArchiveSizeColumn, ArchiveHashColumn, ThumbnailColumn, NsfwColumn, HiddenColumn, CreatedAtColumn, UpdatedAtColumn}
+		UUIDColumn            = sqlite.StringColumn("uuid")
+		LibraryIDColumn       = sqlite.IntegerColumn("library_id")
+		ArchivePathColumn     = sqlite.StringColumn("archive_path")
+		TitleColumn           = sqlite.StringColumn("title")
+		TitleNativeColumn     = sqlite.StringColumn("title_native")
+		TitleTranslatedColumn = sqlite.StringColumn("title_translated")
+		CategoryColumn        = sqlite.StringColumn("category")
+		SeriesColumn          = sqlite.StringColumn("series")
+		ReleasedColumn        = sqlite.StringColumn("released")
+		LanguageColumn        = sqlite.StringColumn("language")
+		TranslatedColumn      = sqlite.BoolColumn("translated")
+		NsfwColumn            = sqlite.BoolColumn("nsfw")
+		HiddenColumn          = sqlite.BoolColumn("hidden")
+		ImageCountColumn      = sqlite.IntegerColumn("image_count")
+		ArchiveSizeColumn     = sqlite.IntegerColumn("archive_size")
+		ArchiveHashColumn     = sqlite.StringColumn("archive_hash")
+		ThumbnailColumn       = sqlite.StringColumn("thumbnail")
+		CreatedAtColumn       = sqlite.TimestampColumn("created_at")
+		UpdatedAtColumn       = sqlite.TimestampColumn("updated_at")
+		allColumns            = sqlite.ColumnList{UUIDColumn, LibraryIDColumn, ArchivePathColumn, TitleColumn, TitleNativeColumn, TitleTranslatedColumn, CategoryColumn, SeriesColumn, ReleasedColumn, LanguageColumn, TranslatedColumn, NsfwColumn, HiddenColumn, ImageCountColumn, ArchiveSizeColumn, ArchiveHashColumn, ThumbnailColumn, CreatedAtColumn, UpdatedAtColumn}
+		mutableColumns        = sqlite.ColumnList{LibraryIDColumn, ArchivePathColumn, TitleColumn, TitleNativeColumn, TitleTranslatedColumn, CategoryColumn, SeriesColumn, ReleasedColumn, LanguageColumn, TranslatedColumn, NsfwColumn, HiddenColumn, ImageCountColumn, ArchiveSizeColumn, ArchiveHashColumn, ThumbnailColumn, CreatedAtColumn, UpdatedAtColumn}
 	)
 
 	return galleryTable{
 		Table: sqlite.NewTable(schemaName, tableName, alias, allColumns...),
 
 		//Columns
-		UUID:        UUIDColumn,
-		LibraryID:   LibraryIDColumn,
-		ArchivePath: ArchivePathColumn,
-		Title:       TitleColumn,
-		TitleNative: TitleNativeColumn,
-		TitleShort:  TitleShortColumn,
-		Released:    ReleasedColumn,
-		Circle:      CircleColumn,
-		Artists:     ArtistsColumn,
-		Series:      SeriesColumn,
-		Category:    CategoryColumn,
-		Language:    LanguageColumn,
-		Translated:  TranslatedColumn,
-		ImageCount:  ImageCountColumn,
-		ArchiveSize: ArchiveSizeColumn,
-		ArchiveHash: ArchiveHashColumn,
-		Thumbnail:   ThumbnailColumn,
-		Nsfw:        NsfwColumn,
-		Hidden:      HiddenColumn,
-		CreatedAt:   CreatedAtColumn,
-		UpdatedAt:   UpdatedAtColumn,
+		UUID:            UUIDColumn,
+		LibraryID:       LibraryIDColumn,
+		ArchivePath:     ArchivePathColumn,
+		Title:           TitleColumn,
+		TitleNative:     TitleNativeColumn,
+		TitleTranslated: TitleTranslatedColumn,
+		Category:        CategoryColumn,
+		Series:          SeriesColumn,
+		Released:        ReleasedColumn,
+		Language:        LanguageColumn,
+		Translated:      TranslatedColumn,
+		Nsfw:            NsfwColumn,
+		Hidden:          HiddenColumn,
+		ImageCount:      ImageCountColumn,
+		ArchiveSize:     ArchiveSizeColumn,
+		ArchiveHash:     ArchiveHashColumn,
+		Thumbnail:       ThumbnailColumn,
+		CreatedAt:       CreatedAtColumn,
+		UpdatedAt:       UpdatedAtColumn,
 
 		AllColumns:     allColumns,
 		MutableColumns: mutableColumns,
