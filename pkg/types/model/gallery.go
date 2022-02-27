@@ -12,25 +12,23 @@ import (
 )
 
 type Gallery struct {
-	UUID        string `sql:"primary_key"`
-	LibraryID   int32
-	ArchivePath string
-	Title       string
-	TitleNative *string
-	TitleShort  *string
-	Released    *string
-	Circle      *string
-	Artists     *string
-	Series      *string
-	Category    *string
-	Language    *string
-	Translated  *bool
-	ImageCount  *int32
-	ArchiveSize *int32
-	ArchiveHash *string
-	Thumbnail   *string
-	Nsfw        bool
-	Hidden      bool
-	CreatedAt   time.Time
-	UpdatedAt   time.Time
+	UUID            string `sql:"primary_key"`
+	LibraryID       int32
+	ArchivePath     string
+	Title           string
+	TitleNative     *string
+	TitleTranslated *string
+	Category        *string
+	Series          *string
+	Released        *string
+	Language        *string
+	Translated      *bool
+	Nsfw            bool
+	Hidden          bool
+	ImageCount      *int32
+	ArchiveSize     *int32
+	ArchiveHash     *string
+	Thumbnail       *string
+	CreatedAt       time.Time
+	UpdatedAt       time.Time
 }

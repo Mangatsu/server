@@ -10,7 +10,7 @@ func TestParseTitle(t *testing.T) {
 		"(C99) [doujin circle (some artist)] very lewd title (Magical Girls) [DL].zip": {
 			Released: "C99",
 			Circle:   "doujin circle",
-			Artists:  "some artist",
+			Artists:  []string{"some artist"},
 			Title:    "very lewd title",
 			Series:   "Magical Girls",
 			Language: "",
@@ -18,7 +18,7 @@ func TestParseTitle(t *testing.T) {
 		"(C99) [doujin circle] very lewd title (Magical Girls) [DL].zip": {
 			Released: "C99",
 			Circle:   "doujin circle",
-			Artists:  "",
+			Artists:  []string{""},
 			Title:    "very lewd title",
 			Series:   "Magical Girls",
 			Language: "",
@@ -26,7 +26,7 @@ func TestParseTitle(t *testing.T) {
 		"[doujin circle] very lewd title (Magical Girls) [DL].zip": {
 			Released: "",
 			Circle:   "doujin circle",
-			Artists:  "",
+			Artists:  []string{""},
 			Title:    "very lewd title",
 			Series:   "Magical Girls",
 			Language: "",
@@ -34,7 +34,7 @@ func TestParseTitle(t *testing.T) {
 		"(C99) [doujin circle] very lewd title [DL].zip": {
 			Released: "C99",
 			Circle:   "doujin circle",
-			Artists:  "",
+			Artists:  []string{""},
 			Title:    "very lewd title",
 			Series:   "",
 			Language: "",
@@ -43,8 +43,17 @@ func TestParseTitle(t *testing.T) {
 
 	for title, want := range wantMap {
 		got := ParseTitle(title)
-		if got != want {
+		if got.Released != want.Released &&
+			got.Circle != want.Circle &&
+			got.Title != want.Title &&
+			got.Series != want.Series &&
+			got.Language != want.Language {
 			t.Errorf("Parsed title (%s) didn't match the expected result", title)
+		}
+		for i, artist := range got.Artists {
+			if artist != want.Artists[i] {
+				t.Errorf("Parsed title's (%s) artists didn't match the expected result", title)
+			}
 		}
 	}
 }
