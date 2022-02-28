@@ -12,7 +12,7 @@ require (
 	github.com/google/uuid v1.3.0
 	github.com/gorilla/mux v1.8.0
 	github.com/joho/godotenv v1.4.0
-	github.com/mattn/go-sqlite3 v1.14.11
+	github.com/mattn/go-sqlite3 v1.14.12
 	github.com/mholt/archiver/v4 v4.0.0-alpha.4
 	github.com/pressly/goose/v3 v3.5.3
 	github.com/rs/cors v1.8.2
@@ -36,7 +36,7 @@ require (
 	github.com/therootcompany/xz v1.0.1 // indirect
 	github.com/ulikunitz/xz v0.5.10 // indirect
 	golang.org/x/image v0.0.0-20211028202545-6944b10bf410 // indirect
-	golang.org/x/sys v0.0.0-20220224120231-95c6836cb0e7 // indirect
+	golang.org/x/sys v0.0.0-20220227234510-4e6760a101f9 // indirect
 	golang.org/x/text v0.3.7 // indirect
 	gopkg.in/yaml.v3 v3.0.0-20210107192922-496545a6307b // indirect
 )
