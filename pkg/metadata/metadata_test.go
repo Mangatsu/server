@@ -101,3 +101,28 @@ func TestParseX(t *testing.T) {
 		t.Error("parsed external info didn't match the expected result")
 	}
 }
+
+func TestParseHath(t *testing.T) {
+	gotGallery, gotTags, err := ParseHath("../../testdata/hath.txt")
+	if err != nil {
+		t.Error("Error parsing galleryinfo.json:", err)
+		return
+	}
+
+	if *gotGallery.TitleNative != "(C88) [hサークル] とてもエッチなタイトル (魔法少女)" {
+		t.Error("parsed gallery didn't match the expected result")
+	}
+
+	wantTags := map[string]string{}
+	wantTags["mahou shoujo"] = "parody"
+	wantTags["hcircle"] = "group"
+	wantTags["group"] = "female"
+	wantTags["thigh high boots"] = "female"
+	wantTags["artbook"] = "other"
+
+	for _, gotTag := range gotTags {
+		if wantTags[gotTag.Name] != gotTag.Namespace {
+			t.Error("parsed tags didn't match expected results: ", wantTags[gotTag.Namespace], " - ", gotTag.Name)
+		}
+	}
+}
