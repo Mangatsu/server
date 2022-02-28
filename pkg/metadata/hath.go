@@ -36,6 +36,7 @@ func ParseHath(filePath string) (model.Gallery, []model.Tag, error) {
 		if strings.HasPrefix(line, "Title:") {
 			title := strings.TrimSpace(strings.TrimPrefix(line, "Title:"))
 			gallery.TitleNative = &title
+			continue
 		}
 
 		if strings.HasPrefix(line, "Tags:") {

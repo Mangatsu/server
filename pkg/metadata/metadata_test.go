@@ -105,7 +105,7 @@ func TestParseX(t *testing.T) {
 func TestParseHath(t *testing.T) {
 	gotGallery, gotTags, err := ParseHath("../../testdata/hath.txt")
 	if err != nil {
-		t.Error("Error parsing galleryinfo.json:", err)
+		t.Error("Error parsing galleryinfo.txt:", err)
 		return
 	}
 
@@ -119,6 +119,37 @@ func TestParseHath(t *testing.T) {
 	wantTags["group"] = "female"
 	wantTags["thigh high boots"] = "female"
 	wantTags["artbook"] = "other"
+
+	for _, gotTag := range gotTags {
+		if wantTags[gotTag.Name] != gotTag.Namespace {
+			t.Error("parsed tags didn't match expected results: ", wantTags[gotTag.Namespace], " - ", gotTag.Name)
+		}
+	}
+}
+
+func TestParseEHDL(t *testing.T) {
+	gotGallery, gotTags, err := ParseEHDL("../../testdata/ehdl.txt")
+	if err != nil {
+		t.Error("Error parsing ehdl.txt:", err)
+		return
+	}
+
+	println("gotGallery.ArchiveSize:", *gotGallery.ArchiveSize)
+	if gotGallery.Title != "[CRAZY CIRCLE (Hana)] Oppai Oppai Oppai" ||
+		*gotGallery.TitleNative != "[CRAZY CIRCLE (はな)] おっぱいおっぱいおっぱい" ||
+		*gotGallery.Category != "doujinshi" ||
+		*gotGallery.Language != "Japanese" ||
+		*gotGallery.ImageCount != int32(12) ||
+		*gotGallery.ArchiveSize != int32(69690002) {
+		t.Error("parsed gallery didn't match the expected result")
+	}
+
+	wantTags := map[string]string{}
+	wantTags["crazy circle"] = "group"
+	wantTags["artist"] = "hana"
+	wantTags["group"] = "female"
+	wantTags["fft threesome"] = "female"
+	wantTags["stockings"] = "female"
 
 	for _, gotTag := range gotTags {
 		if wantTags[gotTag.Name] != gotTag.Namespace {
