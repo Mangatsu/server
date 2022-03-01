@@ -135,7 +135,7 @@ func ParseMetadata(metaTypes map[MetaType]bool) {
 					}
 				}
 
-				if err = db.UpdateGallery(newGallery, tags, &reference, true); err != nil {
+				if err = db.UpdateGallery(newGallery, tags, reference, true); err != nil {
 					log.Debugf("Couldn't tag gallery: %s. Message: %s", gallery.ArchivePath, err)
 					continue
 				}
@@ -162,7 +162,7 @@ func ParseMetadata(metaTypes map[MetaType]bool) {
 					reference.MetaMatch = &permil
 				}
 
-				err = db.UpdateGallery(gallery, tags, &reference, true)
+				err = db.UpdateGallery(gallery, tags, reference, true)
 				if err != nil {
 					log.Debugf("Couldn't tag gallery: %s. Message: %s", gallery.ArchivePath, err)
 					continue
