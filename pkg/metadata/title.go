@@ -115,7 +115,7 @@ func ParseTitles(tryNative bool, overwrite bool) {
 
 				// Set as language if it's not already set and is found in the list predefined of languages.
 				if titleMeta.Language != "" && (!hasLanguage || overwrite) {
-					if languages[titleMeta.Language] {
+					if languages[strings.ToLower(titleMeta.Language)] {
 						gallery.Language = &titleMeta.Language
 					} else if match, err := regexp.MatchString(`\d+`, titleMeta.Language); err == nil && match {
 						exhGid, err := strconv.ParseInt(titleMeta.Language, 10, 32)
