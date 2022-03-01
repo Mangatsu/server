@@ -2,15 +2,12 @@ package metadata
 
 import (
 	"encoding/json"
-	"fmt"
 	"github.com/Mangatsu/server/internal/config"
 	"github.com/Mangatsu/server/pkg/db"
 	"github.com/Mangatsu/server/pkg/library"
 	"github.com/Mangatsu/server/pkg/types/model"
 	log "github.com/sirupsen/logrus"
 	"io/fs"
-	"io/ioutil"
-	"math"
 	"path"
 	"path/filepath"
 	"regexp"
@@ -124,44 +121,6 @@ func convertExh(
 	return newGallery, tags, exh
 }
 
-//func needsUpdate(archivePath string) bool {
-//	stat, err := os.Stat(archivePath)
-//	if err != nil {
-//		log.Error("Error in getting archive stats: ", err)
-//		return false
-//	}
-//
-//	modTime := stat.ModTime()
-//	//size := stat.Size()
-//	needsUpdate, _ := db.NeedsUpdate(archivePath, modTime)
-//
-//	return needsUpdate
-//}
-
-// matchInternalMeta tries to find the metadata file either in the archive.
-func matchInternalMeta(fullArchivePath string) ([]byte, string) {
-	metaData, metaSource := library.ReadArchiveInternalMeta(fullArchivePath)
-	return metaData, metaSource
-}
-
-// matchExternalMeta tries to find the metadata file besides it (exact match).
-func matchExternalMeta(fullArchivePath string, libraryPath string) ([]byte, string) {
-	externalJSON := library.ArchiveExtensions.ReplaceAllString(fullArchivePath, ".json")
-
-	if !library.PathExists(externalJSON) {
-		archivesNoMatch = append(archivesNoMatch, NoMatchPaths{libraryPath: libraryPath, fullPath: fullArchivePath})
-		return nil, ""
-	}
-
-	metaData, err := library.ReadJSON(externalJSON)
-	if err != nil {
-		log.Debug("Couldn't read external metadata: ", err)
-		return nil, ""
-	}
-
-	return metaData, config.RelativePath(libraryPath, externalJSON)
-}
-
 type FuzzyResult struct {
 	MetaTitleMatch     bool
 	Similarity         float64
@@ -235,81 +194,12 @@ func fuzzyMatchExternalMeta(archivePath string, libraryPath string, f fs.FileInf
 	return fuzzyResult, exhGallery
 }
 
-// ParseX parses x JSON files (x: https://github.com/dnsev-h/x).
-func ParseX() {
-	libraries, err := db.GetLibraries()
+// ParseX parses x JSON file (x: https://github.com/dnsev-h/x).
+func ParseX(metaData []byte, metaPath string, archivePath string, internal bool) (model.Gallery, []model.Tag, model.Reference, error) {
+	exhGallery, err := unmarshalExhJSON(metaData)
 	if err != nil {
-		log.Error("Libraries could not be retrieved to parse x JSON files: ", err)
-		return
+		return model.Gallery{}, nil, model.Reference{}, err
 	}
-
-	for _, galleryLibrary := range libraries {
-		for _, gallery := range galleryLibrary.Galleries {
-			fullPath := config.BuildLibraryPath(galleryLibrary.Path, gallery.ArchivePath)
-			//if !needsUpdate(fullPath) {
-			//	continue
-			//}
-
-			var metaData []byte
-			var metaPath string
-			internal := false
-
-			metaData, metaPath = matchInternalMeta(fullPath)
-			if metaData != nil {
-				internal = true
-			}
-
-			if !internal {
-				metaData, metaPath = matchExternalMeta(fullPath, galleryLibrary.Path)
-			}
-
-			if metaData != nil {
-				exhGallery, err := unmarshalExhJSON(metaData)
-				if err != nil {
-					log.Debug("Couldn't unmarshal JSON: ", err)
-					continue
-				}
-
-				newGallery, tags, external := convertExh(exhGallery, gallery.ArchivePath, metaPath, internal)
-				if err = db.UpdateGallery(newGallery, tags, external, true); err != nil {
-					log.Debugf("Couldn't tag gallery: %s. Message: %s", gallery.ArchivePath, err)
-					continue
-				}
-			}
-		}
-	}
-
-	// Fuzzy parsing for all archives that didn't have an exact match.
-	for _, noMatch := range archivesNoMatch {
-		onlyDir := filepath.Dir(noMatch.fullPath)
-		files, err := ioutil.ReadDir(onlyDir)
-		if err != nil {
-			log.Debug("Couldn't read dir while fuzzy matching: ", err)
-		}
-
-		for _, f := range files {
-			r, exhGallery := fuzzyMatchExternalMeta(noMatch.fullPath, noMatch.libraryPath, f)
-
-			if r.MatchedArchivePath != "" && r.MetaTitleMatch || r.Similarity > 0.70 {
-				gallery, tags, external := convertExh(exhGallery, r.MatchedArchivePath, r.RelativeMetaPath, false)
-
-				if !r.MetaTitleMatch {
-					permil := int32(math.Round(r.Similarity * 1000))
-					external.MetaMatch = &permil
-				}
-
-				err = db.UpdateGallery(gallery, tags, external, true)
-				if err != nil {
-					log.Debugf("Couldn't tag gallery: %s. Message: %s", gallery.ArchivePath, err)
-					continue
-				}
-
-				if r.MetaTitleMatch {
-					log.Info("Exact match based on meta titles: ", r.MatchedArchivePath)
-				} else {
-					log.Infof("Fuzzy match (%s): %s", fmt.Sprintf("%.2f", r.Similarity), r.MatchedArchivePath)
-				}
-			}
-		}
-	}
+	gallery, tags, reference := convertExh(exhGallery, archivePath, metaPath, internal)
+	return gallery, tags, reference, nil
 }

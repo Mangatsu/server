@@ -120,7 +120,7 @@ func ParseTitles(tryNative bool, overwrite bool) {
 				gallery.Category = &manga
 			}
 
-			err = db.UpdateGallery(gallery, currentTags, model.Reference{}, true)
+			err = db.UpdateGallery(gallery, currentTags, nil, true)
 			if err != nil {
 				log.Errorf("Error updating gallery %s based on its title: %s", gallery.UUID, err)
 			}

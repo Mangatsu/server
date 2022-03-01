@@ -6,7 +6,6 @@ import (
 	"github.com/Mangatsu/server/pkg/library"
 	"github.com/Mangatsu/server/pkg/metadata"
 	"net/http"
-	"strings"
 )
 
 func scanLibraries(w http.ResponseWriter, r *http.Request) {
@@ -42,25 +41,26 @@ func findMetadata(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	x := r.URL.Query().Get("x")
 	title := r.URL.Query().Get("title")
-	var sources []string
+	x := r.URL.Query().Get("x")
+	ehdl := r.URL.Query().Get("ehdl")
+	hath := r.URL.Query().Get("hath")
 
-	if x == "true" {
-		go metadata.ParseX()
-		sources = append(sources, "X JSON")
-	}
+	metaTypes := make(map[metadata.MetaType]bool)
+	metaTypes[metadata.XMeta] = x == "true"
+	metaTypes[metadata.EHDLMeta] = ehdl == "true"
+	metaTypes[metadata.HathMeta] = hath == "true"
+	go metadata.ParseMetadata(metaTypes)
+
 	if title == "true" {
 		go metadata.ParseTitles(true, false)
-		sources = append(sources, "titles")
 	}
 
 	w.Header().Set("Content-Type", "application/json;charset=UTF-8")
-	if len(sources) > 0 {
-		response := strings.Join(sources, ",")
-		fmt.Fprintf(w, `{ "message": "Started parsing given sources: `+response+`" }`)
+	if metaTypes[metadata.XMeta] || metaTypes[metadata.EHDLMeta] || metaTypes[metadata.HathMeta] || title == "true" {
+		fmt.Fprintf(w, `{ "message": "started parsing given sources" }`)
 		return
 	}
 
-	errorHandler(w, http.StatusBadRequest, "No sources specified.")
+	errorHandler(w, http.StatusBadRequest, "no sources specified")
 }
