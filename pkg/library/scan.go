@@ -57,11 +57,13 @@ func walk(libraryPath string, libraryID int32, libraryLayout config.Layout) fs.W
 			title = d.Name()[:n]
 		}
 
-		err = db.NewGallery(relativePath, libraryID, title, series)
+		uuid, err := db.NewGallery(relativePath, libraryID, title, series)
 		if err != nil {
 			log.Error("Error adding:", err)
 		} else {
-			log.Debug("Added: ", s)
+			// Generates cover thumbnail
+			go ReadArchiveImages(config.BuildLibraryPath(libraryPath, relativePath), uuid, true)
+			log.Debug("Added gallery: ", relativePath)
 		}
 
 		if isImage {

@@ -1,6 +1,7 @@
 package db
 
 import (
+	"database/sql"
 	"github.com/Mangatsu/server/pkg/types/model"
 	. "github.com/Mangatsu/server/pkg/types/table"
 	. "github.com/go-jet/jet/v2/sqlite"
@@ -70,10 +71,10 @@ const (
 )
 
 // NewGallery creates a new gallery
-func NewGallery(archivePath string, libraryID int32, title string, series string) error {
+func NewGallery(archivePath string, libraryID int32, title string, series string) (string, error) {
 	galleryUUID, err := uuid.NewRandom()
 	if err != nil {
-		return err
+		return "", err
 	}
 
 	now := time.Now()
@@ -81,15 +82,24 @@ func NewGallery(archivePath string, libraryID int32, title string, series string
 	if series != "" {
 		stmt = Gallery.
 			INSERT(Gallery.UUID, Gallery.ArchivePath, Gallery.Title, Gallery.LibraryID, Gallery.Series, Gallery.CreatedAt, Gallery.UpdatedAt).
-			VALUES(galleryUUID.String(), archivePath, title, libraryID, series, now, now)
+			VALUES(galleryUUID.String(), archivePath, title, libraryID, series, now, now).
+			RETURNING(Gallery.UUID)
 	} else {
 		stmt = Gallery.
 			INSERT(Gallery.UUID, Gallery.ArchivePath, Gallery.Title, Gallery.LibraryID, Gallery.CreatedAt, Gallery.UpdatedAt).
-			VALUES(galleryUUID.String(), archivePath, title, libraryID, now, now)
+			VALUES(galleryUUID.String(), archivePath, title, libraryID, now, now).
+			RETURNING(Gallery.UUID)
 	}
 
-	_, err = stmt.Exec(db())
-	return err
+	var galleries []model.Gallery
+	err = stmt.Query(db(), &galleries)
+	if err != nil {
+		return "", err
+	}
+	if len(galleries) == 0 {
+		return "", sql.ErrNoRows
+	}
+	return galleries[0].UUID, nil
 }
 
 // UpdateGallery updates a gallery. It also adds tags and references if any.
