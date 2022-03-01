@@ -37,7 +37,7 @@ func ParseTitles(tryNative bool, overwrite bool) {
 
 	for _, library := range libraries {
 		for _, gallery := range library.Galleries {
-			_, currentTags, err := db.GetTags(&gallery.UUID, false)
+			_, currentTags, err := db.GetTags(gallery.UUID, false)
 			if err != nil {
 				log.Error("Tags could not be retrieved when parsing titles: ", err)
 				continue
