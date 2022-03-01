@@ -562,6 +562,19 @@ func GetGallery(galleryUUID *string, userUUID *string) ([]CombinedMetadata, erro
 	return galleries, nil
 }
 
+func GetReference(galleryUUID string) (model.Reference, error) {
+	stmt := SELECT(Reference.AllColumns).
+		FROM(Gallery.LEFT_JOIN(Reference, Reference.GalleryUUID.EQ(String(galleryUUID))))
+
+	var references []model.Reference
+	err := stmt.Query(db(), &references)
+	if err != nil || len(references) == 0 {
+		return model.Reference{}, err
+	}
+
+	return references[0], nil
+}
+
 // GetTags returns all tags.
 func GetTags(galleryUUID string, mapped bool) (MappedTags, []model.Tag, error) {
 	var stmt SelectStatement

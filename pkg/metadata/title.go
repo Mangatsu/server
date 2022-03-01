@@ -9,6 +9,7 @@ import (
 	"path/filepath"
 	"reflect"
 	"regexp"
+	"strconv"
 	"strings"
 )
 
@@ -38,6 +39,7 @@ func ParseTitles(tryNative bool, overwrite bool) {
 	for _, library := range libraries {
 		for _, gallery := range library.Galleries {
 			_, currentTags, err := db.GetTags(gallery.UUID, false)
+			currentReference, err := db.GetReference(gallery.UUID)
 			if err != nil {
 				log.Error("Tags could not be retrieved when parsing titles: ", err)
 				continue
@@ -105,12 +107,23 @@ func ParseTitles(tryNative bool, overwrite bool) {
 						}
 					}
 				}
+
 				// If structured, no need to set the series again.
 				if library.Layout != config.Structured && titleMeta.Series != "" && (!hasSeries || overwrite) {
 					gallery.Series = &titleMeta.Series
 				}
+
+				// Set as language if it's not already set and is found in the list predefined of languages.
 				if titleMeta.Language != "" && (!hasLanguage || overwrite) {
-					gallery.Language = &titleMeta.Language
+					if languages[titleMeta.Language] {
+						gallery.Language = &titleMeta.Language
+					} else if match, err := regexp.MatchString(`\d+`, titleMeta.Language); err == nil && match {
+						exhGid, err := strconv.ParseInt(titleMeta.Language, 10, 32)
+						if err == nil {
+							exhGidInt32 := int32(exhGid)
+							currentReference.ExhGid = &exhGidInt32
+						}
+					}
 				}
 			}
 
@@ -120,7 +133,7 @@ func ParseTitles(tryNative bool, overwrite bool) {
 				gallery.Category = &manga
 			}
 
-			err = db.UpdateGallery(gallery, currentTags, model.Reference{}, true)
+			err = db.UpdateGallery(gallery, currentTags, currentReference, true)
 			if err != nil {
 				log.Errorf("Error updating gallery %s based on its title: %s", gallery.UUID, err)
 			}
