@@ -37,24 +37,24 @@ func thumbnailWalker(onlyCover bool) {
 
 	for _, library := range libraries {
 		for _, gallery := range library.Galleries {
-			galleryThumbnailPath := config.BuildCachePath("thumbnails", gallery.UUID)
-			if !PathExists(galleryThumbnailPath) {
-				err := os.Mkdir(galleryThumbnailPath, os.ModePerm)
-				if err != nil {
-					log.Error(err)
-					continue
-				}
-			}
-
 			fullPath := config.BuildLibraryPath(library.Path, gallery.ArchivePath)
-			readArchiveImages(fullPath, gallery.UUID, onlyCover)
+			go ReadArchiveImages(fullPath, gallery.UUID, onlyCover)
 		}
 	}
 }
 
-// readArchiveImages reads given archive ands generates thumbnails for found images.
+// ReadArchiveImages reads given archive ands generates thumbnails for found images.
 // If onlyCover is true, only covers are generated and the name of cover is saved to db, otherwise covers are generated.
-func readArchiveImages(archivePath string, galleryUUID string, onlyCover bool) {
+func ReadArchiveImages(archivePath string, galleryUUID string, onlyCover bool) {
+	galleryThumbnailPath := config.BuildCachePath("thumbnails", galleryUUID)
+	if !PathExists(galleryThumbnailPath) {
+		err := os.Mkdir(galleryThumbnailPath, os.ModePerm)
+		if err != nil {
+			log.Error("Couldn't create thumbnail dir: ", err)
+			return
+		}
+	}
+
 	fsys, err := archiver.FileSystem(archivePath)
 	if err != nil {
 		log.Error("Error reading '", archivePath, "' on trying to generate thumbnails")
@@ -85,9 +85,8 @@ func readArchiveImages(archivePath string, galleryUUID string, onlyCover bool) {
 		if d.IsDir() {
 			cacheInnerDir := config.BuildCachePath("thumbnails", galleryUUID, d.Name())
 			if !PathExists(cacheInnerDir) {
-				log.Info("Creating thumbnail dir: " + cacheInnerDir)
 				if err = os.Mkdir(cacheInnerDir, os.ModePerm); err != nil {
-					log.Error("Couldn't create thumbnail dir: ", err)
+					log.Error("Couldn't create inner thumbnail dir: ", err)
 					return err
 				}
 			}
@@ -113,7 +112,7 @@ func readArchiveImages(archivePath string, galleryUUID string, onlyCover bool) {
 
 		err = generateThumbnail(galleryUUID, imgName, content, onlyCover)
 		if err != nil {
-			log.Error("Couldn't generate thumbnail for", d.Name())
+			log.Error("Couldn't generate thumbnail for: ", d.Name())
 			return err
 		}
 
