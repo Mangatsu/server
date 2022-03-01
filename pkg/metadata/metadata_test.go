@@ -72,7 +72,7 @@ func TestParseX(t *testing.T) {
 	}
 
 	archivePath := "(C99) [同人サークル (とあるアーティスト)] とてもエッチなタイトル (魔法少女) [DL版].zip"
-	gotGallery, gotTags, gotExternal := convertExh(exhGallery, archivePath, "info.json", true)
+	gotGallery, gotTags, gotReference := convertExh(exhGallery, archivePath, "info.json", true)
 
 	if gotGallery.Title != "(C99) [doujin circle (some artist)] very lewd title (Magical Girls) [DL]" ||
 		*gotGallery.TitleNative != "(C99) [同人サークル (とあるアーティスト)] とてもエッチなタイトル (魔法少女) [DL版]" ||
@@ -97,8 +97,8 @@ func TestParseX(t *testing.T) {
 		}
 	}
 
-	if *gotExternal.MetaPath != "info.json" || *gotExternal.ExhGid != int32(1) || *gotExternal.ExhToken != "abc" {
-		t.Error("parsed external info didn't match the expected result")
+	if *gotReference.MetaPath != "info.json" || *gotReference.ExhGid != int32(1) || *gotReference.ExhToken != "abc" {
+		t.Error("parsed reference info didn't match the expected result")
 	}
 }
 

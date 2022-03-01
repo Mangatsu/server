@@ -1,10 +1,8 @@
 package library
 
 import (
-	"errors"
 	"github.com/Mangatsu/server/internal/config"
 	"github.com/facette/natsort"
-	"github.com/mholt/archiver/v4"
 	log "github.com/sirupsen/logrus"
 	"io"
 	"io/fs"
@@ -21,7 +19,7 @@ func closeFile(f interface{ Close() error }) {
 	}
 }
 
-func readAll(fsys fs.FS, filename string) ([]byte, error) {
+func ReadAll(fsys fs.FS, filename string) ([]byte, error) {
 	archive, err := fsys.Open(filename)
 	if err != nil {
 		return nil, err
@@ -58,38 +56,6 @@ func readCache(dst string, uuid string) ([]string, int) {
 	}
 
 	return files, count
-}
-
-// ReadArchiveInternalMeta reads the internal metadata (info.json or info.txt) from an archive
-func ReadArchiveInternalMeta(archivePath string) ([]byte, string) {
-	fsys, err := archiver.FileSystem(archivePath)
-	if err != nil {
-		log.Error("Error opening archive: ", err)
-		return nil, ""
-	}
-
-	var content []byte
-	var filename string
-
-	err = fs.WalkDir(fsys, ".", func(s string, d fs.DirEntry, err error) error {
-		if err != nil {
-			return err
-		}
-
-		// TODO: Change check to this when txt metafiles are supported: MetaExtensions.MatchString(d.Name())
-		if d.Name() == "info.json" {
-			content, err = readAll(fsys, s)
-			if err != nil {
-				return err
-			}
-
-			filename = s
-			return errors.New("terminate walk")
-		}
-		return nil
-	})
-
-	return content, filename
 }
 
 func ReadGallery(archivePath string, uuid string) ([]string, int) {

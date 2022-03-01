@@ -94,7 +94,7 @@ func NewGallery(archivePath string, libraryID int32, title string, series string
 
 // UpdateGallery updates a gallery. It also adds tags and references if any.
 // If internalScan is true, the gallery is matched by its archive path, not UUID.
-func UpdateGallery(gallery model.Gallery, tags []model.Tag, reference model.Reference, internalScan bool) error {
+func UpdateGallery(gallery model.Gallery, tags []model.Tag, reference *model.Reference, internalScan bool) error {
 	var tagIDs []int32
 	if tags != nil {
 		deleteStmt := GalleryTag.DELETE().WHERE(GalleryTag.GalleryUUID.EQ(String(gallery.UUID)))
@@ -179,7 +179,7 @@ func UpdateGallery(gallery model.Gallery, tags []model.Tag, reference model.Refe
 	}
 
 	// Insert reference
-	if internalScan {
+	if internalScan && reference != nil {
 		newReference := model.Reference{
 			GalleryUUID:  galleries[0].UUID,
 			MetaPath:     reference.MetaPath,

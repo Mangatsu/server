@@ -106,7 +106,7 @@ func readArchiveImages(archivePath string, galleryUUID string, onlyCover bool) {
 		n := strings.LastIndex(s, imgExtension)
 		imgName := s[:n]
 
-		content, err := readAll(fsys, s)
+		content, err := ReadAll(fsys, s)
 		if err != nil {
 			return err
 		}
