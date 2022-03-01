@@ -152,7 +152,7 @@ func returnTags(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	tags, _, err := db.GetTags(nil, true)
+	tags, _, err := db.GetTags("", true)
 	if handleResult(w, tags, err, true) {
 		return
 	}

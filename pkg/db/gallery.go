@@ -542,14 +542,13 @@ func GetGallery(galleryUUID *string, userUUID *string) ([]CombinedMetadata, erro
 }
 
 // GetTags returns all tags.
-func GetTags(galleryUUID *string, mapped bool) (MappedTags, []model.Tag, error) {
+func GetTags(galleryUUID string, mapped bool) (MappedTags, []model.Tag, error) {
 	var stmt SelectStatement
-	if galleryUUID != nil {
-		stmt = stmt.WHERE(GalleryTag.GalleryUUID.EQ(String(*galleryUUID))).
-			FROM(Gallery.
-				LEFT_JOIN(GalleryTag, GalleryTag.GalleryUUID.EQ(Gallery.UUID)).
-				LEFT_JOIN(Tag, Tag.ID.EQ(GalleryTag.TagID)),
-			)
+	if galleryUUID != "" {
+		stmt = SELECT(Tag.Namespace, Tag.Name).FROM(Gallery.
+			LEFT_JOIN(GalleryTag, GalleryTag.GalleryUUID.EQ(String(galleryUUID))).
+			LEFT_JOIN(Tag, Tag.ID.EQ(GalleryTag.TagID)),
+		)
 	} else {
 		stmt = SELECT(Tag.Namespace, Tag.Name).FROM(Tag)
 	}
