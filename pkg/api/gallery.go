@@ -252,7 +252,7 @@ func updateGallery(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 
-	if err := db.UpdateGallery(newGallery, tags, &newReference, false); err != nil {
+	if err := db.UpdateGallery(newGallery, tags, newReference, false); err != nil {
 		errorHandler(w, http.StatusInternalServerError, "")
 		return
 	}

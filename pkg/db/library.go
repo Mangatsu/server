@@ -49,7 +49,7 @@ func GetOnlyLibraries() ([]model.Library, error) {
 
 func GetLibraries() ([]CombinedLibrary, error) {
 	stmt := SELECT(Library.AllColumns, Gallery.AllColumns).
-		FROM(Library.INNER_JOIN(Gallery, Gallery.LibraryID.EQ(Library.ID)))
+		FROM(Library.LEFT_JOIN(Gallery, Gallery.LibraryID.EQ(Library.ID)))
 	var libraries []CombinedLibrary
 
 	err := stmt.Query(db(), &libraries)

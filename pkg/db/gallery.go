@@ -104,7 +104,7 @@ func NewGallery(archivePath string, libraryID int32, title string, series string
 
 // UpdateGallery updates a gallery. It also adds tags and references if any.
 // If internalScan is true, the gallery is matched by its archive path, not UUID.
-func UpdateGallery(gallery model.Gallery, tags []model.Tag, reference *model.Reference, internalScan bool) error {
+func UpdateGallery(gallery model.Gallery, tags []model.Tag, reference model.Reference, internalScan bool) error {
 	var tagIDs []int32
 	if tags != nil {
 		deleteStmt := GalleryTag.DELETE().WHERE(GalleryTag.GalleryUUID.EQ(String(gallery.UUID)))
@@ -189,7 +189,28 @@ func UpdateGallery(gallery model.Gallery, tags []model.Tag, reference *model.Ref
 	}
 
 	// Insert reference
-	if internalScan && reference != nil {
+	if internalScan && reference != (model.Reference{}) {
+		var metaPath string
+		var metaMatch int32
+		var exhGid int32
+		var exhToken string
+		var urls string
+		if reference.MetaPath != nil {
+			metaPath = *reference.MetaPath
+		}
+		if reference.MetaMatch != nil {
+			metaMatch = *reference.MetaMatch
+		}
+		if reference.ExhGid != nil {
+			exhGid = *reference.ExhGid
+		}
+		if reference.ExhToken != nil {
+			exhToken = *reference.ExhToken
+		}
+		if reference.Urls != nil {
+			urls = *reference.Urls
+		}
+
 		newReference := model.Reference{
 			GalleryUUID:  galleries[0].UUID,
 			MetaPath:     reference.MetaPath,
@@ -206,12 +227,12 @@ func UpdateGallery(gallery model.Gallery, tags []model.Tag, reference *model.Ref
 			ON_CONFLICT(Reference.GalleryUUID).DO_UPDATE(
 			SET(
 				Reference.MutableColumns.SET(ROW(
-					String(*newReference.MetaPath),
-					Bool(newReference.MetaInternal),
-					Int32(*newReference.MetaMatch),
-					Int32(*newReference.ExhGid),
-					String(*newReference.ExhToken),
-					String(*newReference.Urls),
+					String(metaPath),
+					Bool(reference.MetaInternal),
+					Int32(metaMatch),
+					Int32(exhGid),
+					String(exhToken),
+					String(urls),
 				),
 				),
 			),
@@ -219,7 +240,7 @@ func UpdateGallery(gallery model.Gallery, tags []model.Tag, reference *model.Ref
 		if _, err = insertRefStmt.Exec(tx); err != nil {
 			return err
 		}
-	} else {
+	} else if reference != (model.Reference{}) {
 		newReference := model.Reference{
 			GalleryUUID: galleries[0].UUID,
 			AnilistID:   reference.AnilistID,
