@@ -276,6 +276,10 @@ func UpdateGallery(gallery model.Gallery, tags []model.Tag, reference model.Refe
 func NewTags(tags []model.Tag) ([]int32, error) {
 	var tagIDs []int32
 	for _, tag := range tags {
+		if tag.Namespace == "" || tag.Name == "" {
+			continue
+		}
+
 		selectStmt := Tag.
 			SELECT(Tag.ID, Tag.Namespace, Tag.Name).FROM(Tag).
 			WHERE(Tag.Namespace.EQ(String(tag.Namespace)).AND(Tag.Name.EQ(String(tag.Name))))
