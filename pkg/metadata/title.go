@@ -142,7 +142,7 @@ func ParseTitles(tryNative bool, overwrite bool) {
 }
 
 // ParseTitle parses the filename or title following the standard:
-// (Release) [Circle (Artist)] Title (Series) [Language] or (Release) [Artist] Title (Series) [Language]
+// (Release) [Circle (Artist)] Title (Series) [<usually> Language] or (Release) [Artist] Title (Series) [<usually> Language]
 func ParseTitle(title string) TitleMeta {
 	match := nameRegex.FindStringSubmatch(title)
 	var artists []string
