@@ -25,6 +25,7 @@ func parseQueryParams(r *http.Request) db.Filters {
 	sortBy := db.SortBy(r.URL.Query().Get("sortby"))
 	searchTerm := r.URL.Query().Get("search")
 	category := r.URL.Query().Get("category")
+	series := r.URL.Query().Get("series")
 	favoriteGroup := r.URL.Query().Get("favorite")
 	nsfw := r.URL.Query().Get("nsfw")
 	rawTags := r.URL.Query()["tag"] // namespace:name
@@ -60,6 +61,7 @@ func parseQueryParams(r *http.Request) db.Filters {
 		Limit:         limit,
 		Offset:        offset,
 		Category:      category,
+		Series:        series,
 		FavoriteGroup: favoriteGroup,
 		NSFW:          nsfw,
 		Tags:          tags,
