@@ -396,6 +396,10 @@ func GetGalleries(filters Filters, hidden bool, userUUID *string) ([]CombinedMet
 		conditions = conditions.AND(Gallery.Category.EQ(String(filters.Category)))
 	}
 
+	if filters.Series != "" {
+		conditions = conditions.AND(Gallery.Series.EQ(String(filters.Series)))
+	}
+
 	if !hidden {
 		conditions = conditions.AND(Gallery.Hidden.IS_NOT_TRUE())
 	}
