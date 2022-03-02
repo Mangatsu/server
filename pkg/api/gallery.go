@@ -8,6 +8,7 @@ import (
 	"github.com/Mangatsu/server/pkg/library"
 	"github.com/Mangatsu/server/pkg/types/model"
 	"github.com/gorilla/mux"
+	log "github.com/sirupsen/logrus"
 	"net/http"
 )
 
@@ -82,6 +83,43 @@ func returnGalleries(w http.ResponseWriter, r *http.Request) {
 		for _, gallery := range galleries {
 			galleriesResult = append(galleriesResult, convertMetadata(gallery))
 		}
+	}
+
+	// TODO: Only calculate the amount of sub galleries. No need to get every field.
+	grouped := queryParams.Grouped == "true"
+	groupedResult := map[string][]MetadataResult{}
+	if grouped {
+		for _, gallery := range galleriesResult {
+			if gallery.Series != nil && *gallery.Series != "" {
+				subGalleries, err := db.GetGalleries(db.Filters{Series: *gallery.Series}, true, userUUID)
+				if err != nil {
+					log.Debugf("Error (%s) getting subgalleries: %s", err, *gallery.Series)
+					continue
+				}
+
+				var subGalleriesResult []MetadataResult
+				if len(subGalleries) > 0 {
+					for _, subGallery := range subGalleries {
+						subGalleriesResult = append(subGalleriesResult, convertMetadata(subGallery))
+					}
+				}
+
+				groupedResult[*gallery.Series] = append(groupedResult[*gallery.Series], subGalleriesResult...)
+			} else {
+				groupedResult[gallery.UUID] = append(groupedResult[gallery.UUID], gallery)
+			}
+		}
+	}
+
+	if grouped {
+		resultToJSON(w, struct {
+			Data  map[string][]MetadataResult
+			Count int
+		}{
+			Data:  groupedResult,
+			Count: count,
+		})
+		return
 	}
 
 	resultToJSON(w, struct {

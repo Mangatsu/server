@@ -28,6 +28,7 @@ func parseQueryParams(r *http.Request) db.Filters {
 	favoriteGroup := r.URL.Query().Get("favorite")
 	nsfw := r.URL.Query().Get("nsfw")
 	rawTags := r.URL.Query()["tag"] // namespace:name
+	grouped := r.URL.Query().Get("grouped")
 
 	var tags []model.Tag
 	for _, rawTag := range rawTags {
@@ -62,6 +63,7 @@ func parseQueryParams(r *http.Request) db.Filters {
 		FavoriteGroup: favoriteGroup,
 		NSFW:          nsfw,
 		Tags:          tags,
+		Grouped:       grouped,
 	}
 }
 

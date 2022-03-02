@@ -51,6 +51,7 @@ type Filters struct {
 	FavoriteGroup string
 	NSFW          string
 	Tags          []model.Tag
+	Grouped       string
 }
 
 type SortBy string
@@ -439,7 +440,14 @@ func GetGalleries(filters Filters, hidden bool, userUUID *string) ([]CombinedMet
 		}
 	}
 
-	filtersStmt = filtersStmt.WHERE(conditions).LIMIT(filters.Limit).OFFSET(filters.Offset)
+	if filters.Grouped == "true" {
+		filtersStmt = filtersStmt.WHERE(conditions).LIMIT(filters.Limit).OFFSET(filters.Offset).GROUP_BY(Raw(`IFNULL(series, uuid)`))
+	} else if filters.Offset == 0 || filters.Limit == 0 {
+		filtersStmt = filtersStmt.WHERE(conditions)
+	} else {
+		filtersStmt = filtersStmt.WHERE(conditions).LIMIT(filters.Limit).OFFSET(filters.Offset)
+	}
+
 	galleryUUID := Gallery.UUID.From(filtersStmt.AsTable("galleries"))
 
 	// Constructing statement
@@ -483,7 +491,7 @@ func GetGalleries(filters Filters, hidden bool, userUUID *string) ([]CombinedMet
 	}
 
 	// Show RAW SQL-query for debugging
-	// println(galleriesStmt.DebugSql())
+	//println(galleriesStmt.DebugSql())
 
 	var galleries []CombinedMetadata
 	err := galleriesStmt.Query(db(), &galleries)
