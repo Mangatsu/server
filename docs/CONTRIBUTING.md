@@ -17,7 +17,7 @@ Use [Conventional Commits](https://www.conventionalcommits.org/en/v1.0.0/) when 
 - Automatic models and types: `jet -dsn="file:///full/path/to/data.sqlite" -path=types` based on the db schema
 
 ### 🔬 Testing
-- Test: `go test ./... -v  -coverprofile "coverage.out"` to test
+- Test: `go test ./... -v  -coverprofile "coverage.out"`
 - Show coverage report: `go tool cover -html "coverage.out"`
 
 ### 📝 Generating docs
