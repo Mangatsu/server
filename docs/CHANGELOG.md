@@ -4,6 +4,23 @@ All notable changes of this project will be documented in this file.
 
 > The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/), and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.3.0] - 2022-03-20
+
+### Added
+- Support for returning galleries grouped by Series from the API
+- Hath (H@H) and EHDL meta text file parsers
+- Support for calling all metadata parsers through the API
+- Validations when updating gallery
+
+### Fixed
+- GetTags SQL query
+
+### Changed
+- Updated dependencies
+- Updated Go to 1.18
+- Harden title language name parsing ([list of supported languages](https://github.com/Mangatsu/server/blob/main/pkg/metadata/language.go))
+- Disallow empty namespaces or names in tags
+
 ## [0.2.0] - 2022-02-27
 
 ### Added
@@ -15,7 +32,7 @@ All notable changes of this project will be documented in this file.
 
 ### Changed
 - Renamed TitleShort column to TitleTranslated
-- Upgraded packages
+- Updated dependencies
 
 ### Removed
 - Artists and Circle columns from Gallery
