@@ -141,19 +141,19 @@ func returnGallery(w http.ResponseWriter, r *http.Request) {
 	params := mux.Vars(r)
 	galleryUUID := params["uuid"]
 
-	galleries, err := db.GetGallery(&galleryUUID, userUUID)
-	if handleResult(w, galleries, err, false) {
+	gallery, err := db.GetGallery(&galleryUUID, userUUID)
+	if handleResult(w, gallery, err, false) {
 		return
 	}
 
-	gallery := convertMetadata(galleries[0])
+	galleryWithMeta := convertMetadata(gallery)
 	files, count := library.ReadGallery(
-		config.BuildLibraryPath(gallery.Library.Path, gallery.ArchivePath),
-		gallery.UUID,
+		config.BuildLibraryPath(galleryWithMeta.Library.Path, galleryWithMeta.ArchivePath),
+		galleryWithMeta.UUID,
 	)
 
 	resultToJSON(w, GalleryResult{
-		Meta:  gallery,
+		Meta:  galleryWithMeta,
 		Files: files,
 		Count: count,
 	})
@@ -166,19 +166,19 @@ func returnRandomGallery(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	galleries, err := db.GetGallery(nil, userUUID)
-	if handleResult(w, galleries, err, false) {
+	gallery, err := db.GetGallery(nil, userUUID)
+	if handleResult(w, gallery, err, false) {
 		return
 	}
 
-	gallery := convertMetadata(galleries[0])
+	galleryWithMeta := convertMetadata(gallery)
 	files, count := library.ReadGallery(
-		config.BuildLibraryPath(gallery.Library.Path, gallery.ArchivePath),
-		gallery.UUID,
+		config.BuildLibraryPath(galleryWithMeta.Library.Path, galleryWithMeta.ArchivePath),
+		galleryWithMeta.UUID,
 	)
 
 	resultToJSON(w, GalleryResult{
-		Meta:  gallery,
+		Meta:  galleryWithMeta,
 		Files: files,
 		Count: count,
 	})
@@ -291,7 +291,7 @@ func updateGallery(w http.ResponseWriter, r *http.Request) {
 	}
 
 	if err := db.UpdateGallery(newGallery, tags, newReference, false); err != nil {
-		errorHandler(w, http.StatusInternalServerError, "")
+		errorHandler(w, http.StatusInternalServerError, err.Error())
 		return
 	}
 	fmt.Fprintf(w, `{ "message": "gallery updated" }`)
