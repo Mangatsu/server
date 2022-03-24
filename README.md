@@ -1,4 +1,4 @@
-
+  
 <h1 align="center"> Mangatsu</h1>
 
 <p align="center">
@@ -28,6 +28,21 @@
   - **Public**: anyone can access (only read) collection and its galleries
   - Assignable roles (admin, member, viewer), and login sessions (can be managed through web)
 - Local cache and thumbnail support. _File server can be disabled to allow web servers like NGINX to handle the files._
+
+## 🖼️ Preview
+
+| Main Catalogue                                                                  | Main Catalogue (grouped galleries)                                                                      |
+|---------------------------------------------------------------------------------|---------------------------------------------------------------------------------------------------------|
+| [![catalogue](docs/images/thumbnails/catalogue.png)](docs/images/catalogue.png) | [![grouped catalogue](docs/images/thumbnails/catalogue_grouped.png)](docs/images/catalogue_grouped.png) |
+
+| Gallery Page + Editing                                                                            | Series Listing                                                                                 |
+|---------------------------------------------------------------------------------------------------|------------------------------------------------------------------------------------------------|
+| [![editing gallery](docs/images/thumbnails/editing_gallery.png)](docs/images/editing_gallery.png) | [![series listing](docs/images/thumbnails/series_listing.png)](docs/images/series_listing.png) |
+
+
+| User Settings                                                                | Administration                                                               |
+|------------------------------------------------------------------------------|------------------------------------------------------------------------------|
+| [![settings](docs/images/thumbnails/settings.png)](docs/images/settings.png) | [![administration](docs/images/thumbnails/admin.png)](docs/images/admin.png) |
 
 ## 📌 Clients
 
