@@ -462,7 +462,7 @@ func GetGalleries(filters Filters, hidden bool, userUUID *string) ([]CombinedMet
 
 	if filters.Grouped == "true" {
 		filtersStmt = filtersStmt.WHERE(conditions).LIMIT(filters.Limit).OFFSET(filters.Offset).GROUP_BY(Raw(`IFNULL(series, uuid)`))
-	} else if filters.Offset == 0 || filters.Limit == 0 {
+	} else if filters.Limit == 0 {
 		filtersStmt = filtersStmt.WHERE(conditions)
 	} else {
 		filtersStmt = filtersStmt.WHERE(conditions).LIMIT(filters.Limit).OFFSET(filters.Offset)
