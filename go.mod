@@ -8,7 +8,7 @@ require (
 	github.com/disintegration/imaging v1.6.2
 	github.com/facette/natsort v0.0.0-20181210072756-2cd4dd1e2dcb
 	github.com/go-jet/jet/v2 v2.7.1
-	github.com/golang-jwt/jwt/v4 v4.4.0
+	github.com/golang-jwt/jwt/v4 v4.4.1
 	github.com/google/uuid v1.3.0
 	github.com/gorilla/mux v1.8.0
 	github.com/joho/godotenv v1.4.0
@@ -17,7 +17,7 @@ require (
 	github.com/pressly/goose/v3 v3.5.3
 	github.com/rs/cors v1.8.2
 	github.com/sirupsen/logrus v1.8.1
-	golang.org/x/crypto v0.0.0-20220315160706-3147a52a75dd
+	golang.org/x/crypto v0.0.0-20220331220935-ae2d96664a29
 )
 
 require (
@@ -35,8 +35,8 @@ require (
 	github.com/stretchr/testify v1.7.1 // indirect
 	github.com/therootcompany/xz v1.0.1 // indirect
 	github.com/ulikunitz/xz v0.5.10 // indirect
-	golang.org/x/image v0.0.0-20220302094943-723b81ca9867 // indirect
-	golang.org/x/sys v0.0.0-20220319134239-a9b59b0215f8 // indirect
+	golang.org/x/image v0.0.0-20220321031419-a8550c1d254a // indirect
+	golang.org/x/sys v0.0.0-20220403020550-483a9cbc67c0 // indirect
 	golang.org/x/text v0.3.7 // indirect
 	gopkg.in/yaml.v3 v3.0.0-20210107192922-496545a6307b // indirect
 )
