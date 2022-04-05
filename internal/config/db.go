@@ -2,6 +2,11 @@ package config
 
 import "os"
 
+type DBConfig struct {
+	Dialect        Dialect
+	MigrationsPath MigrationsPath
+}
+
 type Dialect string
 type MigrationsPath string
 
@@ -17,19 +22,17 @@ const (
 	MySQLPath                     = "./pkg/db/migrations/mysql"
 )
 
-func GetDialectAndMigrationsPath() (Dialect, MigrationsPath) {
+func GetDialectAndMigrationsPath() DBConfig {
 	value := os.Getenv("MTSU_DB")
 	switch value {
 	case "sqlite":
-		return SQLite, SQLitePath
+		return DBConfig{Dialect: SQLite, MigrationsPath: SQLitePath}
 	case "postgres":
-		return PostgreSQL, PostgreSQLPath
-	case "mysql":
-		return MySQL, MySQLPath
-	case "mariadb":
-		return MySQL, MySQLPath
+		return DBConfig{Dialect: PostgreSQL, MigrationsPath: PostgreSQLPath}
+	case "mysql", "mariadb":
+		return DBConfig{Dialect: MySQL, MigrationsPath: MySQLPath}
 	default:
-		return SQLite, SQLitePath
+		return DBConfig{Dialect: SQLite, MigrationsPath: SQLitePath}
 	}
 }
 
@@ -60,8 +63,8 @@ func GetDBHost() string {
 func GetDBPort() string {
 	value := os.Getenv("MTSU_DB_PORT")
 	if value == "" {
-		dialect, _ := GetDialectAndMigrationsPath()
-		switch dialect {
+		dbConfig := GetDialectAndMigrationsPath()
+		switch dbConfig.Dialect {
 		case PostgreSQL:
 			return "5432"
 		case MySQL:
