@@ -25,12 +25,24 @@ func db() *sql.DB {
 
 // EnsureLatestVersion ensures that the database is at the latest version by running all migrations.
 func EnsureLatestVersion() {
-	err := goose.SetDialect("sqlite3")
-	if err != nil {
-		log.Fatal("Invalid DB driver", "driver", "sqlite3", err)
+	driver := config.GetDBDriver()
+	var err error
+	migrationsPath := ""
+
+	switch driver {
+	case config.SQLite:
+		err = goose.SetDialect("sqlite3")
+		migrationsPath = "./pkg/db/migrations/sqlite"
+	case config.PostgreSQL:
+		err = goose.SetDialect("postgres")
+		migrationsPath = "./pkg/db/migrations/psql"
 	}
 
-	err = goose.Run("up", db(), "./pkg/db/migrations")
+	if err != nil {
+		log.Fatal("Invalid DB driver", "driver", driver, err)
+	}
+
+	err = goose.Run("up", db(), migrationsPath)
 	if err != nil {
 		log.Fatal("Failed to apply new migrations", err)
 	}
