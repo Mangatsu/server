@@ -2,25 +2,34 @@ package config
 
 import "os"
 
+type Dialect string
+type MigrationsPath string
+
 const (
-	SQLite     string = "sqlite"
-	PostgreSQL        = "postgres"
-	MySQL             = "mysql"
+	SQLite     Dialect = "sqlite"
+	PostgreSQL         = "postgres"
+	MySQL              = "mysql"
 )
 
-func GetDBDriver() string {
+const (
+	SQLitePath     MigrationsPath = "./pkg/db/migrations/sqlite"
+	PostgreSQLPath                = "./pkg/db/migrations/psql"
+	MySQLPath                     = "./pkg/db/migrations/mysql"
+)
+
+func GetDialectAndMigrationsPath() (Dialect, MigrationsPath) {
 	value := os.Getenv("MTSU_DB")
 	switch value {
 	case "sqlite":
-		return SQLite
+		return SQLite, SQLitePath
 	case "postgres":
-		return PostgreSQL
+		return PostgreSQL, PostgreSQLPath
 	case "mysql":
-		return MySQL
+		return MySQL, MySQLPath
 	case "mariadb":
-		return MySQL
+		return MySQL, MySQLPath
 	default:
-		return SQLite
+		return SQLite, SQLitePath
 	}
 }
 
@@ -51,8 +60,8 @@ func GetDBHost() string {
 func GetDBPort() string {
 	value := os.Getenv("MTSU_DB_PORT")
 	if value == "" {
-		driver := GetDBDriver()
-		switch driver {
+		dialect, _ := GetDialectAndMigrationsPath()
+		switch dialect {
 		case PostgreSQL:
 			return "5432"
 		case MySQL:
