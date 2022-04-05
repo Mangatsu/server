@@ -4,11 +4,14 @@ import (
 	"database/sql"
 
 	"github.com/doug-martin/goqu/v9"
+	_ "github.com/doug-martin/goqu/v9/dialect/sqlite3"
 	_ "github.com/mattn/go-sqlite3"
 	"github.com/pressly/goose/v3"
 	log "github.com/sirupsen/logrus"
 )
 
+// Database is a wrapper around the database connection handle
+// and it stores its dialect
 type Database struct {
 	Dialect string
 	Handle *sql.DB
@@ -27,6 +30,11 @@ func Initdb(dialect, connString string) *Database {
 	dialectWrapper := goqu.Dialect(dialect)
 
 	return &Database{dialect, handle, dialectWrapper}
+}
+
+// QB returns a query builder for the database
+func (db *Database) QB() *goqu.Database {
+	return db.DialectWrapper.DB(db.Handle)
 }
 
 func db() *sql.DB {
