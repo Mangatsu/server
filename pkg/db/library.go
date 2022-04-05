@@ -4,6 +4,7 @@ import (
 	"github.com/Mangatsu/server/internal/config"
 	"github.com/Mangatsu/server/pkg/types/model"
 	. "github.com/Mangatsu/server/pkg/types/table"
+	"github.com/doug-martin/goqu/v9"
 	. "github.com/go-jet/jet/v2/sqlite"
 	log "github.com/sirupsen/logrus"
 )
@@ -39,19 +40,34 @@ func StorePaths(givenLibraries []config.Library) error {
 }
 
 func GetOnlyLibraries() ([]model.Library, error) {
-	stmt := SELECT(Library.AllColumns).FROM(Library.Table)
+	// FIXME: it won't work yet!! see GetLibraries for more info
 	var libraries []model.Library
+	err := database.QB().
+		From("library").
+		ScanStructs(&libraries)
 
-	err := stmt.Query(db(), &libraries)
 	return libraries, err
 }
 
 func GetLibraries() ([]CombinedLibrary, error) {
-	stmt := SELECT(Library.AllColumns, Gallery.AllColumns).
-		FROM(Library.LEFT_JOIN(Gallery, Gallery.LibraryID.EQ(Library.ID)))
+	// FIXME: it won't work yet!! CombinedLibrary has to be a plain struct,
+	// something like this:
+	//
+	// type User struct {
+	// 	FirstName string `db:"first_name"`
+	// 	LastName  string `db:"last_name"`
+	// }
 	var libraries []CombinedLibrary
+	err := database.QB().
+		From("library").
+		LeftJoin(
+			goqu.T("gallery"),
+			goqu.On(goqu.Ex{
+				"gallery.id": goqu.I("library.id"),
+			}),
+		).
+		ScanStructs(&libraries)
 
-	err := stmt.Query(db(), &libraries)
 	return libraries, err
 }
 
