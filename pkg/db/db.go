@@ -3,6 +3,7 @@ package db
 import (
 	"database/sql"
 	"github.com/Mangatsu/server/internal/config"
+	_ "github.com/mattn/go-sqlite3"
 	"github.com/pressly/goose/v3"
 	log "github.com/sirupsen/logrus"
 )
