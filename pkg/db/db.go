@@ -14,6 +14,7 @@ import (
 // and it stores its dialect
 type Database struct {
 	Dialect string
+	MigrationsPath string
 	Handle *sql.DB
 	DialectWrapper goqu.DialectWrapper
 }
@@ -27,14 +28,29 @@ func Initdb(dialect, connString string) *Database {
 		log.Fatal(err)
 	}
 
+	migrationsPath := GetMigrationsPath(dialect)
 	dialectWrapper := goqu.Dialect(dialect)
 
-	return &Database{dialect, handle, dialectWrapper}
+	return &Database{dialect, migrationsPath, handle, dialectWrapper}
 }
 
 // QB returns a query builder for the database
 func (db *Database) QB() *goqu.Database {
 	return db.DialectWrapper.DB(db.Handle)
+}
+
+// GetMigrationsPath returns path for the given dialect,
+// or an empty string if it's not known
+func GetMigrationsPath(dialect string) string {
+	// TODO: change hard-coded case strings
+	switch dialect {
+	case "sqlite3":
+		return "./pkg/db/migrations/sqlite"
+	case "postgres":
+		return "./pkg/db/migrations/psql"
+	default:
+		return ""
+	}
 }
 
 func db() *sql.DB {
@@ -49,7 +65,7 @@ func EnsureLatestVersion() {
 		log.Fatal("Invalid DB driver", "driver", database.Dialect, err)
 	}
 
-	err = goose.Run("up", db(), "./pkg/db/migrations")
+	err = goose.Run("up", database.Handle, database.MigrationsPath)
 	if err != nil {
 		log.Fatal("Failed to apply new migrations", err)
 	}
