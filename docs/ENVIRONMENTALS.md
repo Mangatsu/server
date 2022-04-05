@@ -26,6 +26,15 @@ _~~Struck out~~ values have no effect yet._
   - Max size of the cache where galleries are extracted from the library in MB. Can overflow a bit especially if set too low.
 - ~~**MTSU_CACHE_TTL**~~=604800
   - Time to live for the cache in seconds (604800 = 1 week).
+- ~~**MTSU_DB**~~=sqlite
+  - Database type: `sqlite`, `postgres`, `mysql` or `mariadb`
+- ~~**MTSU_DB_HOST**~~=localhost
+  - Hostname of the database server.
+- ~~**MTSU_DB_PORT**~~=5432
+  - Usually 5432 for PostgreSQL and 3306 for MySQL and MariaDB.
+- ~~**MTSU_DB_NAME**~~=mtsu
+- ~~**MTSU_DB_USER**~~=mtsu-user
+- ~~**MTSU_DB_PASSWORD**~~=s3cr3t
 - **MTSU_VISIBILITY**=public
     - **public**: anyone can access the collection and its galleries.
     - **restricted**: users need a global passphrase to access collection and its galleries.
