@@ -11,7 +11,7 @@ _~~Struck out~~ values have no effect yet._
 - **MTSU_HOSTNAME**=localhost
 - **MTSU_PORT**=5050
     - Hostname and port for the server. Use **mtsuserver** as the hostname if using Docker Compose.
-- **MTSU_BASE_PATHS**=freeform1;/home/user/doujinshi;;structured2:/home/user/manga
+- **MTSU_BASE_PATHS**=freeform1;/home/user/doujinshi;;structured2;/home/user/manga
     - Paths to the archive directories. Relative or absolute paths are accepted.
     - First specify the type of the directory and a numerical ID (e.g. freeform1 or structured2) and then the path separated by a semicolon: `;`.
     - Multiple paths can be separated by a double-semicolon: `;;`.
