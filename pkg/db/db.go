@@ -25,12 +25,12 @@ func db() *sql.DB {
 
 // EnsureLatestVersion ensures that the database is at the latest version by running all migrations.
 func EnsureLatestVersion() {
-	dialect, migrationsPath := config.GetDialectAndMigrationsPath()
-	if err := goose.SetDialect(string(dialect)); err != nil {
-		log.Fatal("Invalid DB dialect: ", dialect, ".", err)
+	dbConfig := config.GetDialectAndMigrationsPath()
+	if err := goose.SetDialect(string(dbConfig.Dialect)); err != nil {
+		log.Fatal("Invalid DB dialect: ", dbConfig.Dialect, ".", err)
 	}
 
-	if err := goose.Run("up", db(), string(migrationsPath)); err != nil {
+	if err := goose.Run("up", db(), string(dbConfig.MigrationsPath)); err != nil {
 		log.Fatal("Failed to apply new migrations", err)
 	}
 }
