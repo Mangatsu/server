@@ -31,5 +31,5 @@ Use [Conventional Commits](https://www.conventionalcommits.org/en/v1.0.0/) when 
 
 ## Requirements
 - Go 1.18+
-- SQLite3
+- SQLite3, PostgreSQL, MySQL or MariaDB
 - Docker (optional)
