@@ -3,9 +3,7 @@ package db
 import (
 	"github.com/Mangatsu/server/internal/config"
 	"github.com/Mangatsu/server/pkg/types/model"
-	. "github.com/Mangatsu/server/pkg/types/table"
 	"github.com/doug-martin/goqu/v9"
-	. "github.com/go-jet/jet/v2/sqlite"
 	log "github.com/sirupsen/logrus"
 )
 
