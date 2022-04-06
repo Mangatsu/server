@@ -73,20 +73,22 @@ func GetLibraries() ([]CombinedLibrary, error) {
 
 // getLibrary returns the library from the database based on the ID or path.
 func getLibrary(id int32, path string) ([]model.Library, error) {
-	stmt := SELECT(
-		Library.AllColumns,
-	).FROM(
-		Library.Table,
-	)
+	stmt := database.QB().From("library")
 
 	if path == "" {
-		stmt = stmt.WHERE(Library.ID.EQ(Int32(id)))
+		stmt = stmt.Where(goqu.Ex{
+			"id": id,
+		})
 	} else {
-		stmt = stmt.WHERE(Library.ID.EQ(Int32(id)).OR(Library.Path.EQ(String(path))))
+		stmt = stmt.Where(goqu.ExOr{
+			"id": id,
+			"path": path,
+		})
 	}
 
 	var libraries []model.Library
-	err := stmt.Query(db(), &libraries)
+	err := stmt.ScanStructs(&libraries)
+
 	return libraries, err
 }
 
