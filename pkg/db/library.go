@@ -3,10 +3,17 @@ package db
 import (
 	"github.com/Mangatsu/server/internal/config"
 	"github.com/Mangatsu/server/pkg/types/model"
-	. "github.com/Mangatsu/server/pkg/types/table"
-	. "github.com/go-jet/jet/v2/sqlite"
+	"github.com/doug-martin/goqu/v9"
 	log "github.com/sirupsen/logrus"
 )
+
+// FIXME: it won't work yet!! CombinedLibrary has to be a plain struct,
+// something like this:
+//
+// 	type User struct {
+// 		FirstName string `db:"first_name"`
+// 		LastName  string `db:"last_name"`
+//	}
 
 type CombinedLibrary struct {
 	model.Library
@@ -39,58 +46,81 @@ func StorePaths(givenLibraries []config.Library) error {
 }
 
 func GetOnlyLibraries() ([]model.Library, error) {
-	stmt := SELECT(Library.AllColumns).FROM(Library.Table)
 	var libraries []model.Library
+	err := database.QB().
+		From("library").
+		ScanStructs(&libraries)
 
-	err := stmt.Query(db(), &libraries)
 	return libraries, err
 }
 
 func GetLibraries() ([]CombinedLibrary, error) {
-	stmt := SELECT(Library.AllColumns, Gallery.AllColumns).
-		FROM(Library.LEFT_JOIN(Gallery, Gallery.LibraryID.EQ(Library.ID)))
 	var libraries []CombinedLibrary
+	err := database.QB().
+		From("library").
+		LeftJoin(
+			goqu.T("gallery"),
+			goqu.On(goqu.Ex{
+				"gallery.id": goqu.I("library.id"),
+			}),
+		).
+		ScanStructs(&libraries)
 
-	err := stmt.Query(db(), &libraries)
 	return libraries, err
 }
 
 // getLibrary returns the library from the database based on the ID or path.
 func getLibrary(id int32, path string) ([]model.Library, error) {
-	stmt := SELECT(
-		Library.AllColumns,
-	).FROM(
-		Library.Table,
-	)
+	stmt := database.QB().From("library").Prepared(true)
 
 	if path == "" {
-		stmt = stmt.WHERE(Library.ID.EQ(Int32(id)))
+		stmt = stmt.Where(goqu.Ex{
+			"id": id,
+		})
 	} else {
-		stmt = stmt.WHERE(Library.ID.EQ(Int32(id)).OR(Library.Path.EQ(String(path))))
+		stmt = stmt.Where(goqu.ExOr{
+			"id":   id,
+			"path": path,
+		})
 	}
 
 	var libraries []model.Library
-	err := stmt.Query(db(), &libraries)
+	err := stmt.ScanStructs(&libraries)
+
 	return libraries, err
 }
 
 // newLibrary creates a new library to the database.
 func newLibrary(id int32, path string, layout string) error {
-	stmt := Library.INSERT(Library.ID, Library.Path, Library.Layout).VALUES(id, path, layout).
-		ON_CONFLICT(Library.ID).
-		DO_UPDATE(SET(Library.Path.SET(String(path)), Library.Layout.SET(String(layout))))
-
-	_, err := stmt.Exec(db())
-	if err != nil {
-		log.Error(err)
-	}
+	// does not handle the scenario when the ID exists in db
+	_, err := database.QB().
+		Insert("library").
+		Prepared(true).
+		Rows(goqu.Record{
+			"id":     id,
+			"path":   path,
+			"layout": layout,
+		}).
+		Executor().
+		Exec()
 
 	return err
 }
 
 // updateLibrary updates the library in the database.
 func updateLibrary(id int32, path string, layout string) error {
-	stmt := Library.UPDATE(Library.Path, Library.Layout).SET(path, layout).WHERE(Library.ID.EQ(Int32(id)))
-	_, err := stmt.Exec(db())
+	_, err := database.QB().
+		Update("library").
+		Prepared(true).
+		Set(goqu.Record{
+			"path":   path,
+			"layout": layout,
+		}).
+		Where(goqu.Ex{
+			"id": id,
+		}).
+		Executor().
+		Exec()
+
 	return err
 }
