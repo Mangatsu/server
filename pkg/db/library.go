@@ -7,6 +7,14 @@ import (
 	log "github.com/sirupsen/logrus"
 )
 
+// FIXME: it won't work yet!! CombinedLibrary has to be a plain struct,
+// something like this:
+//
+// 	type User struct {
+// 		FirstName string `db:"first_name"`
+// 		LastName  string `db:"last_name"`
+//	}
+
 type CombinedLibrary struct {
 	model.Library
 	Galleries []model.Gallery
@@ -38,7 +46,6 @@ func StorePaths(givenLibraries []config.Library) error {
 }
 
 func GetOnlyLibraries() ([]model.Library, error) {
-	// FIXME: it won't work yet!! see GetLibraries for more info
 	var libraries []model.Library
 	err := database.QB().
 		From("library").
@@ -48,13 +55,6 @@ func GetOnlyLibraries() ([]model.Library, error) {
 }
 
 func GetLibraries() ([]CombinedLibrary, error) {
-	// FIXME: it won't work yet!! CombinedLibrary has to be a plain struct,
-	// something like this:
-	//
-	// type User struct {
-	// 	FirstName string `db:"first_name"`
-	// 	LastName  string `db:"last_name"`
-	// }
 	var libraries []CombinedLibrary
 	err := database.QB().
 		From("library").
