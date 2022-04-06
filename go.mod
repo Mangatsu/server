@@ -6,6 +6,7 @@ require (
 	github.com/adrg/strutil v0.2.3
 	github.com/chai2010/webp v1.1.1
 	github.com/disintegration/imaging v1.6.2
+	github.com/doug-martin/goqu/v9 v9.18.0
 	github.com/facette/natsort v0.0.0-20181210072756-2cd4dd1e2dcb
 	github.com/go-jet/jet/v2 v2.7.1
 	github.com/golang-jwt/jwt/v4 v4.4.1
