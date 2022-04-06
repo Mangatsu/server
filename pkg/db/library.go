@@ -73,7 +73,7 @@ func GetLibraries() ([]CombinedLibrary, error) {
 
 // getLibrary returns the library from the database based on the ID or path.
 func getLibrary(id int32, path string) ([]model.Library, error) {
-	stmt := database.QB().From("library")
+	stmt := database.QB().From("library").Prepared(true)
 
 	if path == "" {
 		stmt = stmt.Where(goqu.Ex{
