@@ -30,7 +30,7 @@ func register(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if !config.RegistrationsEnabled() || credentials.Role != nil {
+	if !config.Options.Registrations || credentials.Role != nil {
 		authorization := strings.Fields(r.Header.Get("Authorization"))
 		if len(authorization) == 2 {
 			access, _ := verifyJWT(authorization[1], db.Admin)
@@ -83,7 +83,7 @@ func login(w http.ResponseWriter, r *http.Request) {
 			Token: token,
 		})
 		return
-	} else if credentials.Passphrase == config.RestrictedPassphrase() {
+	} else if credentials.Passphrase == config.Credentials.JWTSecret {
 		resultToJSON(w, struct {
 			Token string
 		}{

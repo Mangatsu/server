@@ -57,8 +57,8 @@ func returnInfo(w http.ResponseWriter, _ *http.Request) {
 	}{
 		APIVersion:    1,
 		ServerVersion: "0.3.1",
-		Visibility:    config.CurrentVisibility(),
-		Registrations: config.RegistrationsEnabled(),
+		Visibility:    string(config.Options.Visibility),
+		Registrations: config.Options.Registrations,
 	})
 }
 
@@ -135,7 +135,7 @@ func handleRequests() {
 	r.HandleFunc(baseURL+"/galleries/{uuid:"+uuidRegex+"}/favorite/{name}", setFavorite).Methods("PATCH")
 	r.HandleFunc(baseURL+"/galleries/{uuid:"+uuidRegex+"}/favorite", setFavorite).Methods("PATCH")
 
-	if !config.CacheServerDisabled() {
+	if config.Options.CacheServer {
 		r.PathPrefix("/cache/").Handler(http.StripPrefix("/cache/", http.FileServer(http.Dir(config.BuildCachePath()))))
 	}
 
@@ -155,14 +155,15 @@ func handleRequests() {
 		AllowCredentials: true,
 	}).Handler(r)
 
+	fullAddress := config.Options.Hostname + ":" + config.Options.Port
 	srv := &http.Server{
 		Handler:      handler,
-		Addr:         config.GetAddress() + ":" + config.GetPort(),
+		Addr:         fullAddress,
 		WriteTimeout: 15 * time.Second,
 		ReadTimeout:  15 * time.Second,
 	}
 
-	log.Info("Starting API on: ", config.GetAddress(), ":", config.GetPort())
+	log.Info("Starting API on: ", fullAddress)
 	log.Info(srv.ListenAndServe())
 }
 
