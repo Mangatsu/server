@@ -26,6 +26,11 @@ const (
 	MySQLPath                     = "migrations/mysql"
 )
 
+func GetDBMigrations() bool {
+	// Disables only if explicitly set to false.
+	return os.Getenv("MTSU_DB_MIGRATIONS") != "false"
+}
+
 func GetDialectAndMigrationsPath() DBConfig {
 	value := strings.ToLower(os.Getenv("MTSU_DB"))
 	switch value {
