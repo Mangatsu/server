@@ -11,7 +11,7 @@ import (
 func main() {
 	config.LoadEnv()
 	library.InitCache()
-	db.Initdb()
+	db.InitDB() // TODO: change these
 	db.EnsureLatestVersion()
 
 	username, password := config.GetInitialAdmin()

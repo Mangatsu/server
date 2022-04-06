@@ -2,48 +2,63 @@ package db
 
 import (
 	"database/sql"
-	"embed"
 	"github.com/Mangatsu/server/internal/config"
+	"github.com/doug-martin/goqu/v9"
+	_ "github.com/doug-martin/goqu/v9/dialect/sqlite3"
 	_ "github.com/mattn/go-sqlite3"
-	"github.com/pressly/goose/v3"
 	log "github.com/sirupsen/logrus"
 )
 
-var database *sql.DB
+// Database is a wrapper around the database connection handle, and it stores its dialect
+type Database struct {
+	Dialect        config.Dialect
+	MigrationsPath MigrationsPath
+	Handle         *sql.DB
+	DialectWrapper goqu.DialectWrapper
+}
 
-//go:embed migrations
-var embedMigrations embed.FS
+var database *Database
 
-// Initdb initializes the database
-func Initdb() {
-	var dbErr error
-	database, dbErr = sql.Open("sqlite3", config.BuildDataPath("mangatsu.sqlite"))
-	if dbErr != nil {
-		log.Fatal(dbErr)
+// InitDB initializes the database
+func InitDB() {
+	dialect := config.Options.DB.Dialect
+	connString := buildConnString(dialect)
+
+	handle, err := sql.Open(string(dialect), connString)
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	migrationsPath := getMigrationsPath(dialect)
+	dialectWrapper := goqu.Dialect(string(dialect))
+
+	database = &Database{dialect, migrationsPath, handle, dialectWrapper}
+}
+
+// QB returns a query builder for the database
+func (db *Database) QB() *goqu.Database {
+	return db.DialectWrapper.DB(db.Handle)
+}
+
+// buildConnString builds the connection string for specified dialect.
+// If no dialect specified is not valid, an empty string is returned.
+func buildConnString(dialect config.Dialect) string {
+	// TODO: Add support for other dialects
+	switch dialect {
+	case config.SQLite:
+		return config.BuildDataPath(config.Options.DB.Name + ".sqlite")
+	case config.PostgreSQL:
+		return ""
+	case config.MySQL:
+		return ""
+	default:
+		return ""
 	}
 }
 
 func db() *sql.DB {
-	return database
-}
-
-// EnsureLatestVersion ensures that the database is at the latest version by running all migrations.
-func EnsureLatestVersion() {
-	if !config.GetDBMigrations() {
-		return
-	}
-
-	// For embedding the migrations in the binary.
-	goose.SetBaseFS(embedMigrations)
-
-	dbConfig := config.GetDialectAndMigrationsPath()
-	if err := goose.SetDialect(string(dbConfig.Dialect)); err != nil {
-		log.Fatal("Invalid DB dialect: ", dbConfig.Dialect, ".", err)
-	}
-
-	if err := goose.Up(db(), string(dbConfig.MigrationsPath)); err != nil {
-		log.Fatal("Failed to apply new migrations", err)
-	}
+	// FIXME: it's still here only not to break current code
+	return database.Handle
 }
 
 func rollbackTx(tx *sql.Tx) {
