@@ -94,14 +94,17 @@ func getLibrary(id int32, path string) ([]model.Library, error) {
 
 // newLibrary creates a new library to the database.
 func newLibrary(id int32, path string, layout string) error {
-	stmt := Library.INSERT(Library.ID, Library.Path, Library.Layout).VALUES(id, path, layout).
-		ON_CONFLICT(Library.ID).
-		DO_UPDATE(SET(Library.Path.SET(String(path)), Library.Layout.SET(String(layout))))
-
-	_, err := stmt.Exec(db())
-	if err != nil {
-		log.Error(err)
-	}
+	// does not handle the scenario when the ID exists in db
+	_, err := database.QB().
+		Insert("library").
+		Prepared(true).
+		Rows(goqu.Record{
+			"id": id,
+			"path": path,
+			"layout": layout,
+		}).
+		Executor().
+		Exec()
 
 	return err
 }
