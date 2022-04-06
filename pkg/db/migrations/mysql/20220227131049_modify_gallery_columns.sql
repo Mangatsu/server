@@ -1,8 +1,8 @@
 -- +goose Up
 -- +goose StatementBegin
 ALTER TABLE gallery RENAME COLUMN title_short TO title_translated;
-ALTER TABLE gallery DROP COLUMN circle;
 ALTER TABLE gallery DROP COLUMN artists;
+ALTER TABLE gallery DROP COLUMN circle;
 -- +goose StatementEnd
 
 -- +goose Down
