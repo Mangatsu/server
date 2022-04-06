@@ -108,7 +108,18 @@ func newLibrary(id int32, path string, layout string) error {
 
 // updateLibrary updates the library in the database.
 func updateLibrary(id int32, path string, layout string) error {
-	stmt := Library.UPDATE(Library.Path, Library.Layout).SET(path, layout).WHERE(Library.ID.EQ(Int32(id)))
-	_, err := stmt.Exec(db())
+	_, err := database.QB().
+		Update("library").
+		Prepared(true).
+		Set(goqu.Record{
+			"path": path,
+			"layout": layout,
+		}).
+		Where(goqu.Ex{
+			"id": id,
+		}).
+		Executor().
+		Exec()
+
 	return err
 }
