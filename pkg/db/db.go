@@ -29,6 +29,10 @@ func db() *sql.DB {
 
 // EnsureLatestVersion ensures that the database is at the latest version by running all migrations.
 func EnsureLatestVersion() {
+	if !config.GetDBMigrations() {
+		return
+	}
+
 	// For embedding the migrations in the binary.
 	goose.SetBaseFS(embedMigrations)
 

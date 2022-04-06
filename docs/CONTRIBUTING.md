@@ -13,9 +13,12 @@ Use [Conventional Commits](https://www.conventionalcommits.org/en/v1.0.0/) when 
 - Run `backend` (`backend.exe` on Windows)
 
 ### 💾 Database migrations
-- For SQLite3: `goose -dir pkg/db/migrations/sqlite sqlite3 ./PATH/TO/mangatsu.sqlite <up|down|status>`
-- For PostgreSQL: `goose -dir pkg/db/migrations/psql postgres "user=USER password=PASSWORD dbname=DATABASE_NAME sslmode=<disable|enabled>" <up|down|status>`
-- For MySQL/MariaDB: `goose -dir pkg/db/migrations/mysql mysql "USER:PASSWORD@/DATABASE_NAME?parseTime=true&multiStatements=true" <up|down|status>`
+- Automatically run when the server is launched. Can be disabled by setting `MTSU_DB_MIGRATIONS=false` in `.env`.
+- Manual migrations
+  - SQLite3: `goose -dir pkg/db/migrations/sqlite sqlite3 ./PATH/TO/mangatsu.sqlite <up|down|status>`
+  - PostgreSQL: `goose -dir pkg/db/migrations/psql postgres "user=USER password=PASSWORD dbname=DATABASE_NAME sslmode=<disable|enabled>" <up|down|status>`
+  - MySQL/MariaDB: `goose -dir pkg/db/migrations/mysql mysql "USER:PASSWORD@/DATABASE_NAME?parseTime=true&multiStatements=true" <up|down|status>`
+  - More examples on [Goose's GitHub](https://github.com/pressly/goose#usage)
 - Automatic models and types: `jet -dsn="file:///full/path/to/data.sqlite" -path=types` based on the db schema
 
 ### 🔬 Testing
