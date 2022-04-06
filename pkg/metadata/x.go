@@ -143,7 +143,7 @@ func fuzzyMatchExternalMeta(archivePath string, libraryPath string, f fs.FileInf
 	archivePath = filepath.ToSlash(archivePath)
 	onlyDir := filepath.Dir(archivePath)
 
-	metaData, err := library.ReadJSON(config.BuiltPath(onlyDir, f.Name()))
+	metaData, err := library.ReadJSON(config.BuildPath(onlyDir, f.Name()))
 	if err != nil {
 		log.Error(err)
 		return fuzzyResult, XMetadata{}

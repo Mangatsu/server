@@ -6,62 +6,62 @@ import (
 )
 
 type Dialect string
-type MigrationsPath string
-
-type DBConfig struct {
-	Dialect        Dialect
-	MigrationsPath MigrationsPath
-}
 
 const (
-	SQLite     Dialect = "sqlite"
+	SQLite     Dialect = "sqlite3"
 	PostgreSQL         = "postgres"
 	MySQL              = "mysql"
 )
 
-// Paths specified here point to the embedded migrations-directory in the binary.
-const (
-	SQLitePath     MigrationsPath = "migrations/sqlite"
-	PostgreSQLPath                = "migrations/psql"
-	MySQLPath                     = "migrations/mysql"
-)
+type DBOptions struct {
+	Dialect    Dialect
+	Host       string
+	Port       string
+	Name       string
+	Migrations bool
+}
 
-func GetDBMigrations() bool {
-	// Disables only if explicitly set to false.
+type DBCredentials struct {
+	User     string
+	Password string
+}
+
+func dbMigrationsEnabled() bool {
+	// Disabled only when explicitly set to false.
 	return os.Getenv("MTSU_DB_MIGRATIONS") != "false"
 }
 
-func GetDialectAndMigrationsPath() DBConfig {
+func dbDialect() Dialect {
 	value := strings.ToLower(os.Getenv("MTSU_DB"))
 	switch value {
 	case "sqlite", "sqlite3":
-		return DBConfig{Dialect: SQLite, MigrationsPath: SQLitePath}
+		return SQLite
 	case "postgres", "postgresql", "psql":
-		return DBConfig{Dialect: PostgreSQL, MigrationsPath: PostgreSQLPath}
+		return PostgreSQL
 	case "mysql", "mariadb":
-		return DBConfig{Dialect: MySQL, MigrationsPath: MySQLPath}
+		return MySQL
 	default:
-		return DBConfig{Dialect: SQLite, MigrationsPath: SQLitePath}
+		return SQLite
 	}
 }
 
-func GetDBName() string {
+func dbName() string {
 	value := os.Getenv("MTSU_DB_NAME")
 	if value == "" {
-		return "mtsu"
+		return "mangatsu"
 	}
 	return value
 }
 
-func GetDBUser() string {
+func dbUser() string {
 	return os.Getenv("MTSU_DB_USER")
 }
 
-func GetDBPassword() string {
+func dbPassword() string {
 	return os.Getenv("MTSU_DB_PASSWORD")
 }
 
-func GetDBHost() string {
+func dbHost() string {
 	value := os.Getenv("MTSU_DB_HOST")
 	if value == "" {
 		return "localhost"
@@ -69,11 +69,10 @@ func GetDBHost() string {
 	return value
 }
 
-func GetDBPort() string {
+func dbPort() string {
 	value := os.Getenv("MTSU_DB_PORT")
 	if value == "" {
-		dbConfig := GetDialectAndMigrationsPath()
-		switch dbConfig.Dialect {
+		switch dbDialect() {
 		case PostgreSQL:
 			return "5432"
 		case MySQL:
