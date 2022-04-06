@@ -2,13 +2,13 @@ package config
 
 import "os"
 
+type Dialect string
+type MigrationsPath string
+
 type DBConfig struct {
 	Dialect        Dialect
 	MigrationsPath MigrationsPath
 }
-
-type Dialect string
-type MigrationsPath string
 
 const (
 	SQLite     Dialect = "sqlite"
