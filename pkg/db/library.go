@@ -79,7 +79,7 @@ func getLibrary(id int32, path string) ([]model.Library, error) {
 		})
 	} else {
 		stmt = stmt.Where(goqu.ExOr{
-			"id": id,
+			"id":   id,
 			"path": path,
 		})
 	}
@@ -97,8 +97,8 @@ func newLibrary(id int32, path string, layout string) error {
 		Insert("library").
 		Prepared(true).
 		Rows(goqu.Record{
-			"id": id,
-			"path": path,
+			"id":     id,
+			"path":   path,
 			"layout": layout,
 		}).
 		Executor().
@@ -113,7 +113,7 @@ func updateLibrary(id int32, path string, layout string) error {
 		Update("library").
 		Prepared(true).
 		Set(goqu.Record{
-			"path": path,
+			"path":   path,
 			"layout": layout,
 		}).
 		Where(goqu.Ex{

@@ -2,36 +2,37 @@ package db
 
 import (
 	"database/sql"
-
+	"github.com/Mangatsu/server/internal/config"
 	"github.com/doug-martin/goqu/v9"
 	_ "github.com/doug-martin/goqu/v9/dialect/sqlite3"
 	_ "github.com/mattn/go-sqlite3"
-	"github.com/pressly/goose/v3"
 	log "github.com/sirupsen/logrus"
 )
 
-// Database is a wrapper around the database connection handle
-// and it stores its dialect
+// Database is a wrapper around the database connection handle, and it stores its dialect
 type Database struct {
-	Dialect string
-	MigrationsPath string
-	Handle *sql.DB
+	Dialect        config.Dialect
+	MigrationsPath MigrationsPath
+	Handle         *sql.DB
 	DialectWrapper goqu.DialectWrapper
 }
 
 var database *Database
 
-// Initdb initializes the database
-func Initdb(dialect, connString string) *Database {
-	handle, err := sql.Open(dialect, connString)
+// InitDB initializes the database
+func InitDB() {
+	dialect := config.Options.DB.Dialect
+	connString := buildConnString(dialect)
+
+	handle, err := sql.Open(string(dialect), connString)
 	if err != nil {
 		log.Fatal(err)
 	}
 
-	migrationsPath := GetMigrationsPath(dialect)
-	dialectWrapper := goqu.Dialect(dialect)
+	migrationsPath := getMigrationsPath(dialect)
+	dialectWrapper := goqu.Dialect(string(dialect))
 
-	return &Database{dialect, migrationsPath, handle, dialectWrapper}
+	database = &Database{dialect, migrationsPath, handle, dialectWrapper}
 }
 
 // QB returns a query builder for the database
@@ -39,15 +40,17 @@ func (db *Database) QB() *goqu.Database {
 	return db.DialectWrapper.DB(db.Handle)
 }
 
-// GetMigrationsPath returns path for the given dialect,
-// or an empty string if it's not known
-func GetMigrationsPath(dialect string) string {
-	// TODO: change hard-coded case strings
+// buildConnString builds the connection string for specified dialect.
+// If no dialect specified is not valid, an empty string is returned.
+func buildConnString(dialect config.Dialect) string {
+	// TODO: Add support for other dialects
 	switch dialect {
-	case "sqlite3":
-		return "./pkg/db/migrations/sqlite"
-	case "postgres":
-		return "./pkg/db/migrations/psql"
+	case config.SQLite:
+		return config.BuildDataPath(config.Options.DB.Name + ".sqlite")
+	case config.PostgreSQL:
+		return ""
+	case config.MySQL:
+		return ""
 	default:
 		return ""
 	}
@@ -56,19 +59,6 @@ func GetMigrationsPath(dialect string) string {
 func db() *sql.DB {
 	// FIXME: it's still here only not to break current code
 	return database.Handle
-}
-
-// EnsureLatestVersion ensures that the database is at the latest version by running all migrations.
-func EnsureLatestVersion() {
-	err := goose.SetDialect(database.Dialect)
-	if err != nil {
-		log.Fatal("Invalid DB driver", "driver", database.Dialect, err)
-	}
-
-	err = goose.Run("up", database.Handle, database.MigrationsPath)
-	if err != nil {
-		log.Fatal("Failed to apply new migrations", err)
-	}
 }
 
 func rollbackTx(tx *sql.Tx) {

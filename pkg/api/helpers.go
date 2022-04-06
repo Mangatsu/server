@@ -100,8 +100,8 @@ func hasAccess(w http.ResponseWriter, r *http.Request, role db.Role) (bool, *str
 		if access {
 			return access, userUUID
 		}
-		if config.CurrentVisibility() == config.Restricted && role == 0 {
-			anonymousAccess := authorization[1] == config.RestrictedPassphrase()
+		if config.Options.Visibility == config.Restricted && role == 0 {
+			anonymousAccess := authorization[1] == config.Credentials.JWTSecret
 			if anonymousAccess {
 				return anonymousAccess, nil
 			}
@@ -122,7 +122,7 @@ func hasAccess(w http.ResponseWriter, r *http.Request, role db.Role) (bool, *str
 	}
 
 	// If public, anonymous access without passphrase is allowed
-	if config.CurrentVisibility() == config.Public && role == 0 {
+	if config.Options.Visibility == config.Public && role == 0 {
 		return true, nil
 	}
 
@@ -160,7 +160,7 @@ func newJWT(userUUID string, sessionID string, expiresIn *int64, sessionName *st
 		Roles:   role,
 	})
 
-	token, err := claims.SignedString([]byte(config.JWTSecret()))
+	token, err := claims.SignedString([]byte(config.Credentials.JWTSecret))
 	if err != nil {
 		return "", err
 	}
@@ -186,7 +186,7 @@ func verifyJWT(tokenString string, role db.Role) (bool, *string) {
 func parseJWT(tokenString string) (CustomClaims, bool, *jwt.Token, error) {
 	token, err := jwt.ParseWithClaims(
 		tokenString, &CustomClaims{},
-		func(token *jwt.Token) (interface{}, error) { return []byte(config.JWTSecret()), nil },
+		func(token *jwt.Token) (interface{}, error) { return []byte(config.Credentials.JWTSecret), nil },
 		jwt.WithValidMethods([]string{jwt.SigningMethodHS256.Name}),
 	)
 	if err != nil {
