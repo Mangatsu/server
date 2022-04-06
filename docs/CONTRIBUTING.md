@@ -13,7 +13,9 @@ Use [Conventional Commits](https://www.conventionalcommits.org/en/v1.0.0/) when 
 - Run `backend` (`backend.exe` on Windows)
 
 ### 💾 Database migrations
-- Migrations: `goose -dir db/migrations sqlite3 ./data.sqlite up`
+- For SQLite3: `goose -dir pkg/db/migrations/sqlite sqlite3 ./PATH/TO/mangatsu.sqlite <up|down|status>`
+- For PostgreSQL: `goose -dir pkg/db/migrations/psql postgres "user=USER password=PASSWORD dbname=DATABASE_NAME sslmode=<disable|enabled>" <up|down|status>`
+- For MySQL/MariaDB: `goose -dir pkg/db/migrations/mysql mysql "USER:PASSWORD@/DATABASE_NAME?parseTime=true&multiStatements=true" <up|down|status>`
 - Automatic models and types: `jet -dsn="file:///full/path/to/data.sqlite" -path=types` based on the db schema
 
 ### 🔬 Testing
