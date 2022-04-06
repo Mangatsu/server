@@ -1,6 +1,9 @@
 package config
 
-import "os"
+import (
+	"os"
+	"strings"
+)
 
 type Dialect string
 type MigrationsPath string
@@ -16,18 +19,19 @@ const (
 	MySQL              = "mysql"
 )
 
+// Paths specified here point to the embedded migrations-directory in the binary.
 const (
-	SQLitePath     MigrationsPath = "./pkg/db/migrations/sqlite"
-	PostgreSQLPath                = "./pkg/db/migrations/psql"
-	MySQLPath                     = "./pkg/db/migrations/mysql"
+	SQLitePath     MigrationsPath = "migrations/sqlite"
+	PostgreSQLPath                = "migrations/psql"
+	MySQLPath                     = "migrations/mysql"
 )
 
 func GetDialectAndMigrationsPath() DBConfig {
-	value := os.Getenv("MTSU_DB")
+	value := strings.ToLower(os.Getenv("MTSU_DB"))
 	switch value {
-	case "sqlite":
+	case "sqlite", "sqlite3":
 		return DBConfig{Dialect: SQLite, MigrationsPath: SQLitePath}
-	case "postgres":
+	case "postgres", "postgresql", "psql":
 		return DBConfig{Dialect: PostgreSQL, MigrationsPath: PostgreSQLPath}
 	case "mysql", "mariadb":
 		return DBConfig{Dialect: MySQL, MigrationsPath: MySQLPath}
