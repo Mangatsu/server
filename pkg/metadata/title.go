@@ -133,7 +133,8 @@ func ParseTitles(tryNative bool, overwrite bool) {
 				gallery.Category = &manga
 			}
 
-			err = db.UpdateGallery(gallery, currentTags, currentReference, true)
+			// FIXME: Remove the type assertion after UpdateGallery is reworked.
+			err = db.UpdateGallery(model.Gallery(gallery), currentTags, currentReference, true)
 			if err != nil {
 				log.Errorf("Error updating gallery %s based on its title: %s", gallery.UUID, err)
 			}
