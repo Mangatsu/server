@@ -2,23 +2,10 @@ package db
 
 import (
 	"github.com/Mangatsu/server/internal/config"
-	"github.com/Mangatsu/server/pkg/types/model"
+	"github.com/Mangatsu/server/pkg/model"
 	"github.com/doug-martin/goqu/v9"
 	log "github.com/sirupsen/logrus"
 )
-
-// FIXME: it won't work yet!! CombinedLibrary has to be a plain struct,
-// something like this:
-//
-// 	type User struct {
-// 		FirstName string `db:"first_name"`
-// 		LastName  string `db:"last_name"`
-//	}
-
-type CombinedLibrary struct {
-	model.Library
-	Galleries []model.Gallery
-}
 
 func StorePaths(givenLibraries []config.Library) error {
 	for _, library := range givenLibraries {
@@ -54,8 +41,8 @@ func GetOnlyLibraries() ([]model.Library, error) {
 	return libraries, err
 }
 
-func GetLibraries() ([]CombinedLibrary, error) {
-	var libraries []CombinedLibrary
+func GetLibraries() ([]model.CombinedLibrary, error) {
+	var libraries []model.CombinedLibrary
 	err := database.QB().
 		From("library").
 		LeftJoin(
