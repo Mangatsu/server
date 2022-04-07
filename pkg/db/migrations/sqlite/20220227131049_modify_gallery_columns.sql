@@ -19,8 +19,8 @@ CREATE TABLE gallery2(
     archive_size int,
     archive_hash text,
     thumbnail text,
-    created_at datetime NOT NULL,
-    updated_at datetime NOT NULL,
+    created_at date NOT NULL,
+    updated_at date NOT NULL,
     PRIMARY KEY(uuid),
     FOREIGN KEY(library_id)
         REFERENCES library(id)
@@ -72,8 +72,8 @@ CREATE TABLE gallery2 (
     thumbnail text,
     nsfw boolean NOT NULL DEFAULT false,
     hidden boolean NOT NULL DEFAULT false,
-    created_at datetime NOT NULL,
-    updated_at datetime NOT NULL,
+    created_at date NOT NULL,
+    updated_at date NOT NULL,
     PRIMARY KEY(uuid),
     FOREIGN KEY(library_id)
         REFERENCES library(id)

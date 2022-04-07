@@ -1,46 +1,67 @@
 package config
 
-import "os"
-
-const (
-	SQLite     string = "sqlite"
-	PostgreSQL        = "postgres"
-	MySQL             = "mysql"
+import (
+	"os"
+	"strings"
 )
 
-func GetDBDriver() string {
-	value := os.Getenv("MTSU_DB")
+type Dialect string
+
+const (
+	SQLite     Dialect = "sqlite3"
+	PostgreSQL         = "postgres"
+	MySQL              = "mysql"
+)
+
+type DBOptions struct {
+	Dialect    Dialect
+	Host       string
+	Port       string
+	Name       string
+	Migrations bool
+}
+
+type DBCredentials struct {
+	User     string
+	Password string
+}
+
+func dbMigrationsEnabled() bool {
+	// Disabled only when explicitly set to false.
+	return os.Getenv("MTSU_DB_MIGRATIONS") != "false"
+}
+
+func dbDialect() Dialect {
+	value := strings.ToLower(os.Getenv("MTSU_DB"))
 	switch value {
-	case "sqlite":
+	case "sqlite", "sqlite3":
 		return SQLite
-	case "postgres":
+	case "postgres", "postgresql", "psql":
 		return PostgreSQL
-	case "mysql":
-		return MySQL
-	case "mariadb":
+	case "mysql", "mariadb":
 		return MySQL
 	default:
 		return SQLite
 	}
 }
 
-func GetDBName() string {
+func dbName() string {
 	value := os.Getenv("MTSU_DB_NAME")
 	if value == "" {
-		return "mtsu"
+		return "mangatsu"
 	}
 	return value
 }
 
-func GetDBUser() string {
+func dbUser() string {
 	return os.Getenv("MTSU_DB_USER")
 }
 
-func GetDBPassword() string {
+func dbPassword() string {
 	return os.Getenv("MTSU_DB_PASSWORD")
 }
 
-func GetDBHost() string {
+func dbHost() string {
 	value := os.Getenv("MTSU_DB_HOST")
 	if value == "" {
 		return "localhost"
@@ -48,11 +69,10 @@ func GetDBHost() string {
 	return value
 }
 
-func GetDBPort() string {
+func dbPort() string {
 	value := os.Getenv("MTSU_DB_PORT")
 	if value == "" {
-		driver := GetDBDriver()
-		switch driver {
+		switch dbDialect() {
 		case PostgreSQL:
 			return "5432"
 		case MySQL:
