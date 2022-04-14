@@ -3,6 +3,7 @@ package main
 import (
 	"github.com/Mangatsu/server/internal/config"
 	"github.com/Mangatsu/server/pkg/api"
+	"github.com/Mangatsu/server/pkg/cache"
 	"github.com/Mangatsu/server/pkg/db"
 	"github.com/Mangatsu/server/pkg/library"
 	log "github.com/sirupsen/logrus"
@@ -32,19 +33,7 @@ func main() {
 		log.Fatal("Error saving library to db: ", err)
 	}
 
-	// Scan the libraries for metadata and insert/update to the db.
-	//startScan := time.Now()
-	// library.ScanArchives()
-	//metadata.ParseX()
-	//metadata.ParseTitles(true, false)
-	//elapsedScan := time.Since(startScan)
-	//log.Info("Finding and tagging archives took: ", elapsedScan)
-
-	// Generate thumbnails for all the archives, prioritizing covers.
-	//startThumbnail := time.Now()
-	//library.GenerateThumbnails(true)
-	//elapsedThumbnail := time.Since(startThumbnail)
-	//log.Info("Generating thumbnails took: ", elapsedThumbnail)
+	cache.Init()
 
 	api.LaunchAPI()
 }

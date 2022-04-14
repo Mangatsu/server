@@ -4,6 +4,7 @@ import (
 	"github.com/joho/godotenv"
 	log "github.com/sirupsen/logrus"
 	"os"
+	"time"
 )
 
 type Layout string
@@ -21,13 +22,18 @@ const (
 	Public                = "public"
 )
 
+type CacheOptions struct {
+	WebServer bool
+	TTL       time.Duration
+}
+
 type OptionsModel struct {
 	Hostname      string
 	Port          string
-	CacheServer   bool
 	Registrations bool
 	Visibility    Visibility
 	DB            DBOptions
+	Cache         CacheOptions
 }
 
 type CredentialsModel struct {
@@ -51,12 +57,15 @@ func LoadEnv() {
 	Options = &OptionsModel{
 		Hostname:      hostname(),
 		Port:          port(),
-		CacheServer:   cacheServerEnabled(),
 		Registrations: registrationsEnabled(),
 		Visibility:    currentVisibility(),
 		DB: DBOptions{
 			Name:       dbName(),
 			Migrations: dbMigrationsEnabled(),
+		},
+		Cache: CacheOptions{
+			WebServer: cacheServerEnabled(),
+			TTL:       cacheTTL(),
 		},
 	}
 
@@ -140,4 +149,24 @@ func jwtSecret() string {
 		return "iugnrg8o9347ghjmloi2jhbaw8723hjdbjnwq"
 	}
 	return value
+}
+
+func cacheTTL() time.Duration {
+	value := os.Getenv("MTSU_CACHE_TTL")
+	if value == "" {
+		value = "336h"
+	}
+
+	duration, err := time.ParseDuration(value)
+	if err != nil {
+		log.Warningf("%s is not a valid TTL for MTSU_CACHE_TTL. Defaulting to 336h (14 days)", value)
+		duration, _ = time.ParseDuration("336h")
+	}
+
+	if duration < time.Minute*15 {
+		log.Warning("Minimum TTL is 15 minutes. Defaulting to 15m")
+		duration, _ = time.ParseDuration("10s")
+	}
+
+	return duration
 }

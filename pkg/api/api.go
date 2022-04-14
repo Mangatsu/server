@@ -135,7 +135,7 @@ func handleRequests() {
 	r.HandleFunc(baseURL+"/galleries/{uuid:"+uuidRegex+"}/favorite/{name}", setFavorite).Methods("PATCH")
 	r.HandleFunc(baseURL+"/galleries/{uuid:"+uuidRegex+"}/favorite", setFavorite).Methods("PATCH")
 
-	if config.Options.CacheServer {
+	if config.Options.Cache.WebServer {
 		r.PathPrefix("/cache/").Handler(http.StripPrefix("/cache/", http.FileServer(http.Dir(config.BuildCachePath()))))
 	}
 

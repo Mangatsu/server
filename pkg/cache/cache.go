@@ -42,14 +42,26 @@ func Init() {
 			Mu:       &sync.Mutex{},
 		}
 	})
+
+	periodicPrune()
 }
 
-// PruneCache removes entries not accessed (internal timestamp in mem) in the last ttlSeconds in a thread-safe manner.
-func PruneCache(ttlSeconds int32) {
+// periodicPrune prunes the cache every.
+func periodicPrune() {
+	go func() {
+		for {
+			PruneCache()
+			time.Sleep(time.Minute)
+		}
+	}()
+}
+
+// PruneCache removes entries not accessed (internal timestamp in mem) in the last x time in a thread-safe manner.
+func PruneCache() {
 	now := time.Now()
 	for galleryUUID, value := range galleryCache.Store {
 		value.Mu.Lock()
-		if value.Accessed.Add(time.Second * time.Duration(ttlSeconds)).Before(now) {
+		if value.Accessed.Add(config.Options.Cache.TTL).Before(now) {
 			if err := remove(galleryUUID); err != nil {
 				log.Errorf("Error occured while deleting cache entry: %s", err)
 			}
@@ -58,11 +70,11 @@ func PruneCache(ttlSeconds int32) {
 	}
 }
 
-// PruneCacheFS removes entries not accessed (filesystem timestamp) in the last ttlSeconds. Not thread-safe.
-func PruneCacheFS(ttlSeconds int32) {
+// PruneCacheFS removes entries not accessed (filesystem timestamp) in the last x time. Not thread-safe.
+func PruneCacheFS() {
 	now := time.Now()
 	iterateCacheEntries(func(pathToEntry string, accessTime time.Time) {
-		if accessTime.Add(time.Second * time.Duration(ttlSeconds)).Before(now) {
+		if accessTime.Add(config.Options.Cache.TTL).Before(now) {
 			if err := os.Remove(pathToEntry); err != nil {
 				log.Errorf("Error occured while removing cache entry: %s", err)
 			}

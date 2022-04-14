@@ -22,10 +22,10 @@ _~~Struck out~~ values have no effect yet._
     - Doesn't need changing if using Docker Compose.
 - **MTSU_DISABLE_CACHE_SERVER**=false
   - True to disable the internal cache server (serves media files and thumbnails). Useful if one wants to use the web server such as NGINX to serve the files.
+- **MTSU_CACHE_TTL**=336h
+  - Cache time to live (for example `336h` (2 weeks), `8h30m`). If a gallery is not viewed for this time, it will be purged from the cache.
 - ~~**MTSU_CACHE_SIZE**~~=10000
   - Max size of the cache where galleries are extracted from the library in MB. Can overflow a bit especially if set too low.
-- ~~**MTSU_CACHE_TTL**~~=604800
-  - Time to live for the cache in seconds (604800 = 1 week).
 - **MTSU_DB_NAME**=mangatsu
   - Name of the SQLite database file
 - ~~**MTSU_DB**~~=sqlite
