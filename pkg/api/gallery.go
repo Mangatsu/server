@@ -4,8 +4,8 @@ import (
 	"encoding/json"
 	"fmt"
 	"github.com/Mangatsu/server/internal/config"
+	"github.com/Mangatsu/server/pkg/cache"
 	"github.com/Mangatsu/server/pkg/db"
-	"github.com/Mangatsu/server/pkg/library"
 	"github.com/Mangatsu/server/pkg/types/model"
 	"github.com/gorilla/mux"
 	log "github.com/sirupsen/logrus"
@@ -147,10 +147,8 @@ func returnGallery(w http.ResponseWriter, r *http.Request) {
 	}
 
 	galleryWithMeta := convertMetadata(gallery)
-	files, count := library.ReadGallery(
-		config.BuildLibraryPath(galleryWithMeta.Library.Path, galleryWithMeta.ArchivePath),
-		galleryWithMeta.UUID,
-	)
+	galleryPath := config.BuildLibraryPath(galleryWithMeta.Library.Path, galleryWithMeta.ArchivePath)
+	files, count := cache.Read(galleryPath, galleryWithMeta.UUID)
 
 	resultToJSON(w, GalleryResult{
 		Meta:  galleryWithMeta,
@@ -172,10 +170,8 @@ func returnRandomGallery(w http.ResponseWriter, r *http.Request) {
 	}
 
 	galleryWithMeta := convertMetadata(gallery)
-	files, count := library.ReadGallery(
-		config.BuildLibraryPath(galleryWithMeta.Library.Path, galleryWithMeta.ArchivePath),
-		galleryWithMeta.UUID,
-	)
+	galleryPath := config.BuildLibraryPath(galleryWithMeta.Library.Path, galleryWithMeta.ArchivePath)
+	files, count := cache.Read(galleryPath, galleryWithMeta.UUID)
 
 	resultToJSON(w, GalleryResult{
 		Meta:  galleryWithMeta,
