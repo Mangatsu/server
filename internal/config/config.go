@@ -152,20 +152,23 @@ func jwtSecret() string {
 }
 
 func cacheTTL() time.Duration {
+	defaultDuration := time.Hour * 336
+	minDuration := time.Minute * 15
+
 	value := os.Getenv("MTSU_CACHE_TTL")
 	if value == "" {
-		value = "336h"
+		return defaultDuration
 	}
 
 	duration, err := time.ParseDuration(value)
 	if err != nil {
 		log.Warningf("%s is not a valid TTL for MTSU_CACHE_TTL. Defaulting to 336h (14 days)", value)
-		duration, _ = time.ParseDuration("336h")
+		return defaultDuration
 	}
 
-	if duration < time.Minute*15 {
+	if duration < minDuration {
 		log.Warning("Minimum TTL is 15 minutes. Defaulting to 15m")
-		duration, _ = time.ParseDuration("10s")
+		return minDuration
 	}
 
 	return duration
