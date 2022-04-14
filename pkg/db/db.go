@@ -29,12 +29,17 @@ func db() *sql.DB {
 
 // EnsureLatestVersion ensures that the database is at the latest version by running all migrations.
 func EnsureLatestVersion() {
+	if !config.Options.DB.Migrations {
+		log.Warning("Database migrations are disabled.")
+		return
+	}
+
 	// For embedding the migrations in the binary.
 	goose.SetBaseFS(embedMigrations)
 
 	err := goose.SetDialect("sqlite3")
 	if err != nil {
-		log.Fatal("Invalid DB driver", "driver", "sqlite3", err)
+		log.Fatal(err)
 	}
 
 	err = goose.Up(db(), "migrations")

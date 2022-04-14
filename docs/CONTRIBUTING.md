@@ -13,7 +13,8 @@ Use [Conventional Commits](https://www.conventionalcommits.org/en/v1.0.0/) when 
 - Run `backend` (`backend.exe` on Windows)
 
 ### 💾 Database migrations
-- Migrations: `goose -dir db/migrations sqlite3 ./data.sqlite up`
+- Automatically run when the server is launched. Can be disabled by setting `MTSU_DB_MIGRATIONS=false` in `.env`.
+- Manually: `goose -dir pkg/db/migrations sqlite3 ./PATH/TO/mangatsu.sqlite <up|down|status>`
 - Automatic models and types: `jet -dsn="file:///full/path/to/data.sqlite" -path=types` based on the db schema
 
 ### 🔬 Testing
