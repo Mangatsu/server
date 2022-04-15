@@ -4,6 +4,23 @@ All notable changes of this project will be documented in this file.
 
 > The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/), and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.4.0] - 2022-04-15
+
+### Added
+- Periodically prune the gallery cache of old entries
+  - Time to live can be configured via `MTSU_CACHE_TTL` environment variable. Defaults to 336h (14 days)
+  - Utilizes mutex to prevent reading and deleting the same entry at the same time
+- Environmental variable to disable migrations `MTSU_DB_MIGRATIONS=false`
+- Environment variable to override the default database name: `MTSU_DB=mangatsu`
+- Embedded migrations to binary
+
+### Changed
+- Updated dependencies
+
+### Docs
+- Cross out 7z in README as it's not supported yet
+- Fix mistakes in example.env and ENVIRONMENTALS.md
+
 ## [0.3.1] - 2022-03-24
 
 ### Fixed
