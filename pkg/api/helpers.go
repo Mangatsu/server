@@ -101,7 +101,7 @@ func hasAccess(w http.ResponseWriter, r *http.Request, role db.Role) (bool, *str
 			return access, userUUID
 		}
 		if config.Options.Visibility == config.Restricted && role == 0 {
-			anonymousAccess := authorization[1] == config.Credentials.JWTSecret
+			anonymousAccess := authorization[1] == config.Credentials.Passphrase
 			if anonymousAccess {
 				return anonymousAccess, nil
 			}

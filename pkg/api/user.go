@@ -83,7 +83,7 @@ func login(w http.ResponseWriter, r *http.Request) {
 			Token: token,
 		})
 		return
-	} else if credentials.Passphrase == config.Credentials.JWTSecret {
+	} else if credentials.Passphrase == config.Credentials.Passphrase {
 		resultToJSON(w, struct {
 			Token string
 		}{
