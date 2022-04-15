@@ -4,6 +4,11 @@ All notable changes of this project will be documented in this file.
 
 > The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/), and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.4.1] - 2022-04-15
+
+### Fixed
+- Regression of not being able to log in with passphrase
+
 ## [0.4.0] - 2022-04-15
 
 ### Added
@@ -11,7 +16,7 @@ All notable changes of this project will be documented in this file.
   - Time to live can be configured via `MTSU_CACHE_TTL` environment variable. Defaults to 336h (14 days)
   - Utilizes mutex to prevent reading and deleting the same entry at the same time
 - Environmental variable to disable migrations `MTSU_DB_MIGRATIONS=false`
-- Environment variable to override the default database name: `MTSU_DB=mangatsu`
+- Environment variable to override the default database name: `MTSU_DB_NAME=mangatsu`
 - Embedded migrations to binary
 
 ### Changed
