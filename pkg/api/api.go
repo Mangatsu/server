@@ -52,12 +52,12 @@ func returnInfo(w http.ResponseWriter, _ *http.Request) {
 	resultToJSON(w, struct {
 		APIVersion    int
 		ServerVersion string
-		Visibility    string
+		Visibility    config.Visibility
 		Registrations bool
 	}{
 		APIVersion:    1,
 		ServerVersion: "0.4.0",
-		Visibility:    string(config.Options.Visibility),
+		Visibility:    config.Options.Visibility,
 		Registrations: config.Options.Registrations,
 	})
 }
