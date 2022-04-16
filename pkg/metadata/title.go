@@ -75,7 +75,11 @@ func ParseTitles(tryNative bool, overwrite bool) {
 
 			if !reflect.ValueOf(titleMeta).IsZero() {
 				if titleMeta.Title != "" && (!hasTitleTranslated || overwrite) {
-					gallery.TitleTranslated = &titleMeta.Title
+					if gallery.Translated != nil && *gallery.Translated {
+						gallery.TitleTranslated = &titleMeta.Title
+					} else {
+						gallery.TitleNative = &titleMeta.Title
+					}
 				}
 				if titleMeta.Released != "" && (!hasRelease || overwrite) {
 					gallery.Released = &titleMeta.Released
