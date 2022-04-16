@@ -139,7 +139,37 @@ func UpdateGallery(gallery model.Gallery, tags []model.Tag, reference model.Refe
 
 	gallery.UpdatedAt = now
 	if internalScan {
-		updateGalleryStmt = Gallery.UPDATE(Gallery.MutableColumns).SET(gallery)
+		galleryModel := model.Gallery{
+			Title:           gallery.Title,
+			TitleNative:     gallery.TitleNative,
+			TitleTranslated: gallery.TitleTranslated,
+			Category:        gallery.Category,
+			Released:        gallery.Released,
+			Series:          gallery.Series,
+			Language:        gallery.Language,
+			Translated:      gallery.Translated,
+			Nsfw:            gallery.Nsfw,
+			ImageCount:      gallery.ImageCount,
+			ArchiveSize:     gallery.ArchiveSize,
+			ArchiveHash:     gallery.ArchiveHash,
+			UpdatedAt:       now,
+		}
+		updateGalleryStmt = Gallery.UPDATE(
+			Gallery.Title,
+			Gallery.TitleNative,
+			Gallery.TitleTranslated,
+			Gallery.Category,
+			Gallery.Released,
+			Gallery.Series,
+			Gallery.Language,
+			Gallery.Translated,
+			Gallery.Nsfw,
+			Gallery.ImageCount,
+			Gallery.ArchiveSize,
+			Gallery.ArchiveHash,
+			Gallery.UpdatedAt,
+		).MODEL(galleryModel)
+
 		updateGalleryStmt = updateGalleryStmt.WHERE(Gallery.ArchivePath.EQ(String(gallery.ArchivePath))).RETURNING(Gallery.UUID)
 	} else {
 		newGallery := ValidateGallery(oldGallery.Gallery, gallery)
@@ -166,7 +196,7 @@ func UpdateGallery(gallery model.Gallery, tags []model.Tag, reference model.Refe
 			newGallery.Nsfw,
 			newGallery.Hidden,
 			newGallery.Translated,
-			newGallery.UpdatedAt,
+			gallery.UpdatedAt,
 		).WHERE(Gallery.UUID.EQ(String(gallery.UUID))).RETURNING(Gallery.UUID)
 	}
 
