@@ -17,7 +17,7 @@ var embedMigrations embed.FS
 // Initdb initializes the database
 func Initdb() {
 	var dbErr error
-	database, dbErr = sql.Open("sqlite3", config.BuildDataPath("mangatsu.sqlite"))
+	database, dbErr = sql.Open("sqlite3", config.BuildDataPath(config.Options.DB.Name+".sqlite"))
 	if dbErr != nil {
 		log.Fatal(dbErr)
 	}
