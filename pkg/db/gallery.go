@@ -414,6 +414,14 @@ func constructGalleryFilters(filters Filters, hidden bool, userUUID *string) Boo
 
 	if filters.Series != "" {
 		conditions = conditions.AND(Gallery.Series.EQ(String(filters.Series)))
+	} else if filters.Grouped == "true" {
+		conditions = conditions.AND(Gallery.Series.IS_NOT_NULL())
+		conditions = conditions.AND(EXISTS(SELECT(NULL).
+			FROM(Library.AS("lib")).
+			WHERE(Library.AS("lib").ID.EQ(Gallery.LibraryID).
+				AND(Library.AS("lib").Layout.EQ(String("structured"))),
+			),
+		))
 	}
 
 	if !hidden {
