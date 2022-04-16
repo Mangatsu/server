@@ -7,6 +7,8 @@ import (
 	. "github.com/go-jet/jet/v2/sqlite"
 	"github.com/google/uuid"
 	log "github.com/sirupsen/logrus"
+	"math"
+	"math/rand"
 	"time"
 )
 
@@ -51,6 +53,7 @@ type Filters struct {
 	NSFW          string
 	Tags          []model.Tag
 	Grouped       string
+	Seed          int64
 }
 
 type SortBy string
@@ -65,9 +68,8 @@ const (
 type Order string
 
 const (
-	Desc   Order = "desc"
-	Asc          = "asc"
-	Random       = "random"
+	Desc Order = "desc"
+	Asc        = "asc"
 )
 
 // NewGallery creates a new gallery
@@ -376,8 +378,7 @@ func SetThumbnail(uuid string, thumbnail string) error {
 	return err
 }
 
-// GetGalleries returns galleries based on the given filters.
-func GetGalleries(filters Filters, hidden bool, userUUID *string) ([]CombinedMetadata, error) {
+func constructGalleryFilters(filters Filters, hidden bool, userUUID *string) BoolExpression {
 	// Constructing conditions
 	conditions := Bool(true)
 
@@ -435,27 +436,81 @@ func GetGalleries(filters Filters, hidden bool, userUUID *string) ([]CombinedMet
 		conditions = conditions.AND(Gallery.Nsfw.IS_TRUE())
 	}
 
-	filtersStmt := SELECT(Gallery.AllColumns).FROM(Gallery.Table)
+	return conditions
+}
 
-	// TODO: Is there a way to do this without duplicating the switch statement?
-	if filters.Order == Desc {
-		switch filters.SortBy {
-		case TitleNative:
-			filtersStmt = filtersStmt.ORDER_BY(Gallery.TitleNative.DESC())
-		case UpdatedAt:
-			filtersStmt = filtersStmt.ORDER_BY(Gallery.UpdatedAt.DESC())
-		default:
-			filtersStmt = filtersStmt.ORDER_BY(Gallery.Title.DESC())
-		}
+// GetGalleryCount returns the number of galleries that match the given filters.
+func GetGalleryCount(filters Filters, hidden bool, userUUID *string) (int64, error) {
+	stmt := Gallery.SELECT(COUNT(Gallery.UUID)).WHERE(constructGalleryFilters(filters, hidden, userUUID))
+
+	var count []int64
+	err := stmt.Query(db(), &count)
+	if count == nil {
+		return 0, err
+	}
+
+	return count[0], err
+}
+
+// GetGalleries returns galleries based on the given filters.
+func GetGalleries(filters Filters, hidden bool, userUUID *string, count bool) ([]CombinedMetadata, error) {
+	conditions := constructGalleryFilters(filters, hidden, userUUID)
+
+	var filtersStmt SelectStatement
+
+	if count {
+		filtersStmt = SELECT(COUNT(Gallery.UUID)).FROM(Gallery.Table).WHERE(conditions)
+
 	} else {
-		switch filters.SortBy {
-		case TitleNative:
-			filtersStmt = filtersStmt.ORDER_BY(Gallery.TitleNative.ASC())
-		case UpdatedAt:
-			filtersStmt = filtersStmt.ORDER_BY(Gallery.UpdatedAt.ASC())
-		default:
-			filtersStmt = filtersStmt.ORDER_BY(Gallery.Title.ASC())
+		filtersStmt = SELECT(Gallery.AllColumns).FROM(Gallery.Table)
 
+		// TODO: Is there a way to do this without duplicating the switch statement?
+		if filters.Order == Desc {
+			switch filters.SortBy {
+			case TitleNative:
+				filtersStmt = filtersStmt.ORDER_BY(Gallery.TitleNative.DESC())
+			case UpdatedAt:
+				filtersStmt = filtersStmt.ORDER_BY(Gallery.UpdatedAt.DESC())
+			default:
+				filtersStmt = filtersStmt.ORDER_BY(Gallery.Title.DESC())
+			}
+		} else {
+			switch filters.SortBy {
+			case TitleNative:
+				filtersStmt = filtersStmt.ORDER_BY(Gallery.TitleNative.ASC())
+			case UpdatedAt:
+				filtersStmt = filtersStmt.ORDER_BY(Gallery.UpdatedAt.ASC())
+			default:
+				filtersStmt = filtersStmt.ORDER_BY(Gallery.Title.ASC())
+
+			}
+		}
+	}
+
+	shuffle := filters.Seed != 0 && filters.Limit > 0
+	var pages []int64
+	if shuffle {
+		rand.Seed(filters.Seed)
+		galleryCount, err := GetGalleryCount(filters, hidden, userUUID)
+		if err != nil {
+			return nil, err
+		}
+
+		maxOffset := int64(math.Ceil(float64(galleryCount / filters.Limit)))
+
+		pages = make([]int64, maxOffset+1)
+		for i := range pages {
+			pages[i] = int64(i)
+		}
+
+		rand.Shuffle(len(pages), func(i, j int) {
+			pages[i], pages[j] = pages[j], pages[i]
+		})
+
+		if filters.Offset < int64(len(pages)) {
+			filters.Offset = pages[filters.Offset]
+		} else {
+			filters.Offset = maxOffset + 1
 		}
 	}
 
@@ -514,6 +569,13 @@ func GetGalleries(filters Filters, hidden bool, userUUID *string) ([]CombinedMet
 
 	var galleries []CombinedMetadata
 	err := galleriesStmt.Query(db(), &galleries)
+
+	if shuffle && galleries != nil {
+		rand.Shuffle(len(galleries), func(i, j int) {
+			galleries[i], galleries[j] = galleries[j], galleries[i]
+		})
+	}
+
 	return galleries, err
 }
 

@@ -54,6 +54,11 @@ func parseQueryParams(r *http.Request) db.Filters {
 		offset = db.Clamp(offset, 0, math.MaxInt64)
 	}
 
+	seed, err := strconv.ParseInt(r.URL.Query().Get("seed"), 10, 64)
+	if err != nil {
+		seed = 0
+	}
+
 	return db.Filters{
 		SearchTerm:    strings.TrimSpace(searchTerm),
 		Order:         order,
@@ -66,6 +71,7 @@ func parseQueryParams(r *http.Request) db.Filters {
 		NSFW:          nsfw,
 		Tags:          tags,
 		Grouped:       grouped,
+		Seed:          seed,
 	}
 }
 

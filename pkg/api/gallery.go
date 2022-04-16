@@ -72,7 +72,7 @@ func returnGalleries(w http.ResponseWriter, r *http.Request) {
 	}
 
 	queryParams := parseQueryParams(r)
-	galleries, err := db.GetGalleries(queryParams, true, userUUID)
+	galleries, err := db.GetGalleries(queryParams, true, userUUID, false)
 	if handleResult(w, galleries, err, false) {
 		return
 	}
@@ -91,7 +91,7 @@ func returnGalleries(w http.ResponseWriter, r *http.Request) {
 	if grouped {
 		for _, gallery := range galleriesResult {
 			if gallery.Series != nil && *gallery.Series != "" {
-				subGalleries, err := db.GetGalleries(db.Filters{Series: *gallery.Series}, true, userUUID)
+				subGalleries, err := db.GetGalleries(db.Filters{Series: *gallery.Series}, true, userUUID, false)
 				if err != nil {
 					log.Debugf("Error (%s) getting subgalleries: %s", err, *gallery.Series)
 					continue
@@ -129,6 +129,22 @@ func returnGalleries(w http.ResponseWriter, r *http.Request) {
 		Data:  galleriesResult,
 		Count: count,
 	})
+}
+
+// returnGalleryCount returns the amount of galleries.
+func returnGalleryCount(w http.ResponseWriter, r *http.Request) {
+	access, userUUID := hasAccess(w, r, db.NoRole)
+	if !access {
+		return
+	}
+
+	queryParams := parseQueryParams(r)
+	count, err := db.GetGalleryCount(queryParams, true, userUUID)
+	if handleResult(w, count, err, false) {
+		return
+	}
+
+	resultToJSON(w, struct{ Count int64 }{Count: count})
 }
 
 // returnGallery returns one gallery as JSON.
