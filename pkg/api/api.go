@@ -19,7 +19,7 @@ func handleResult(w http.ResponseWriter, result interface{}, err error, many boo
 	resultType := reflect.TypeOf(result)
 	if err != nil {
 		log.Debug(err)
-		errorHandler(w, http.StatusInternalServerError, "")
+		errorHandler(w, http.StatusInternalServerError, err.Error())
 		return true
 	}
 	if !many {
@@ -44,7 +44,7 @@ func handleResult(w http.ResponseWriter, result interface{}, err error, many boo
 func resultToJSON(w http.ResponseWriter, result interface{}) {
 	w.Header().Set("Content-Type", "application/json;charset=UTF-8")
 	if err := json.NewEncoder(w).Encode(result); err != nil {
-		errorHandler(w, http.StatusInternalServerError, "")
+		errorHandler(w, http.StatusInternalServerError, err.Error())
 	}
 }
 
