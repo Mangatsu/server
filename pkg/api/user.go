@@ -73,7 +73,7 @@ func login(w http.ResponseWriter, r *http.Request) {
 		}
 		token, err := newJWT(*userUUID, "", credentials.ExpiresIn, credentials.SessionName, role)
 		if err != nil {
-			errorHandler(w, http.StatusInternalServerError, "")
+			errorHandler(w, http.StatusInternalServerError, err.Error())
 			return
 		}
 
@@ -148,7 +148,7 @@ func updateUser(w http.ResponseWriter, r *http.Request) {
 	}
 
 	if err := db.UpdateUser(userUUID, userForm); err != nil {
-		errorHandler(w, http.StatusInternalServerError, "")
+		errorHandler(w, http.StatusInternalServerError, err.Error())
 		return
 	}
 
@@ -272,7 +272,7 @@ func setFavorite(w http.ResponseWriter, r *http.Request) {
 	}
 
 	if err := db.SetFavoriteGroup(params["name"], params["uuid"], *userUUID); err != nil {
-		errorHandler(w, http.StatusInternalServerError, "")
+		errorHandler(w, http.StatusInternalServerError, err.Error())
 		return
 	}
 	fmt.Fprintf(w, `{ "message": "favorite group updated" }`)
@@ -287,12 +287,12 @@ func updateProgress(w http.ResponseWriter, r *http.Request) {
 	params := mux.Vars(r)
 	progress, err := strconv.ParseInt(params["progress"], 10, 32)
 	if err != nil || params["uuid"] == "" {
-		errorHandler(w, http.StatusBadRequest, "")
+		errorHandler(w, http.StatusBadRequest, err.Error())
 		return
 	}
 
 	if err = db.UpdateProgress(int32(progress), params["uuid"], *userUUID); err != nil {
-		errorHandler(w, http.StatusInternalServerError, "")
+		errorHandler(w, http.StatusInternalServerError, err.Error())
 		return
 	}
 	fmt.Fprintf(w, `{ "message": "progress updated" }`)
