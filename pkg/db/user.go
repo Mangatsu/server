@@ -245,3 +245,11 @@ func DeleteSession(id string, userUUID string) error {
 	_, err := stmt.Exec(db())
 	return err
 }
+
+// PruneExpiredSessions removes all expired sessions.
+func PruneExpiredSessions() {
+	stmt := Session.DELETE().WHERE(Session.ExpiresAt.LT(CURRENT_TIMESTAMP()))
+	if _, err := stmt.Exec(db()); err != nil {
+		log.Error("Error pruning expired sessions: ", err)
+	}
+}
