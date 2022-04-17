@@ -6,7 +6,9 @@ import (
 	"github.com/Mangatsu/server/pkg/cache"
 	"github.com/Mangatsu/server/pkg/db"
 	"github.com/Mangatsu/server/pkg/library"
+	"github.com/Mangatsu/server/pkg/utility"
 	log "github.com/sirupsen/logrus"
+	"time"
 )
 
 func main() {
@@ -20,9 +22,9 @@ func main() {
 	if err != nil {
 		log.Error(err)
 	}
+
 	if users == nil || len(users) == 0 {
-		err := db.Register(username, password, int64(db.Admin))
-		if err != nil {
+		if err := db.Register(username, password, int64(db.Admin)); err != nil {
 			log.Fatal("Error registering initial admin: ", err)
 		}
 	}
@@ -34,6 +36,10 @@ func main() {
 	}
 
 	cache.Init()
+
+	// Tasks
+	utility.PeriodicTask(time.Minute, cache.PruneCache)
+	utility.PeriodicTask(time.Minute, db.PruneExpiredSessions)
 
 	api.LaunchAPI()
 }
