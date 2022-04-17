@@ -42,18 +42,6 @@ func Init() {
 			Mu:       &sync.Mutex{},
 		}
 	})
-
-	periodicPrune()
-}
-
-// periodicPrune prunes the cache every.
-func periodicPrune() {
-	go func() {
-		for {
-			PruneCache()
-			time.Sleep(time.Minute)
-		}
-	}()
 }
 
 // PruneCache removes entries not accessed (internal timestamp in mem) in the last x time in a thread-safe manner.
