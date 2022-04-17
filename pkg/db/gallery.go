@@ -380,17 +380,13 @@ func UpdateProgress(progress int32, galleryUUID string, userUUID string) error {
 
 // SetFavoriteGroup sets a favorite group for a gallery.
 func SetFavoriteGroup(favoriteGroup string, galleryUUID string, userUUID string) error {
-	now := time.Now()
+	now := CURRENT_TIMESTAMP()
 	stmt := GalleryPref.
 		INSERT(GalleryPref.GalleryUUID, GalleryPref.UserUUID, GalleryPref.FavoriteGroup, GalleryPref.UpdatedAt).
 		VALUES(galleryUUID, userUUID, favoriteGroup, now).
 		ON_CONFLICT(GalleryPref.GalleryUUID, GalleryPref.UserUUID).
 		WHERE(GalleryPref.UserUUID.EQ(String(userUUID)).AND(GalleryPref.GalleryUUID.EQ(String(galleryUUID)))).
-		DO_UPDATE(
-			SET(GalleryPref.FavoriteGroup.SET(String(favoriteGroup)),
-				// For some reason, Time couldn't be used here in the same way as other statements.
-				GalleryPref.UpdatedAt.SET(DateTime(now.Year(), now.Month(), now.Day(), now.Hour(), now.Minute(), now.Second()))),
-		)
+		DO_UPDATE(SET(GalleryPref.FavoriteGroup.SET(String(favoriteGroup)), GalleryPref.UpdatedAt.SET(now)))
 
 	_, err := stmt.Exec(db())
 	return err
