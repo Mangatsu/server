@@ -151,7 +151,7 @@ func loginHelper(w http.ResponseWriter, credentials Credentials, requiredRole db
 func newJWT(userUUID string, sessionID string, expiresIn *int64, sessionName *string, role *int32) (string, error) {
 	if sessionID == "" {
 		if expiresIn != nil {
-			*expiresIn = utility.Clamp(*expiresIn, 30, 60*60*24*30)
+			*expiresIn = utility.Clamp(*expiresIn, 30, 60*60*24*365)
 		}
 
 		newSessionID, err := db.NewSession(userUUID, expiresIn, sessionName)
