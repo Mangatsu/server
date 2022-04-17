@@ -5,6 +5,7 @@ import (
 	"github.com/Mangatsu/server/internal/config"
 	"github.com/Mangatsu/server/pkg/db"
 	"github.com/Mangatsu/server/pkg/types/model"
+	"github.com/Mangatsu/server/pkg/utility"
 	"github.com/golang-jwt/jwt/v4"
 	"math"
 	"net/http"
@@ -44,14 +45,14 @@ func parseQueryParams(r *http.Request) db.Filters {
 	if err != nil {
 		limit = 50
 	} else {
-		limit = db.Clamp(limit, 1, 100)
+		limit = utility.Clamp(limit, 1, 100)
 	}
 
 	offset, err := strconv.ParseInt(r.URL.Query().Get("offset"), 10, 64)
 	if err != nil {
 		offset = 0
 	} else {
-		offset = db.Clamp(offset, 0, math.MaxInt64)
+		offset = utility.Clamp(offset, 0, math.MaxInt64)
 	}
 
 	seed, err := strconv.ParseInt(r.URL.Query().Get("seed"), 10, 64)
@@ -150,7 +151,7 @@ func loginHelper(w http.ResponseWriter, credentials Credentials, requiredRole db
 func newJWT(userUUID string, sessionID string, expiresIn *int64, sessionName *string, role *int32) (string, error) {
 	if sessionID == "" {
 		if expiresIn != nil {
-			*expiresIn = db.Clamp(*expiresIn, 30, 60*60*24*30)
+			*expiresIn = utility.Clamp(*expiresIn, 30, 60*60*24*30)
 		}
 
 		newSessionID, err := db.NewSession(userUUID, expiresIn, sessionName)

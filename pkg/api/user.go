@@ -6,6 +6,7 @@ import (
 	"github.com/Mangatsu/server/internal/config"
 	"github.com/Mangatsu/server/pkg/db"
 	"github.com/Mangatsu/server/pkg/types/model"
+	"github.com/Mangatsu/server/pkg/utility"
 	"github.com/gorilla/mux"
 	log "github.com/sirupsen/logrus"
 	"net/http"
@@ -50,7 +51,7 @@ func register(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 	}
-	if err = db.Register(credentials.Username, credentials.Password, db.Clamp(role, 0, int64(db.Admin))); err != nil {
+	if err = db.Register(credentials.Username, credentials.Password, utility.Clamp(role, 0, int64(db.Admin))); err != nil {
 		w.WriteHeader(http.StatusConflict)
 		fmt.Fprintf(w, `{ "Username already in use" }`)
 		return

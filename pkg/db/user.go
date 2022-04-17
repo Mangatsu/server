@@ -6,6 +6,7 @@ import (
 	"encoding/base64"
 	"github.com/Mangatsu/server/pkg/types/model"
 	. "github.com/Mangatsu/server/pkg/types/table"
+	"github.com/Mangatsu/server/pkg/utility"
 	. "github.com/go-jet/jet/v2/sqlite"
 	"github.com/google/uuid"
 	log "github.com/sirupsen/logrus"
@@ -180,7 +181,7 @@ func UpdateUser(userUUID string, userForm *UserForm) error {
 		if err != nil {
 			return err
 		}
-		role = Clamp(role, NoRole, int64(Admin))
+		role = utility.Clamp(role, NoRole, int64(Admin))
 
 		updateUserStmt := User.
 			UPDATE(User.Role, User.UpdatedAt).
