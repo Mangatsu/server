@@ -98,6 +98,14 @@ func errorHandler(w http.ResponseWriter, status int, msg string) {
 	}
 }
 
+func returnTest(w http.ResponseWriter, r *http.Request) {
+	libraries, err := db.GetLibraries()
+	if handleResult(w, libraries, err, true) {
+		return
+	}
+	resultToJSON(w, libraries)
+}
+
 // Handles HTTP(S) requests.
 func handleRequests() {
 	baseURL := "/api/v1"
@@ -122,6 +130,7 @@ func handleRequests() {
 	r.HandleFunc(baseURL+"/scan", scanLibraries).Methods("GET")
 	r.HandleFunc(baseURL+"/thumbnails", generateThumbnails).Methods("GET")
 	r.HandleFunc(baseURL+"/meta", findMetadata).Methods("GET")
+	r.HandleFunc(baseURL+"/test", returnTest).Methods("GET")
 
 	r.HandleFunc(baseURL+"/categories", returnCategories).Methods("GET")
 	r.HandleFunc(baseURL+"/series", returnSeries).Methods("GET")
