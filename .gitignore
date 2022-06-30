@@ -2,9 +2,9 @@
 /.idea
 
 # data
+/data
 mangatsu.sqlite
 /devarchive
-/data/cache
 /.env
 docker-compose.yml
 /mangatsu-server.exe
