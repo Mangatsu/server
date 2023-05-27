@@ -147,7 +147,7 @@ func handleRequests() {
 	})
 
 	handler := cors.New(cors.Options{
-		AllowedOrigins: []string{"http://localhost:3000"},
+		AllowOriginFunc: func(_ string) bool { return true },
 		AllowedMethods: []string{
 			http.MethodOptions, http.MethodGet, http.MethodPost, http.MethodDelete, http.MethodPut, http.MethodPatch,
 		},
