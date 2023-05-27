@@ -33,10 +33,6 @@ func ExtractPDF() {
 	// TODO: Add support for PDF files, Probably with https://github.com/gen2brain/go-fitz
 }
 
-func Extract7z() {
-	// TODO: add support for 7z compression. Probably with https://github.com/bodgit/sevenzip
-}
-
 // UniversalExtract extracts media files from zip, cbz, rar, cbr, tar (all its variants) archives.
 // Plain directories without compression are also supported. For PDF ExtractPDF respectively.
 func UniversalExtract(dst string, archivePath string) ([]string, int) {
