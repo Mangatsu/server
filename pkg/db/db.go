@@ -14,8 +14,8 @@ var database *sql.DB
 //go:embed migrations
 var embedMigrations embed.FS
 
-// Initdb initializes the database
-func Initdb() {
+// InitDB initializes the database
+func InitDB() {
 	var dbErr error
 	database, dbErr = sql.Open("sqlite3", config.BuildDataPath(config.Options.DB.Name+".sqlite"))
 	if dbErr != nil {
