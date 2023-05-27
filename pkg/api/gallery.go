@@ -3,13 +3,14 @@ package api
 import (
 	"encoding/json"
 	"fmt"
+	"net/http"
+
 	"github.com/Mangatsu/server/internal/config"
 	"github.com/Mangatsu/server/pkg/cache"
 	"github.com/Mangatsu/server/pkg/db"
 	"github.com/Mangatsu/server/pkg/types/model"
 	"github.com/gorilla/mux"
 	log "github.com/sirupsen/logrus"
-	"net/http"
 )
 
 type MetadataResult struct {
@@ -73,7 +74,7 @@ func returnGalleries(w http.ResponseWriter, r *http.Request) {
 
 	queryParams := parseQueryParams(r)
 	galleries, err := db.GetGalleries(queryParams, true, userUUID, false)
-	if handleResult(w, galleries, err, false) {
+	if handleResult(w, galleries, err, true) {
 		return
 	}
 

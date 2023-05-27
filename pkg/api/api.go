@@ -3,14 +3,15 @@ package api
 import (
 	"encoding/json"
 	"fmt"
+	"net/http"
+	"reflect"
+	"time"
+
 	"github.com/Mangatsu/server/internal/config"
 	"github.com/Mangatsu/server/pkg/db"
 	"github.com/gorilla/mux"
 	"github.com/rs/cors"
 	log "github.com/sirupsen/logrus"
-	"net/http"
-	"reflect"
-	"time"
 )
 
 // handleResult handles the result and returns if it was successful or not.
@@ -146,12 +147,14 @@ func handleRequests() {
 	})
 
 	handler := cors.New(cors.Options{
-		AllowedOrigins: []string{"*"},
+		AllowedOrigins: []string{"http://localhost:3000"},
 		AllowedMethods: []string{
 			http.MethodOptions, http.MethodGet, http.MethodPost, http.MethodDelete, http.MethodPut, http.MethodPatch,
 		},
 		AllowedHeaders: []string{
 			"Accept", "Content-Type", "Content-Length", "Accept-Encoding", "X-CSRF-Token", "Authorization",
+			"Access-Control-Allow-Headers", "Origin", "X-Requested-With", "Access-Control-Request-Method",
+			"Access-Control-Request-Headers",
 		},
 		AllowCredentials: true,
 	}).Handler(r)
