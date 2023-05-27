@@ -2,15 +2,16 @@ package api
 
 import (
 	"encoding/json"
+	"math"
+	"net/http"
+	"strconv"
+	"strings"
+
 	"github.com/Mangatsu/server/internal/config"
 	"github.com/Mangatsu/server/pkg/db"
 	"github.com/Mangatsu/server/pkg/types/model"
 	"github.com/Mangatsu/server/pkg/utility"
 	"github.com/golang-jwt/jwt/v4"
-	"math"
-	"net/http"
-	"strconv"
-	"strings"
 )
 
 type CustomClaims struct {
@@ -96,40 +97,61 @@ func convertMetadata(metadata db.CombinedMetadata) MetadataResult {
 	}
 }
 
+// readJWT parses the JWT from an HTTP request's Cookie or Authorization header.
+func readJWT(r *http.Request) string {
+	jwtCookie, err := r.Cookie("mtsu.jwt")   // Mostly for web browsers
+	jwtAuth := r.Header.Get("Authorization") // Others such as mobile apps
+
+	token := ""
+	if err == nil {
+		token = jwtCookie.Value
+	} else {
+		token = jwtAuth
+	}
+
+	splitToken := strings.Fields(token)
+	if len(splitToken) == 2 {
+		return splitToken[1]
+	}
+
+	return ""
+}
+
 // hasAccess handles access based on the Visibility option. Role restricts access to the specified role.
 // NoRole (0) allows access to anonymous users if the Visibility is Public or Restricted (passphrase required).
 func hasAccess(w http.ResponseWriter, r *http.Request, role db.Role) (bool, *string) {
-	// JWT/session auth or passphrase auth
-	authorization := strings.Fields(r.Header.Get("Authorization"))
-	validAuthHeader := len(authorization) == 2
-	if validAuthHeader {
-		access, userUUID := verifyJWT(authorization[1], role)
+	publicAccess := config.Options.Visibility == config.Public && role == 0
+
+	token := readJWT(r)
+	if token != "" {
+		access, userUUID := verifyJWT(token, role)
 		if access {
-			return access, userUUID
+			return access || publicAccess, userUUID
 		}
-		if config.Options.Visibility == config.Restricted && role == 0 {
-			anonymousAccess := authorization[1] == config.Credentials.Passphrase
-			if anonymousAccess {
-				return anonymousAccess, nil
-			}
+		passphrase := "Passphrase " + config.Credentials.Passphrase
+		if config.Options.Visibility == config.Restricted && role == 0 && token == passphrase {
+			return true, nil
 		}
+
 		errorHandler(w, http.StatusUnauthorized, "")
-		return false, nil
+		return publicAccess, nil
 	}
 
 	// Username & password auth
-	credentials := &Credentials{}
-	err := json.NewDecoder(r.Body).Decode(credentials)
-	if err == nil && credentials.Username != "" && credentials.Password != "" {
-		access, userUUID, _ := loginHelper(w, *credentials, role)
-		if !access {
-			return false, nil
+	if r.Body != nil {
+		credentials := &Credentials{}
+		err := json.NewDecoder(r.Body).Decode(credentials)
+		if err == nil && credentials.Username != "" && credentials.Password != "" {
+			access, userUUID, _ := loginHelper(w, *credentials, role)
+			if !access {
+				return false, nil
+			}
+			return access || publicAccess, userUUID
 		}
-		return access, userUUID
 	}
 
 	// If public, anonymous access without passphrase is allowed
-	if config.Options.Visibility == config.Public && role == 0 {
+	if publicAccess {
 		return true, nil
 	}
 

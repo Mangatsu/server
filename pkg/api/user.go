@@ -3,15 +3,15 @@ package api
 import (
 	"encoding/json"
 	"fmt"
+	"net/http"
+	"strconv"
+
 	"github.com/Mangatsu/server/internal/config"
 	"github.com/Mangatsu/server/pkg/db"
 	"github.com/Mangatsu/server/pkg/types/model"
 	"github.com/Mangatsu/server/pkg/utility"
 	"github.com/gorilla/mux"
 	log "github.com/sirupsen/logrus"
-	"net/http"
-	"strconv"
-	"strings"
 )
 
 type Credentials struct {
@@ -23,6 +23,8 @@ type Credentials struct {
 	SessionName *string `json:"session_name"`
 }
 
+const yearInSeconds = 365 * 24 * 60 * 60
+
 func register(w http.ResponseWriter, r *http.Request) {
 	credentials := &Credentials{}
 	err := json.NewDecoder(r.Body).Decode(credentials)
@@ -32,13 +34,14 @@ func register(w http.ResponseWriter, r *http.Request) {
 	}
 
 	if !config.Options.Registrations || credentials.Role != nil {
-		authorization := strings.Fields(r.Header.Get("Authorization"))
-		if len(authorization) == 2 {
-			access, _ := verifyJWT(authorization[1], db.Admin)
-			if !access {
-				errorHandler(w, http.StatusUnauthorized, "")
-				return
-			}
+		token := readJWT(r)
+		if token == "" {
+			errorHandler(w, http.StatusBadRequest, "")
+			return
+		}
+		if access, _ := verifyJWT(token, db.Admin); !access {
+			errorHandler(w, http.StatusUnauthorized, "")
+			return
 		}
 	}
 
@@ -78,18 +81,42 @@ func login(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 
+		jwtCookie := http.Cookie{
+			Name:     "mtsu.jwt",
+			Value:    "Bearer " + token,
+			Path:     "/",
+			MaxAge:   yearInSeconds,
+			Secure:   true,
+			HttpOnly: true,
+			SameSite: http.SameSiteNoneMode,
+		}
+
+		http.SetCookie(w, &jwtCookie)
+
 		resultToJSON(w, struct {
-			Token string
+			UUID      *string
+			Role      *int32
+			ExpiresIn *int64
 		}{
-			Token: token,
+			UUID:      userUUID,
+			Role:      role,
+			ExpiresIn: credentials.ExpiresIn,
 		})
+
 		return
 	} else if credentials.Passphrase == config.Credentials.Passphrase {
-		resultToJSON(w, struct {
-			Token string
-		}{
-			Token: credentials.Passphrase,
-		})
+		passphraseCookie := http.Cookie{
+			Name:     "mtsu.jwt",
+			Value:    "Passphrase " + credentials.Passphrase,
+			Path:     "/",
+			MaxAge:   yearInSeconds,
+			Secure:   true,
+			HttpOnly: true,
+			SameSite: http.SameSiteNoneMode,
+		}
+		http.SetCookie(w, &passphraseCookie)
+
+		fmt.Fprint(w, `{ "message": "successfully logged in anonymously" }`)
 		return
 	}
 
@@ -97,17 +124,29 @@ func login(w http.ResponseWriter, r *http.Request) {
 }
 
 func logout(w http.ResponseWriter, r *http.Request) {
-	authorization := strings.Split(r.Header.Get("Authorization"), " ")
-	if len(authorization) != 2 {
+	token := readJWT(r)
+	if token == "" {
 		errorHandler(w, http.StatusBadRequest, "")
 		return
 	}
 
-	claims, ok, _, err := parseJWT(authorization[1])
+	claims, ok, _, err := parseJWT(token)
 	if err != nil || !ok {
 		errorHandler(w, http.StatusUnauthorized, "")
 		return
 	}
+
+	cookie := http.Cookie{
+		Name:     "mtsu.jwt",
+		Value:    "",
+		Path:     "/",
+		MaxAge:   0,
+		Secure:   true,
+		HttpOnly: true,
+		SameSite: http.SameSiteNoneMode,
+	}
+	http.SetCookie(w, &cookie)
+
 	if err = db.Logout(claims.ID, claims.Subject); err != nil {
 		w.WriteHeader(http.StatusGone)
 		fmt.Fprintf(w, `{ "code": %d, "message": "gone" }`, http.StatusGone)
