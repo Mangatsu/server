@@ -3,16 +3,17 @@ package metadata
 import (
 	"errors"
 	"fmt"
+	"io/fs"
+	"io/ioutil"
+	"math"
+	"path/filepath"
+
 	"github.com/Mangatsu/server/internal/config"
 	"github.com/Mangatsu/server/pkg/db"
 	"github.com/Mangatsu/server/pkg/library"
 	"github.com/Mangatsu/server/pkg/types/model"
 	"github.com/mholt/archiver/v4"
 	log "github.com/sirupsen/logrus"
-	"io/fs"
-	"io/ioutil"
-	"math"
-	"path/filepath"
 )
 
 type MetaType string
@@ -25,7 +26,7 @@ const (
 
 // matchInternalMeta reads the internal metadata (info.json, info.txt or galleryinfo.txt) from the given archive.
 func matchInternalMeta(metaTypes map[MetaType]bool, fullArchivePath string) ([]byte, string, MetaType) {
-	fsys, err := archiver.FileSystem(fullArchivePath)
+	fsys, err := archiver.FileSystem(nil, fullArchivePath)
 	if err != nil {
 		log.Error("Error opening archive: ", err)
 		return nil, "", ""

@@ -1,13 +1,14 @@
 package library
 
 import (
-	"github.com/Mangatsu/server/internal/config"
-	"github.com/mholt/archiver/v4"
-	log "github.com/sirupsen/logrus"
 	"io"
 	"io/fs"
 	"os"
 	"path/filepath"
+
+	"github.com/Mangatsu/server/internal/config"
+	"github.com/mholt/archiver/v4"
+	log "github.com/sirupsen/logrus"
 )
 
 func InitCache() {
@@ -37,9 +38,9 @@ func Extract7z() {
 }
 
 // UniversalExtract extracts media files from zip, cbz, rar, cbr, tar (all its variants) archives.
-// Plain directories without compression are also supported. For 7zip and PDF see Extract7z and ExtractPDF respectively.
+// Plain directories without compression are also supported. For PDF ExtractPDF respectively.
 func UniversalExtract(dst string, archivePath string) ([]string, int) {
-	fsys, err := archiver.FileSystem(archivePath)
+	fsys, err := archiver.FileSystem(nil, archivePath)
 	if err != nil {
 		log.Error("Error opening archive: ", err)
 		return nil, 0

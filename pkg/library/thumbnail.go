@@ -4,17 +4,18 @@ import (
 	"bytes"
 	"errors"
 	"fmt"
+	"image"
+	"io/fs"
+	"os"
+	"path"
+	"strings"
+
 	"github.com/Mangatsu/server/internal/config"
 	"github.com/Mangatsu/server/pkg/db"
 	"github.com/chai2010/webp"
 	"github.com/disintegration/imaging"
 	"github.com/mholt/archiver/v4"
 	log "github.com/sirupsen/logrus"
-	"image"
-	"io/fs"
-	"os"
-	"path"
-	"strings"
 )
 
 // GenerateThumbnails generates thumbnails for covers and pages in parallel.
@@ -55,7 +56,7 @@ func ReadArchiveImages(archivePath string, galleryUUID string, onlyCover bool) {
 		}
 	}
 
-	fsys, err := archiver.FileSystem(archivePath)
+	fsys, err := archiver.FileSystem(nil, archivePath)
 	if err != nil {
 		log.Error("Error reading '", archivePath, "' on trying to generate thumbnails")
 		return
