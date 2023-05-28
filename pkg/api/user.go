@@ -141,6 +141,7 @@ func logout(w http.ResponseWriter, r *http.Request) {
 	cookie := http.Cookie{
 		Name:     "mtsu.jwt",
 		Value:    "",
+		Domain:   config.Options.Domain,
 		Path:     "/",
 		MaxAge:   0,
 		Secure:   true,
