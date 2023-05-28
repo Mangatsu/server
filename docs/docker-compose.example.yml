@@ -58,13 +58,6 @@ services:
       NEXT_PUBLIC_MANGATSU_API_URL: https://mangatsu-api.example.com
       # Hostname or the domain where images are hosted. Usually the same as the domain in the API URL.
       NEXT_MANGATSU_IMAGE_HOSTNAME: mangatsu-api.example.com
-      # URL to this frontend server.
-      NEXTAUTH_URL: https://mangatsu.example.com
-      # URL to this frontend server. Change this to something else!
-      SECRET: zb4DyuqELIfi8X0XRMa52yV9y6d011YTyyHBtczhYeHbzsquYnsr7Q9OkHNoLd6HvFqz4vvrCPcINol7sIEfLG6pY4D0KSHo
-      # Secret to sign JWTs in the web client. Recommended to change.
-      # Can be generated with the command 'jose newkey -s 256 -t oct -a HS512' (https://www.npmjs.com/package/node-jose-tools)
-      JWT_SIGNING_PRIVATE_KEY: '{"kty":"oct","kid":"bbdunoB1J71jPATtgJAseZnx36LB4ant1OfH6ysV78M","alg":"HS512","k":"axdN1SbiVxMIPJYapyHOpGuo7KcE_mkT6_bugy5xxG8"}'
       # If some other container is already using the same port, you can use this to avoid conflicts. Remember to change the first port in 3030:3030 too.
       PORT: 3030
     # Above environmental variables can also be loaded from a file:

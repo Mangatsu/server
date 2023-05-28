@@ -37,9 +37,6 @@ services:
       NODE_ENV: production
       NEXT_PUBLIC_MANGATSU_API_URL: https://mangatsu-api.example.com
       NEXT_MANGATSU_IMAGE_HOSTNAME: mangatsu-api.example.com
-      NEXTAUTH_URL: https://mangatsu.example.com
-      SECRET: zb4DyuqELIfi8X0XRMa52yV9y6d011YTyyHBtczhYeHbzsquYnsr7Q9OkHNoLd6HvFqz4vvrCPcINol7sIEfLG6pY4D0KSHo
-      JWT_SIGNING_PRIVATE_KEY: '{"kty":"oct","kid":"bbdunoB1J71jPATtgJAseZnx36LB4ant1OfH6ysV78M","alg":"HS512","k":"axdN1SbiVxMIPJYapyHOpGuo7KcE_mkT6_bugy5xxG8"}'
       PORT: 3030
 
 volumes:
