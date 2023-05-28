@@ -15,7 +15,7 @@
 ## 📌 Features
 - Organizing and tagging local (and remote, with tools like [rclone](https://rclone.org)) collections of manga, doujinshi and other art
   - **Mangatsu will never do any writes inside specified locations.**
-  - Supports **ZIP** (or CBZ), **RAR** (or CBR), ~~7z~~ and plain image (png, jpg, jpeg, webp, gif, tiff, bmp) files.
+  - Supports **ZIP** (or CBZ), **RAR** (or CBR), **7z** and plain image (png, jpg, jpeg, webp, gif, tiff, bmp) files.
     - PDF and video support is planned.
 - Metadata parsing from filenames and JSON files (inside or beside the archive)
   - Support for more sources is planned such as TXT files from EH/ExH
