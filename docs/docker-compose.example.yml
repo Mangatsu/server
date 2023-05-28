@@ -31,6 +31,11 @@ services:
       MTSU_REGISTRATIONS: 'false'
       # Secret to sign JWTs for login sessions in the backend. Recommended to change.
       MTSU_JWT_SECRET: 9Wag7sMvKl3aF6K5lwIg6TI42ia2f6BstZAVrdJIq8Mp38lnl7UzQMC1qjKyZCBzHFGbbqsA0gKcHqDuyXQAhWoJ0lcx4K5q
+      # Domain for the server. Used in cookies.
+      # For example, if the address for the server is "api.example.com", and for the frontend "read.example.com",
+      # the value here should be "example.com" for the cookies to work properly between subdomains.
+      # https://developer.mozilla.org/en-US/docs/Web/HTTP/Cookies#define_where_cookies_are_sent
+      MTSU_DOMAIN: example.org
       # Usually the following three envs don't need changing as they are the container's internal hostname, port and data path.
       # In case of port conflict, change the port here and the first one above in the ports section.
       MTSU_HOSTNAME: mtsuserver

@@ -20,6 +20,7 @@ services:
       MTSU_RESTRICTED_PASSPHRASE: secretpassword
       MTSU_REGISTRATIONS: 'false'
       MTSU_JWT_SECRET: 9Wag7sMvKl3aF6K5lwIg6TI42ia2f6BstZAVrdJIq8Mp38lnl7UzQMC1qjKyZCBzHFGbbqsA0gKcHqDuyXQAhWoJ0lcx4K5q
+      MTSU_DOMAIN: example.org
       MTSU_HOSTNAME: mtsuserver
       MTSU_PORT: 5050
       MTSU_DATA_PATH: /data

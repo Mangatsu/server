@@ -1,10 +1,11 @@
 package config
 
 import (
-	"github.com/joho/godotenv"
-	log "github.com/sirupsen/logrus"
 	"os"
 	"time"
+
+	"github.com/joho/godotenv"
+	log "github.com/sirupsen/logrus"
 )
 
 type Layout string
@@ -28,6 +29,7 @@ type CacheOptions struct {
 }
 
 type OptionsModel struct {
+	Domain        string
 	Hostname      string
 	Port          string
 	Registrations bool
@@ -55,6 +57,7 @@ func LoadEnv() {
 	}
 
 	Options = &OptionsModel{
+		Domain:        domain(),
 		Hostname:      hostname(),
 		Port:          port(),
 		Registrations: registrationsEnabled(),
@@ -85,6 +88,10 @@ func GetInitialAdmin() (string, string) {
 		password = "admin321"
 	}
 	return username, password
+}
+
+func domain() string {
+	return os.Getenv("MTSU_DOMAIN")
 }
 
 func hostname() string {

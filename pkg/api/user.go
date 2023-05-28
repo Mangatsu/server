@@ -84,6 +84,7 @@ func login(w http.ResponseWriter, r *http.Request) {
 		jwtCookie := http.Cookie{
 			Name:     "mtsu.jwt",
 			Value:    "Bearer " + token,
+			Domain:   config.Options.Domain,
 			Path:     "/",
 			MaxAge:   yearInSeconds,
 			Secure:   true,
@@ -108,6 +109,7 @@ func login(w http.ResponseWriter, r *http.Request) {
 		passphraseCookie := http.Cookie{
 			Name:     "mtsu.jwt",
 			Value:    "Passphrase " + credentials.Passphrase,
+			Domain:   config.Options.Domain,
 			Path:     "/",
 			MaxAge:   yearInSeconds,
 			Secure:   true,
