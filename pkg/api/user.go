@@ -8,10 +8,11 @@ import (
 
 	"github.com/Mangatsu/server/internal/config"
 	"github.com/Mangatsu/server/pkg/db"
+	"github.com/Mangatsu/server/pkg/log"
 	"github.com/Mangatsu/server/pkg/types/model"
 	"github.com/Mangatsu/server/pkg/utils"
 	"github.com/gorilla/mux"
-	log "github.com/sirupsen/logrus"
+	"go.uber.org/zap"
 )
 
 type Credentials struct {
@@ -49,12 +50,12 @@ func register(w http.ResponseWriter, r *http.Request) {
 	if credentials.Role != nil {
 		role, err = strconv.ParseInt(*credentials.Role, 10, 8)
 		if err != nil {
-			log.Error(err)
+			log.Z.Debug("failed to parse role value when registering", zap.String("err", err.Error()))
 			errorHandler(w, http.StatusBadRequest, "")
 			return
 		}
 	}
-	if err = db.Register(credentials.Username, credentials.Password, utility.Clamp(role, 0, int64(db.Admin))); err != nil {
+	if err = db.Register(credentials.Username, credentials.Password, utils.Clamp(role, 0, int64(db.Admin))); err != nil {
 		w.WriteHeader(http.StatusConflict)
 		fmt.Fprintf(w, `{ "Username already in use" }`)
 		return

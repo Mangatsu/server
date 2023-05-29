@@ -4,16 +4,18 @@ import (
 	"crypto/rand"
 	"database/sql"
 	"encoding/base64"
+	"io"
+	"strconv"
+	"time"
+
+	"github.com/Mangatsu/server/pkg/log"
 	"github.com/Mangatsu/server/pkg/types/model"
 	. "github.com/Mangatsu/server/pkg/types/table"
 	"github.com/Mangatsu/server/pkg/utils"
 	. "github.com/go-jet/jet/v2/sqlite"
 	"github.com/google/uuid"
-	log "github.com/sirupsen/logrus"
+	"go.uber.org/zap"
 	"golang.org/x/crypto/bcrypt"
-	"io"
-	"strconv"
-	"time"
 )
 
 type UserForm struct {
@@ -159,7 +161,6 @@ func VerifySession(id string, userUUID string) bool {
 	var sessions []model.Session
 	err := stmt.Query(db(), &sessions)
 	if err != nil {
-		log.Debug("Error verifying session: ", err)
 		return false
 	}
 
@@ -181,7 +182,7 @@ func UpdateUser(userUUID string, userForm *UserForm) error {
 		if err != nil {
 			return err
 		}
-		role = utility.Clamp(role, NoRole, int64(Admin))
+		role = utils.Clamp(role, NoRole, int64(Admin))
 
 		updateUserStmt := User.
 			UPDATE(User.Role, User.UpdatedAt).
@@ -250,6 +251,6 @@ func DeleteSession(id string, userUUID string) error {
 func PruneExpiredSessions() {
 	stmt := Session.DELETE().WHERE(BoolExp(Raw("unixepoch() > session.expires_at")))
 	if _, err := stmt.Exec(db()); err != nil {
-		log.Error("Error pruning expired sessions: ", err)
+		log.Z.Error("failed to prune expired sessions", zap.String("err", err.Error()))
 	}
 }

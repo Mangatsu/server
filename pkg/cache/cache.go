@@ -1,15 +1,17 @@
 package cache
 
 import (
-	"github.com/Mangatsu/server/internal/config"
-	"github.com/Mangatsu/server/pkg/library"
-	"github.com/djherbis/atime"
-	"github.com/google/uuid"
-	log "github.com/sirupsen/logrus"
 	"os"
 	"path"
 	"sync"
 	"time"
+
+	"github.com/Mangatsu/server/internal/config"
+	"github.com/Mangatsu/server/pkg/library"
+	"github.com/Mangatsu/server/pkg/log"
+	"github.com/djherbis/atime"
+	"github.com/google/uuid"
+	"go.uber.org/zap"
 )
 
 type cacheValue struct {
@@ -51,7 +53,10 @@ func PruneCache() {
 		value.Mu.Lock()
 		if value.Accessed.Add(config.Options.Cache.TTL).Before(now) {
 			if err := remove(galleryUUID); err != nil {
-				log.Errorf("Error occured while deleting cache entry: %s", err)
+				log.Z.Error("failed to delete a cache entry",
+					zap.Bool("thread-safe", true),
+					zap.String("uuid", galleryUUID),
+					zap.String("err", err.Error()))
 			}
 		}
 		value.Mu.Unlock()
@@ -64,13 +69,16 @@ func PruneCacheFS() {
 	iterateCacheEntries(func(pathToEntry string, accessTime time.Time) {
 		if accessTime.Add(config.Options.Cache.TTL).Before(now) {
 			if err := os.Remove(pathToEntry); err != nil {
-				log.Errorf("Error occured while removing cache entry: %s", err)
+				log.Z.Error("failed to delete a cache entry",
+					zap.Bool("thread-safe", false),
+					zap.String("path", pathToEntry),
+					zap.String("err", err.Error()))
 			}
 		}
 	})
 }
 
-// Read reads the cached gallery from disk. If it doesn't exist, it will be created and then read.
+// Read reads the cached gallery from the disk. If it doesn't exist, it will be created and then read.
 func Read(archivePath string, galleryUUID string) ([]string, int) {
 	galleryCache.Store[galleryUUID] = cacheValue{
 		Accessed: time.Now(),
@@ -88,7 +96,7 @@ func Read(archivePath string, galleryUUID string) ([]string, int) {
 	return files, count
 }
 
-// remove wipes the cached gallery from disk.
+// remove wipes the cached gallery from the disk.
 func remove(galleryUUID string) error {
 	// Paranoid check to make sure that the base is a real UUID, since we don't want to delete anything else.
 	maybeUUID := path.Base(galleryUUID)
@@ -115,21 +123,28 @@ func iterateCacheEntries(callback func(pathToEntry string, accessTime time.Time)
 	cachePath := config.BuildCachePath()
 	cacheEntries, err := os.ReadDir(cachePath)
 	if err != nil {
-		log.Errorf("Could not read cache dir: %s", err)
+		log.Z.Error("could not read cache dir",
+			zap.String("path", cachePath),
+			zap.String("err", err.Error()))
 		return
 	}
 
 	for _, entry := range cacheEntries {
 		info, err := entry.Info()
 		if err != nil {
-			log.Errorf("Error occured while reading cache entry info: %s", err)
+			log.Z.Error("could to read cache entry info",
+				zap.String("path", cachePath),
+				zap.String("err", err.Error()))
 			return
 		}
 
 		pathToEntry := path.Join(cachePath, entry.Name())
 		accessTime, err := atime.Stat(pathToEntry)
 		if err != nil {
-			log.Debugf("Could not read the access time of '%s'.  %s", entry.Name(), err)
+			log.Z.Debug("could to read the access time",
+				zap.String("name", entry.Name()),
+				zap.String("path", cachePath),
+				zap.String("err", err.Error()))
 			accessTime = info.ModTime()
 		}
 

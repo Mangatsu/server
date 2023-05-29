@@ -2,10 +2,12 @@ package metadata
 
 import (
 	"bufio"
-	"github.com/Mangatsu/server/pkg/types/model"
-	log "github.com/sirupsen/logrus"
 	"os"
 	"strings"
+
+	"github.com/Mangatsu/server/pkg/log"
+	"github.com/Mangatsu/server/pkg/types/model"
+	"go.uber.org/zap"
 )
 
 // ParseHath parses given text file. Input file is expected to be in the H@H (Hath) format (galleryinfo.txt).
@@ -21,7 +23,7 @@ func ParseHath(filePath string) (model.Gallery, []model.Tag, error) {
 	defer func(file *os.File) {
 		err := file.Close()
 		if err != nil {
-			log.Error(err)
+			log.Z.Debug("failed to close Hath formatted file", zap.String("err", err.Error()))
 		}
 	}(file)
 

@@ -12,10 +12,11 @@ import (
 
 	"github.com/Mangatsu/server/internal/config"
 	"github.com/Mangatsu/server/pkg/db"
+	"github.com/Mangatsu/server/pkg/log"
 	"github.com/chai2010/webp"
 	"github.com/disintegration/imaging"
 	"github.com/mholt/archiver/v4"
-	log "github.com/sirupsen/logrus"
+	"go.uber.org/zap"
 )
 
 // GenerateThumbnails generates thumbnails for covers and pages in parallel.
@@ -32,7 +33,7 @@ func GenerateThumbnails(pages bool, force bool) {
 func thumbnailWalker(onlyCover bool) {
 	libraries, err := db.GetLibraries()
 	if err != nil {
-		log.Error("Could not get libraries for thumbnail generation: ", err)
+		log.Z.Error("could not get libraries for thumbnail generation", zap.String("err", err.Error()))
 		return
 	}
 
@@ -51,21 +52,25 @@ func ReadArchiveImages(archivePath string, galleryUUID string, onlyCover bool) {
 	if !PathExists(galleryThumbnailPath) {
 		err := os.Mkdir(galleryThumbnailPath, os.ModePerm)
 		if err != nil {
-			log.Error("Couldn't create thumbnail dir: ", err)
+			log.Z.Error("could not create thumbnail dir",
+				zap.String("path", galleryThumbnailPath),
+				zap.String("err", err.Error()))
 			return
 		}
 	}
 
 	fsys, err := archiver.FileSystem(nil, archivePath)
 	if err != nil {
-		log.Error("Error reading '", archivePath, "' on trying to generate thumbnails")
+		log.Z.Error("failed to read path on trying to generate thumbnails",
+			zap.String("path", archivePath),
+			zap.String("err", err.Error()))
 		return
 	}
 
 	if dir, ok := fsys.(fs.ReadDirFile); ok {
 		entries, err := dir.ReadDir(0)
 		if err != nil {
-			log.Error("Error reading dir: ", err)
+			log.Z.Error("failed to read dir", zap.String("err", err.Error()))
 			return
 		}
 		for _, e := range entries {
@@ -87,7 +92,9 @@ func ReadArchiveImages(archivePath string, galleryUUID string, onlyCover bool) {
 			cacheInnerDir := config.BuildCachePath("thumbnails", galleryUUID, d.Name())
 			if !PathExists(cacheInnerDir) {
 				if err = os.Mkdir(cacheInnerDir, os.ModePerm); err != nil {
-					log.Error("Couldn't create inner thumbnail dir: ", err)
+					log.Z.Error("could not create inner thumbnail dir",
+						zap.String("path", cacheInnerDir),
+						zap.String("err", err.Error()))
 					return err
 				}
 			}
@@ -113,16 +120,22 @@ func ReadArchiveImages(archivePath string, galleryUUID string, onlyCover bool) {
 
 		err = generateThumbnail(galleryUUID, imgName, content, onlyCover)
 		if err != nil {
-			log.Error("Couldn't generate thumbnail for: ", d.Name())
+			log.Z.Error("could not create thumbnail",
+				zap.String("uuid", galleryUUID),
+				zap.String("name", d.Name()),
+				zap.String("err", err.Error()))
 			return err
 		}
 
 		if onlyCover {
 			webpName := imgName + ".webp"
-			log.Info("Cover thumbnail generated: ", webpName)
+			log.Z.Info("cover thumbnail generated", zap.String("img", webpName))
 
 			if err := db.SetThumbnail(galleryUUID, webpName); err != nil {
-				log.Error("Couldn't save cover thumbnail to db: ", err)
+				log.Z.Error("could not save cover thumbnail to db",
+					zap.String("uuid", galleryUUID),
+					zap.String("name", webpName),
+					zap.String("err", err.Error()))
 				return err
 			}
 			return errors.New("terminate walk")
@@ -132,10 +145,12 @@ func ReadArchiveImages(archivePath string, galleryUUID string, onlyCover bool) {
 		return nil
 	})
 	if err != nil && err.Error() != "terminate walk" {
-		log.Debug("Error walking dir: ", err)
+		log.Z.Debug("failed to walk the dir when generating thumbnails", zap.String("err", err.Error()))
 	}
 	if !onlyCover {
-		log.Infof("%d non-cover thumbnails generated for gallery: %s", generatedCount, galleryUUID)
+		log.Z.Info("non-cover thumbnails generated for gallery",
+			zap.String("uuid", galleryUUID),
+			zap.Int("count", generatedCount))
 	}
 }
 
@@ -143,7 +158,9 @@ func ReadArchiveImages(archivePath string, galleryUUID string, onlyCover bool) {
 func generateThumbnail(galleryUUID string, thumbnailPath string, imgBytes []byte, large bool) error {
 	srcImage, _, err := image.Decode(bytes.NewReader(imgBytes))
 	if err != nil {
-		log.Debugf("Could not decode img %s. Message: %s", thumbnailPath, err)
+		log.Z.Debug("could not decode img",
+			zap.String("path", thumbnailPath),
+			zap.String("err", err.Error()))
 		return err
 	}
 
@@ -156,14 +173,18 @@ func generateThumbnail(galleryUUID string, thumbnailPath string, imgBytes []byte
 
 	var buf bytes.Buffer
 	if err = webp.Encode(&buf, dstImage, &webp.Options{Lossless: false, Quality: 75}); err != nil {
-		log.Debugf("Could not encode img %s. Message: %s", thumbnailPath, err)
+		log.Z.Debug("could not encode img",
+			zap.String("path", thumbnailPath),
+			zap.String("err", err.Error()))
 		return err
 	}
 
 	// webp
 	err = os.WriteFile(config.BuildCachePath("thumbnails", galleryUUID, thumbnailPath+".webp"), buf.Bytes(), 0666)
 	if err != nil {
-		log.Debugf("Couldn't write thumbnail %s. Message: %s", thumbnailPath, err)
+		log.Z.Debug("could not write thumbnail",
+			zap.String("path", thumbnailPath),
+			zap.String("err", err.Error()))
 	}
 
 	// TODO: test how long it takes to generate webp thumbnails compared to jpg + size differences

@@ -2,14 +2,16 @@ package library
 
 import (
 	"errors"
-	"github.com/Mangatsu/server/internal/config"
-	"github.com/Mangatsu/server/pkg/db"
-	log "github.com/sirupsen/logrus"
 	"io/fs"
 	"os"
 	"path"
 	"path/filepath"
 	"strings"
+
+	"github.com/Mangatsu/server/internal/config"
+	"github.com/Mangatsu/server/pkg/db"
+	"github.com/Mangatsu/server/pkg/log"
+	"go.uber.org/zap"
 )
 
 func walk(libraryPath string, libraryID int32, libraryLayout config.Layout) fs.WalkDirFunc {
@@ -38,7 +40,7 @@ func walk(libraryPath string, libraryID int32, libraryLayout config.Layout) fs.W
 
 		// Skip if already in database
 		if db.ArchivePathFound(relativePath) {
-			log.Debug("Skipping: ", d.Name())
+			log.Z.Debug("skipping archive already in db", zap.String("name", d.Name()))
 			return nil
 		}
 
@@ -59,11 +61,13 @@ func walk(libraryPath string, libraryID int32, libraryLayout config.Layout) fs.W
 
 		uuid, err := db.NewGallery(relativePath, libraryID, title, series)
 		if err != nil {
-			log.Error("Error adding:", err)
+			log.Z.Error("failed to add gallery to db",
+				zap.String("path", relativePath),
+				zap.String("err", err.Error()))
 		} else {
 			// Generates cover thumbnail
 			go ReadArchiveImages(config.BuildLibraryPath(libraryPath, relativePath), uuid, true)
-			log.Debug("Added gallery: ", relativePath)
+			log.Z.Debug("added gallery", zap.String("path", relativePath))
 		}
 
 		if isImage {
@@ -79,14 +83,16 @@ func ScanArchives() {
 	// Not too important as current implementation is pretty fast already.
 	libraries, err := db.GetOnlyLibraries()
 	if err != nil {
-		log.Error("Error finding libraries to scan: ", err)
+		log.Z.Error("failed to find libraries to scan", zap.String("err", err.Error()))
 		return
 	}
 
 	for _, library := range libraries {
 		err := filepath.WalkDir(library.Path, walk(library.Path, library.ID, config.Layout(library.Layout)))
 		if err != nil {
-			log.Errorf("Skipping library %s as an error occured while scanning it: %s", library.Path, err)
+			log.Z.Error("skipping library as an error occurred during scanning",
+				zap.String("path", library.Path),
+				zap.String("err", err.Error()))
 			continue
 		}
 	}

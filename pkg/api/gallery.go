@@ -8,9 +8,10 @@ import (
 	"github.com/Mangatsu/server/internal/config"
 	"github.com/Mangatsu/server/pkg/cache"
 	"github.com/Mangatsu/server/pkg/db"
+	"github.com/Mangatsu/server/pkg/log"
 	"github.com/Mangatsu/server/pkg/types/model"
 	"github.com/gorilla/mux"
-	log "github.com/sirupsen/logrus"
+	"go.uber.org/zap"
 )
 
 type MetadataResult struct {
@@ -94,7 +95,9 @@ func returnGalleries(w http.ResponseWriter, r *http.Request) {
 			if gallery.Series != nil && *gallery.Series != "" {
 				subGalleries, err := db.GetGalleries(db.Filters{Series: *gallery.Series}, true, userUUID, false)
 				if err != nil {
-					log.Debugf("Error (%s) getting subgalleries: %s", err, *gallery.Series)
+					log.Z.Debug("failed getting sub-galleries",
+						zap.Stringp("name", gallery.Series),
+						zap.String("err", err.Error()))
 					continue
 				}
 

@@ -7,8 +7,9 @@ import (
 	"path/filepath"
 
 	"github.com/Mangatsu/server/internal/config"
+	"github.com/Mangatsu/server/pkg/log"
 	"github.com/mholt/archiver/v4"
-	log "github.com/sirupsen/logrus"
+	"go.uber.org/zap"
 )
 
 func InitCache() {
@@ -16,7 +17,9 @@ func InitCache() {
 	if !PathExists(cachePath) {
 		err := os.Mkdir(cachePath, os.ModePerm)
 		if err != nil {
-			log.Error(err)
+			log.Z.Error("failed to create cache dir",
+				zap.String("path", cachePath),
+				zap.String("err", err.Error()))
 		}
 	}
 
@@ -24,7 +27,9 @@ func InitCache() {
 	if !PathExists(thumbnailsPath) {
 		err := os.Mkdir(thumbnailsPath, os.ModePerm)
 		if err != nil {
-			log.Error(err)
+			log.Z.Error("failed to create thumbnails cache dir",
+				zap.String("path", thumbnailsPath),
+				zap.String("err", err.Error()))
 		}
 	}
 }
@@ -34,16 +39,20 @@ func ExtractPDF() {
 }
 
 // UniversalExtract extracts media files from zip, cbz, rar, cbr, tar (all its variants) archives.
-// Plain directories without compression are also supported. For PDF ExtractPDF respectively.
+// Plain directories without compression are also supported. For PDF files, use ExtractPDF.
 func UniversalExtract(dst string, archivePath string) ([]string, int) {
 	fsys, err := archiver.FileSystem(nil, archivePath)
 	if err != nil {
-		log.Error("Error opening archive: ", err)
+		log.Z.Error("failed to open an archive",
+			zap.String("path", archivePath),
+			zap.String("err", err.Error()))
 		return nil, 0
 	}
 
 	if err = os.Mkdir(dst, os.ModePerm); err != nil {
-		log.Error(err)
+		log.Z.Error("failed to create a dir for gallery",
+			zap.String("path", dst),
+			zap.String("err", err.Error()))
 		return nil, 0
 	}
 
@@ -85,7 +94,9 @@ func UniversalExtract(dst string, archivePath string) ([]string, int) {
 		}
 
 		if _, err := io.Copy(dstFile, fileInArchive); err != nil {
-			log.Error(err)
+			log.Z.Error("failed to copy file",
+				zap.String("dstFile", dstFile.Name()),
+				zap.String("err", err.Error()))
 		}
 
 		if err = dstFile.Close(); err != nil {
@@ -100,7 +111,7 @@ func UniversalExtract(dst string, archivePath string) ([]string, int) {
 		return nil
 	})
 	if err != nil {
-		log.Debug("Error walking dir: ", err)
+		log.Z.Debug("failed to walk dir when copying archive", zap.String("err", err.Error()))
 		return nil, 0
 	}
 

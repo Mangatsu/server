@@ -9,9 +9,10 @@ import (
 
 	"github.com/Mangatsu/server/internal/config"
 	"github.com/Mangatsu/server/pkg/db"
+	"github.com/Mangatsu/server/pkg/log"
 	"github.com/gorilla/mux"
 	"github.com/rs/cors"
-	log "github.com/sirupsen/logrus"
+	"go.uber.org/zap"
 )
 
 // handleResult handles the result and returns if it was successful or not.
@@ -19,7 +20,6 @@ import (
 func handleResult(w http.ResponseWriter, result interface{}, err error, many bool) bool {
 	resultType := reflect.TypeOf(result)
 	if err != nil {
-		log.Debug(err)
 		errorHandler(w, http.StatusInternalServerError, err.Error())
 		return true
 	}
@@ -94,9 +94,11 @@ func errorHandler(w http.ResponseWriter, status int, msg string) {
 		fmt.Fprintf(w, `{ "code": %d, "message": "unauthorized" }`, status)
 	default:
 		w.WriteHeader(http.StatusInternalServerError)
-		fmt.Fprintf(w, `{ "code": %d, "message": "internal server error" }`, http.StatusInternalServerError)
-		log.Error("Internal server error: ", msg)
+		fmt.Fprintf(w, `{ "status": %d, "message": "internal server error" }`, http.StatusInternalServerError)
+		log.Z.Error(msg, zap.Int("status", status))
+		return
 	}
+	log.Z.Debug(msg, zap.Int("status", status))
 }
 
 // Handles HTTP(S) requests.
@@ -143,7 +145,7 @@ func handleRequests() {
 
 	// General 404
 	r.NotFoundHandler = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		errorHandler(w, http.StatusNotFound, "")
+		errorHandler(w, http.StatusNotFound, r.RequestURI)
 	})
 
 	handler := cors.New(cors.Options{
@@ -167,8 +169,8 @@ func handleRequests() {
 		ReadTimeout:  15 * time.Second,
 	}
 
-	log.Info("Starting API on: ", fullAddress)
-	log.Info(srv.ListenAndServe())
+	log.Z.Info("starting API on: " + fullAddress)
+	log.Z.Warn(srv.ListenAndServe().Error())
 }
 
 // LaunchAPI starts handling API requests.

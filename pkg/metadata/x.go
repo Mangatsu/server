@@ -2,16 +2,18 @@ package metadata
 
 import (
 	"encoding/json"
-	"github.com/Mangatsu/server/internal/config"
-	"github.com/Mangatsu/server/pkg/db"
-	"github.com/Mangatsu/server/pkg/library"
-	"github.com/Mangatsu/server/pkg/types/model"
-	log "github.com/sirupsen/logrus"
 	"io/fs"
 	"path"
 	"path/filepath"
 	"regexp"
 	"strings"
+
+	"github.com/Mangatsu/server/internal/config"
+	"github.com/Mangatsu/server/pkg/db"
+	"github.com/Mangatsu/server/pkg/library"
+	"github.com/Mangatsu/server/pkg/log"
+	"github.com/Mangatsu/server/pkg/types/model"
+	"go.uber.org/zap"
 )
 
 type Tags map[string][]string
@@ -68,7 +70,7 @@ func unmarshalExhJSON(byteValue []byte) (XMetadata, error) {
 	var gallery XMetadata
 	err := json.Unmarshal(byteValue, &gallery)
 	if err != nil {
-		log.Error("Error in unmarshalling x metadata: ", err)
+		log.Z.Error("failed to unmarshal x metadata", zap.String("err", err.Error()))
 		return XMetadata{}, err
 	}
 
@@ -145,13 +147,13 @@ func fuzzyMatchExternalMeta(archivePath string, libraryPath string, f fs.FileInf
 
 	metaData, err := library.ReadJSON(config.BuildPath(onlyDir, f.Name()))
 	if err != nil {
-		log.Error(err)
+		log.Z.Debug("failed to unmarshal x metadata", zap.String("err", err.Error()))
 		return fuzzyResult, XMetadata{}
 	}
 
 	exhGallery, err := unmarshalExhJSON(metaData)
 	if err != nil {
-		log.Debug("Couldn't unmarshal exhGallery: ", err)
+		log.Z.Debug("could not unmarshal exhGallery", zap.String("err", err.Error()))
 		return fuzzyResult, XMetadata{}
 	}
 

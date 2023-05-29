@@ -1,16 +1,18 @@
 package metadata
 
 import (
-	"github.com/Mangatsu/server/internal/config"
-	"github.com/Mangatsu/server/pkg/db"
-	"github.com/Mangatsu/server/pkg/types/model"
-	log "github.com/sirupsen/logrus"
 	"path"
 	"path/filepath"
 	"reflect"
 	"regexp"
 	"strconv"
 	"strings"
+
+	"github.com/Mangatsu/server/internal/config"
+	"github.com/Mangatsu/server/pkg/db"
+	"github.com/Mangatsu/server/pkg/log"
+	"github.com/Mangatsu/server/pkg/types/model"
+	"go.uber.org/zap"
 )
 
 var nameRegex = regexp.MustCompile(
@@ -32,7 +34,7 @@ type TitleMeta struct {
 func ParseTitles(tryNative bool, overwrite bool) {
 	libraries, err := db.GetLibraries()
 	if err != nil {
-		log.Error("Libraries could not be retrieved to parse titles: ", err)
+		log.Z.Error("libraries could not be retrieved to parse titles", zap.String("err", err.Error()))
 		return
 	}
 
@@ -41,7 +43,7 @@ func ParseTitles(tryNative bool, overwrite bool) {
 			_, currentTags, err := db.GetTags(gallery.UUID, false)
 			currentReference, err := db.GetReference(gallery.UUID)
 			if err != nil {
-				log.Error("Tags could not be retrieved when parsing titles: ", err)
+				log.Z.Error("tags could not be retrieved when parsing titles", zap.String("err", err.Error()))
 				continue
 			}
 
@@ -139,7 +141,9 @@ func ParseTitles(tryNative bool, overwrite bool) {
 
 			err = db.UpdateGallery(gallery, currentTags, currentReference, true)
 			if err != nil {
-				log.Errorf("Error updating gallery %s based on its title: %s", gallery.UUID, err)
+				log.Z.Error("failed to update gallery based on its title",
+					zap.String("gallery", gallery.UUID),
+					zap.String("err", err.Error()))
 			}
 		}
 	}

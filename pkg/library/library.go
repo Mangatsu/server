@@ -1,20 +1,23 @@
 package library
 
 import (
-	"github.com/Mangatsu/server/internal/config"
-	"github.com/facette/natsort"
-	log "github.com/sirupsen/logrus"
+	"errors"
 	"io"
 	"io/fs"
 	"os"
 	"path/filepath"
 	"strings"
+
+	"github.com/Mangatsu/server/internal/config"
+	"github.com/Mangatsu/server/pkg/log"
+	"github.com/facette/natsort"
+	"go.uber.org/zap"
 )
 
 func closeFile(f interface{ Close() error }) {
 	err := f.Close()
 	if err != nil {
-		log.Error(err)
+		log.Z.Debug("failed to close file", zap.String("err", err.Error()))
 		return
 	}
 }
@@ -36,7 +39,9 @@ func readCache(dst string, uuid string) ([]string, int) {
 
 	cacheWalk := func(s string, d fs.DirEntry, err error) error {
 		if err != nil {
-			log.Error("Error in walk: ", err)
+			log.Z.Error("failed to walk cache dir",
+				zap.String("name", d.Name()),
+				zap.String("err", err.Error()))
 			return err
 		}
 		if d.IsDir() {
@@ -51,7 +56,9 @@ func readCache(dst string, uuid string) ([]string, int) {
 
 	err := filepath.WalkDir(dst, cacheWalk)
 	if err != nil {
-		log.Error("Error walking dir: ", err)
+		log.Z.Error("failed to walk cache dir",
+			zap.String("dst", dst),
+			zap.String("err", err.Error()))
 		return nil, 0
 	}
 
@@ -60,7 +67,7 @@ func readCache(dst string, uuid string) ([]string, int) {
 
 func ReadGallery(archivePath string, uuid string) ([]string, int) {
 	dst := config.BuildCachePath(uuid)
-	if _, err := os.Stat(dst); os.IsNotExist(err) {
+	if _, err := os.Stat(dst); errors.Is(err, fs.ErrNotExist) {
 		return UniversalExtract(dst, archivePath)
 	}
 
@@ -68,6 +75,9 @@ func ReadGallery(archivePath string, uuid string) ([]string, int) {
 	if count == 0 {
 		err := os.Remove(dst)
 		if err != nil {
+			log.Z.Debug("removing empty cache dir failed",
+				zap.String("dst", dst),
+				zap.String("err", err.Error()))
 			return nil, 0
 		}
 

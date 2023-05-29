@@ -1,11 +1,15 @@
 package config
 
 import (
+	"fmt"
 	"os"
+	"strconv"
 	"time"
 
+	"github.com/Mangatsu/server/pkg/log"
 	"github.com/joho/godotenv"
-	log "github.com/sirupsen/logrus"
+	"go.uber.org/zap"
+	"go.uber.org/zap/zapcore"
 )
 
 type Layout string
@@ -54,13 +58,19 @@ var Options *OptionsModel
 // Credentials stores the JWT secret, and optionally a passphrase and credentials for the db
 var Credentials *CredentialsModel // TODO: Encrypt in memory?
 
-// LoadEnv loads the environment variables into Options and Credentials
+// LoadEnv loads the environment variables.
 func LoadEnv() {
 	var err = godotenv.Load()
 	if err != nil {
-		log.Debug("No .env file found")
+		fmt.Println("No .env file or environmentals found.")
 	}
 
+	loadEnvironment()
+	loadLogLevel()
+}
+
+// SetEnv sets the environment variables into Options and Credentials
+func SetEnv() {
 	Options = &OptionsModel{
 		Domain:        domain(),
 		Hostname:      hostname(),
@@ -74,6 +84,7 @@ func LoadEnv() {
 		Cache: CacheOptions{
 			WebServer: cacheServerEnabled(),
 			TTL:       cacheTTL(),
+			Size:      cacheSize(),
 		},
 	}
 
@@ -93,6 +104,29 @@ func GetInitialAdmin() (string, string) {
 		password = "admin321"
 	}
 	return username, password
+}
+
+func loadEnvironment() {
+	value := os.Getenv("MTSU_ENV")
+	if value == "production" {
+		AppEnvironment = log.Production
+		return
+	}
+	AppEnvironment = log.Development
+}
+
+func loadLogLevel() {
+	value := os.Getenv("MTSU_LOG_LEVEL")
+	switch value {
+	case "debug":
+		LogLevel = zap.DebugLevel
+	case "warn":
+		LogLevel = zap.WarnLevel
+	case "error":
+		LogLevel = zap.ErrorLevel
+	default:
+		LogLevel = zap.InfoLevel
+	}
 }
 
 func domain() string {
@@ -147,7 +181,7 @@ func restrictedPassphrase() string {
 	value := os.Getenv("MTSU_RESTRICTED_PASSPHRASE")
 	if value == "" {
 		if currentVisibility() == Restricted {
-			log.Error("MTSU_RESTRICTED_PASSPHRASE is not set. Defaulting to 's3cr3t'.")
+			log.Z.Warn("MTSU_RESTRICTED_PASSPHRASE is not set. Defaulting to 's3cr3t'.")
 		}
 		return "s3cr3t"
 	}
@@ -157,7 +191,7 @@ func restrictedPassphrase() string {
 func jwtSecret() string {
 	value := os.Getenv("MTSU_JWT_SECRET")
 	if value == "" {
-		log.Error("MTSU_JWT_SECRET is not set. An unsecure secret will be used instead. DO NOT USE IN PRODUCTION.")
+		log.Z.Warn("MTSU_JWT_SECRET is not set. An unsecure secret will be used instead. DO NOT USE IN PRODUCTION.")
 		return "iugnrg8o9347ghjmloi2jhbaw8723hjdbjnwq"
 	}
 	return value
@@ -174,12 +208,12 @@ func cacheTTL() time.Duration {
 
 	duration, err := time.ParseDuration(value)
 	if err != nil {
-		log.Warningf("%s is not a valid TTL for MTSU_CACHE_TTL. Defaulting to 336h (14 days)", value)
+		log.Z.Error(value + " is not a valid TTL for MTSU_CACHE_TTL. Defaulting to 336h (14 days).")
 		return defaultDuration
 	}
 
 	if duration < minDuration {
-		log.Warning("Minimum TTL is 15 minutes. Defaulting to 15m")
+		log.Z.Info("Minimum TTL is 15 minutes. Defaulting to 15 minutes.")
 		return minDuration
 	}
 

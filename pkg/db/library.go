@@ -2,10 +2,11 @@ package db
 
 import (
 	"github.com/Mangatsu/server/internal/config"
+	"github.com/Mangatsu/server/pkg/log"
 	"github.com/Mangatsu/server/pkg/types/model"
 	. "github.com/Mangatsu/server/pkg/types/table"
 	. "github.com/go-jet/jet/v2/sqlite"
-	log "github.com/sirupsen/logrus"
+	"go.uber.org/zap"
 )
 
 type CombinedLibrary struct {
@@ -17,7 +18,9 @@ func StorePaths(givenLibraries []config.Library) error {
 	for _, library := range givenLibraries {
 		libraries, err := getLibrary(library.ID, "")
 		if err != nil {
-			log.Error(err)
+			log.Z.Debug("failed to get libraries when storing paths",
+				zap.Int32("id", library.ID),
+				zap.String("err", err.Error()))
 			continue
 		}
 
@@ -82,7 +85,10 @@ func newLibrary(id int32, path string, layout string) error {
 
 	_, err := stmt.Exec(db())
 	if err != nil {
-		log.Error(err)
+		log.Z.Error("failed to create a new library",
+			zap.Int32("id", id),
+			zap.String("path", path),
+			zap.String("err", err.Error()))
 	}
 
 	return err

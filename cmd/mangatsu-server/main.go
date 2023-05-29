@@ -15,6 +15,8 @@ import (
 
 func main() {
 	config.LoadEnv()
+	log.InitializeLogger(config.AppEnvironment, config.LogLevel)
+	config.SetEnv()
 	library.InitCache()
 	db.InitDB()
 	db.EnsureLatestVersion()
@@ -22,26 +24,26 @@ func main() {
 	username, password := config.GetInitialAdmin()
 	users, err := db.GetUser(username)
 	if err != nil {
-		log.Error(err)
+		log.Z.Error("error fetching initial admin", zap.String("error", err.Error()))
 	}
 
 	if users == nil || len(users) == 0 {
 		if err := db.Register(username, password, int64(db.Admin)); err != nil {
-			log.Fatal("Error registering initial admin: ", err)
+			log.Z.Fatal("Error registering initial admin: ", zap.String("err", err.Error()))
 		}
 	}
 
 	// Parse libraries from the environmental and insert/update to the db.
 	libraries := config.ParseBasePaths()
 	if err = db.StorePaths(libraries); err != nil {
-		log.Fatal("Error saving library to db: ", err)
+		log.Z.Fatal("Error saving library to db: ", zap.String("err", err.Error()))
 	}
 
 	cache.Init()
 
 	// Tasks
-	utility.PeriodicTask(time.Minute, cache.PruneCache)
-	utility.PeriodicTask(time.Minute, db.PruneExpiredSessions)
+	utils.PeriodicTask(time.Minute, cache.PruneCache)
+	utils.PeriodicTask(time.Minute, db.PruneExpiredSessions)
 
 	api.LaunchAPI()
 }

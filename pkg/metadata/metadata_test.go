@@ -1,8 +1,9 @@
 package metadata
 
 import (
-	"github.com/Mangatsu/server/pkg/library"
 	"testing"
+
+	"github.com/Mangatsu/server/pkg/library"
 )
 
 func TestParseTitle(t *testing.T) {

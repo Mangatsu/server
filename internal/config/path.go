@@ -8,7 +8,7 @@ import (
 	"strconv"
 	"strings"
 
-	log "github.com/sirupsen/logrus"
+	"github.com/Mangatsu/server/pkg/log"
 )
 
 type Library struct {
@@ -22,7 +22,7 @@ var libraryOptionsR = regexp.MustCompile(`^(freeform|structured)(\d+)$`)
 func ParseBasePaths() []Library {
 	basePaths := os.Getenv("MTSU_BASE_PATHS")
 	if basePaths == "" {
-		log.Fatal("MTSU_BASE_PATHS is not set")
+		log.Z.Fatal("MTSU_BASE_PATHS is not set")
 	}
 
 	basePathsSlice := strings.Split(basePaths, ";;")
@@ -31,18 +31,18 @@ func ParseBasePaths() []Library {
 	for _, basePath := range basePathsSlice {
 		layoutAndPath := strings.SplitN(basePath, ";", 2)
 		if len(layoutAndPath) != 2 {
-			log.Fatal("MTSU_BASE_PATHS is not set correctly")
+			log.Z.Fatal("MTSU_BASE_PATHS is not set correctly")
 		}
 
 		libraryOptionsMatch := libraryOptionsR.MatchString(layoutAndPath[0])
 		if !libraryOptionsMatch {
-			log.Fatal(layoutAndPath[0], " is not a valid layout in BASE_PATHS. Valid: freeform1, structured2, freeform3 ...")
+			log.Z.Fatal(layoutAndPath[0] + " is not a valid layout in BASE_PATHS. Valid: freeform1, structured2, freeform3 ...")
 		}
 		if layoutAndPath[1] == "" {
-			log.Fatal("Paths in MTSU_BASE_PATHS cannot be empty")
+			log.Z.Fatal("Paths in MTSU_BASE_PATHS cannot be empty")
 		}
 		if _, err := os.Stat(layoutAndPath[1]); os.IsNotExist(err) {
-			log.Fatal("Path in MTSU_BASE_PATHS not found: ", layoutAndPath[1])
+			log.Z.Fatal("Path in MTSU_BASE_PATHS not found: " + layoutAndPath[1])
 		}
 
 		libraryOptions := libraryOptionsR.FindStringSubmatch(layoutAndPath[0])

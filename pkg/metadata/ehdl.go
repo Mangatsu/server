@@ -2,12 +2,14 @@ package metadata
 
 import (
 	"bufio"
-	"github.com/Mangatsu/server/pkg/types/model"
-	log "github.com/sirupsen/logrus"
 	"os"
 	"regexp"
 	"strconv"
 	"strings"
+
+	"github.com/Mangatsu/server/pkg/log"
+	"github.com/Mangatsu/server/pkg/types/model"
+	"go.uber.org/zap"
 )
 
 var exhURLRegex = regexp.MustCompile(`https://\w+\.\w+/g/(\d+)/[a-z0-9]+`)
@@ -29,7 +31,7 @@ func ParseEHDL(filePath string) (model.Gallery, []model.Tag, error) {
 	defer func(file *os.File) {
 		err := file.Close()
 		if err != nil {
-			log.Error(err)
+			log.Z.Debug("failed to close EHDL formatted file", zap.String("err", err.Error()))
 		}
 	}(file)
 
@@ -59,7 +61,7 @@ func ParseEHDL(filePath string) (model.Gallery, []model.Tag, error) {
 			}
 			exhGid, err := strconv.ParseInt(capture[2], 10, 32)
 			if err != nil {
-				log.Debug(err)
+				log.S.Debug("failed to parse exhGid", "err", err.Error(), "exhGid", exhGid)
 				continue
 			}
 			exhGidInt32 := int32(exhGid)
@@ -88,7 +90,7 @@ func ParseEHDL(filePath string) (model.Gallery, []model.Tag, error) {
 			}
 			length, err := strconv.ParseInt(capture[1], 10, 32)
 			if err != nil {
-				log.Debug(err)
+				log.S.Debug("failed to parse length", "err", err.Error(), "length", length)
 				continue
 			}
 			lengthInt32 := int32(length)
@@ -103,7 +105,7 @@ func ParseEHDL(filePath string) (model.Gallery, []model.Tag, error) {
 			}
 			size, err := strconv.ParseFloat(capture[1], 32)
 			if err != nil {
-				log.Debug(err)
+				log.S.Debug("failed to parse size", "err", err.Error(), "size", size)
 				continue
 			}
 			sizeInt32 := int32(size * 1000 * 1000)

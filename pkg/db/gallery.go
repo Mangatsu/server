@@ -2,14 +2,16 @@ package db
 
 import (
 	"database/sql"
+	"math"
+	"math/rand"
+	"time"
+
+	"github.com/Mangatsu/server/pkg/log"
 	"github.com/Mangatsu/server/pkg/types/model"
 	. "github.com/Mangatsu/server/pkg/types/table"
 	. "github.com/go-jet/jet/v2/sqlite"
 	"github.com/google/uuid"
-	log "github.com/sirupsen/logrus"
-	"math"
-	"math/rand"
-	"time"
+	"go.uber.org/zap"
 )
 
 type CombinedMetadata struct {
@@ -334,7 +336,7 @@ func NewTags(tags []model.Tag) ([]int32, error) {
 
 		var existingTags []model.Tag
 		if err := selectStmt.Query(db(), &existingTags); err != nil {
-			log.Debug("Could not select tags, aborting: ", err)
+			log.Z.Debug("could not select tags, aborting", zap.String("err", err.Error()))
 			return nil, err
 		}
 
@@ -346,7 +348,7 @@ func NewTags(tags []model.Tag) ([]int32, error) {
 		insertStmt := Tag.INSERT(Tag.Namespace, Tag.Name).VALUES(tag.Namespace, tag.Name).RETURNING(Tag.ID)
 		var insertedTags []model.Tag
 		if err := insertStmt.Query(db(), &insertedTags); err != nil {
-			log.Debug("Could not insert tags, aborting: ", err)
+			log.Z.Debug("could not insert tags, aborting", zap.String("err", err.Error()))
 			return nil, err
 		}
 
@@ -617,7 +619,10 @@ func GetGalleries(filters Filters, hidden bool, userUUID *string, count bool) ([
 func GetGallery(galleryUUID *string, userUUID *string) (CombinedMetadata, error) {
 	if userUUID != nil && galleryUUID != nil {
 		if err := NewGalleryPref(*galleryUUID, *userUUID); err != nil {
-			log.Debug("Could not add user gallery entry: ", err)
+			log.Z.Debug("could not add user gallery entry",
+				zap.Stringp("gUUID", galleryUUID),
+				zap.Stringp("uUUID", userUUID),
+				zap.String("err", err.Error()))
 			return CombinedMetadata{}, err
 		}
 	}
@@ -670,7 +675,9 @@ func GetGallery(galleryUUID *string, userUUID *string) (CombinedMetadata, error)
 
 	var galleries []CombinedMetadata
 	if err := stmt.Query(db(), &galleries); err != nil {
-		log.Debug("Could not get gallery: ", err)
+		log.Z.Debug("could not get gallery",
+			zap.Stringp("gUUID", galleryUUID),
+			zap.String("err", err.Error()))
 		return CombinedMetadata{}, err
 	}
 
@@ -681,7 +688,10 @@ func GetGallery(galleryUUID *string, userUUID *string) (CombinedMetadata, error)
 	// When requesting a random gallery and if needed, a new user gallery entry is created after the SELECT.
 	if userUUID != nil && galleryUUID == nil {
 		if err := NewGalleryPref(galleries[0].UUID, *userUUID); err != nil {
-			log.Debug("Could not add user gallery entry: ", err)
+			log.Z.Debug("could not add user gallery entry when random gallery was requested",
+				zap.Stringp("gUUID", galleryUUID),
+				zap.Stringp("uUUID", userUUID),
+				zap.String("err", err.Error()))
 			return CombinedMetadata{}, err
 		}
 	}
@@ -758,7 +768,7 @@ func NeedsUpdate(archivePath string, updatedAt time.Time) (bool, string) {
 	var galleries []CombinedMetadata
 	err := stmt.Query(db(), &galleries)
 	if err != nil {
-		log.Error(err)
+		log.Z.Error(err.Error())
 		return false, ""
 	}
 
@@ -778,7 +788,9 @@ func ArchivePathFound(archivePath string) bool {
 	var galleries []model.Gallery
 	err := stmt.Query(db(), &galleries)
 	if err != nil {
-		log.Error(err)
+		log.Z.Debug("failed to query for archive path",
+			zap.String("archivePath", archivePath),
+			zap.String("err", err.Error()))
 		return false
 	}
 
@@ -796,7 +808,9 @@ func MetaPathFound(metaPath string, libraryPath string) bool {
 	var galleries []struct{ Reference []struct{ model.Reference } }
 	err := stmt.Query(db(), &galleries)
 	if err != nil {
-		log.Error(err)
+		log.Z.Debug("failed to query for meta path",
+			zap.String("metaPath", metaPath),
+			zap.String("err", err.Error()))
 		return false
 	}
 
@@ -808,7 +822,9 @@ func DeleteGallery(galleryUUID string) bool {
 	stmt := Gallery.DELETE().WHERE(Gallery.UUID.EQ(String(galleryUUID)))
 	res, err := stmt.Exec(db())
 	if err != nil {
-		log.Error(err)
+		log.Z.Debug("failed to delete a gallery",
+			zap.String("uuid", galleryUUID),
+			zap.String("err", err.Error()))
 		return false
 	}
 

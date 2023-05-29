@@ -2,7 +2,6 @@ package metadata
 
 import (
 	"errors"
-	"fmt"
 	"io/fs"
 	"io/ioutil"
 	"math"
@@ -11,9 +10,10 @@ import (
 	"github.com/Mangatsu/server/internal/config"
 	"github.com/Mangatsu/server/pkg/db"
 	"github.com/Mangatsu/server/pkg/library"
+	"github.com/Mangatsu/server/pkg/log"
 	"github.com/Mangatsu/server/pkg/types/model"
 	"github.com/mholt/archiver/v4"
-	log "github.com/sirupsen/logrus"
+	"go.uber.org/zap"
 )
 
 type MetaType string
@@ -28,7 +28,9 @@ const (
 func matchInternalMeta(metaTypes map[MetaType]bool, fullArchivePath string) ([]byte, string, MetaType) {
 	fsys, err := archiver.FileSystem(nil, fullArchivePath)
 	if err != nil {
-		log.Error("Error opening archive: ", err)
+		log.Z.Error("could not open archive",
+			zap.String("path", fullArchivePath),
+			zap.String("err", err.Error()))
 		return nil, "", ""
 	}
 
@@ -78,7 +80,9 @@ func matchExternalMeta(metaTypes map[MetaType]bool, fullArchivePath string, libr
 
 	metaData, err := library.ReadJSON(externalJSON)
 	if err != nil {
-		log.Debug("Couldn't read external metadata: ", err)
+		log.Z.Debug("could not read external metadata",
+			zap.String("path", externalJSON),
+			zap.String("err", err.Error()))
 		return nil, ""
 	}
 
@@ -89,7 +93,7 @@ func matchExternalMeta(metaTypes map[MetaType]bool, fullArchivePath string, libr
 func ParseMetadata(metaTypes map[MetaType]bool) {
 	libraries, err := db.GetLibraries()
 	if err != nil {
-		log.Error("Libraries could not be retrieved to parse meta files: ", err)
+		log.Z.Error("libraries could not be retrieved to parse meta files: ", zap.String("err", err.Error()))
 		return
 	}
 
@@ -121,23 +125,31 @@ func ParseMetadata(metaTypes map[MetaType]bool) {
 				switch metaType {
 				case XMeta:
 					if newGallery, tags, reference, err = ParseX(metaData, metaPath, gallery.ArchivePath, internal); err != nil {
-						log.Debug("Couldn't parse X meta: ", err)
+						log.Z.Debug("could not parse X meta",
+							zap.String("path", metaPath),
+							zap.String("err", err.Error()))
 						continue
 					}
 				case EHDLMeta:
 					if newGallery, tags, err = ParseEHDL(metaPath); err != nil {
-						log.Debug("Couldn't parse EHDL meta: ", err)
+						log.Z.Debug("could not parse EHDL meta",
+							zap.String("path", metaPath),
+							zap.String("err", err.Error()))
 						continue
 					}
 				case HathMeta:
 					if newGallery, tags, err = ParseHath(metaPath); err != nil {
-						log.Debug("Couldn't parse Hath meta: ", err)
+						log.Z.Debug("could not parse Hath meta",
+							zap.String("path", metaPath),
+							zap.String("err", err.Error()))
 						continue
 					}
 				}
 
 				if err = db.UpdateGallery(newGallery, tags, reference, true); err != nil {
-					log.Debugf("Couldn't tag gallery: %s. Message: %s", gallery.ArchivePath, err)
+					log.Z.Debug("could not tag gallery",
+						zap.String("path", gallery.ArchivePath),
+						zap.String("err", err.Error()))
 					continue
 				}
 			}
@@ -147,9 +159,11 @@ func ParseMetadata(metaTypes map[MetaType]bool) {
 	// Fuzzy parsing for all archives that didn't have an exact match.
 	for _, noMatch := range archivesNoMatch {
 		onlyDir := filepath.Dir(noMatch.fullPath)
-		files, err := ioutil.ReadDir(onlyDir)
+		files, err := ioutil.ReadDir(onlyDir) // TODO: Replace with os.ReadDir as this is deprecated as of Go 1.16
 		if err != nil {
-			log.Debug("Couldn't read dir while fuzzy matching: ", err)
+			log.Z.Debug("could not gallery read dir while fuzzy matching",
+				zap.String("path", onlyDir),
+				zap.String("err", err.Error()))
 		}
 
 		for _, f := range files {
@@ -165,14 +179,18 @@ func ParseMetadata(metaTypes map[MetaType]bool) {
 
 				err = db.UpdateGallery(gallery, tags, reference, true)
 				if err != nil {
-					log.Debugf("Couldn't tag gallery: %s. Message: %s", gallery.ArchivePath, err)
+					log.Z.Debug("could not tag gallery",
+						zap.String("path", gallery.ArchivePath),
+						zap.String("err", err.Error()))
 					continue
 				}
 
 				if r.MetaTitleMatch {
-					log.Info("Exact match based on meta titles: ", r.MatchedArchivePath)
+					log.Z.Info("exact match based on meta titles", zap.String("path", r.MatchedArchivePath))
 				} else {
-					log.Infof("Fuzzy match (%s): %s", fmt.Sprintf("%.2f", r.Similarity), r.MatchedArchivePath)
+					log.Z.Info("fuzzy match",
+						zap.Float64("similarity", r.Similarity),
+						zap.String("path", r.MatchedArchivePath))
 				}
 			}
 		}
