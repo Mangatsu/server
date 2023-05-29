@@ -6,7 +6,7 @@ import (
 	"encoding/base64"
 	"github.com/Mangatsu/server/pkg/types/model"
 	. "github.com/Mangatsu/server/pkg/types/table"
-	"github.com/Mangatsu/server/pkg/utility"
+	"github.com/Mangatsu/server/pkg/utils"
 	. "github.com/go-jet/jet/v2/sqlite"
 	"github.com/google/uuid"
 	log "github.com/sirupsen/logrus"

@@ -1,14 +1,16 @@
 package main
 
 import (
+	"time"
+
 	"github.com/Mangatsu/server/internal/config"
 	"github.com/Mangatsu/server/pkg/api"
 	"github.com/Mangatsu/server/pkg/cache"
 	"github.com/Mangatsu/server/pkg/db"
 	"github.com/Mangatsu/server/pkg/library"
-	"github.com/Mangatsu/server/pkg/utility"
-	log "github.com/sirupsen/logrus"
-	"time"
+	"github.com/Mangatsu/server/pkg/log"
+	"github.com/Mangatsu/server/pkg/utils"
+	"go.uber.org/zap"
 )
 
 func main() {

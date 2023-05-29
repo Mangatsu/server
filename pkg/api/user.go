@@ -9,7 +9,7 @@ import (
 	"github.com/Mangatsu/server/internal/config"
 	"github.com/Mangatsu/server/pkg/db"
 	"github.com/Mangatsu/server/pkg/types/model"
-	"github.com/Mangatsu/server/pkg/utility"
+	"github.com/Mangatsu/server/pkg/utils"
 	"github.com/gorilla/mux"
 	log "github.com/sirupsen/logrus"
 )
