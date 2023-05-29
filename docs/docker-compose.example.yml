@@ -38,6 +38,10 @@ services:
       # the value here should be "example.com" for the cookies to work properly between subdomains.
       # https://developer.mozilla.org/en-US/docs/Web/HTTP/Cookies#define_where_cookies_are_sent
       MTSU_DOMAIN: example.org
+      # When true, the server only allows authenticated connections from the MTSU_DOMAIN and its subdomains (eg .*.example.org).
+      # When false, connections from every origin is allowed.
+      # https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Access-Control-Allow-Origin
+      MTSU_STRICT_ACAO: 'false'
       # Usually the following three envs don't need changing as they are the container's internal hostname, port and data path.
       # In case of port conflict, change the port here and the first one above in the ports section.
       MTSU_HOSTNAME: mtsuserver

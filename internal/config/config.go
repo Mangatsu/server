@@ -38,6 +38,7 @@ type OptionsModel struct {
 	Domain        string
 	Hostname      string
 	Port          string
+	StrictACAO    bool
 	Registrations bool
 	Visibility    Visibility
 	DB            DBOptions
@@ -75,6 +76,7 @@ func SetEnv() {
 		Domain:        domain(),
 		Hostname:      hostname(),
 		Port:          port(),
+		StrictACAO:    acao(),
 		Registrations: registrationsEnabled(),
 		Visibility:    currentVisibility(),
 		DB: DBOptions{
@@ -149,6 +151,10 @@ func port() string {
 	return value
 }
 
+func acao() bool {
+	return os.Getenv("MTSU_STRICT_ACAO") == "true"
+}
+
 func cacheServerEnabled() bool {
 	value := os.Getenv("MTSU_DISABLE_CACHE_SERVER")
 	if value == "true" {
@@ -191,8 +197,8 @@ func restrictedPassphrase() string {
 func jwtSecret() string {
 	value := os.Getenv("MTSU_JWT_SECRET")
 	if value == "" {
-		log.Z.Warn("MTSU_JWT_SECRET is not set. An unsecure secret will be used instead. DO NOT USE IN PRODUCTION.")
-		return "iugnrg8o9347ghjmloi2jhbaw8723hjdbjnwq"
+		log.Z.Error("MTSU_JWT_SECRET is not set. An unsecure secret will be used instead. DO NOT USE IN PRODUCTION.")
+		return "9Wag7sMvKl3aF6K5lwIg6TI42ia2f6BstZAVrdJIq8Mp38lnl7UzQMC1qjKyZCBzHFGbbqsA0gKcHqDuyXQAhWoJ0lcx4K5q"
 	}
 	return value
 }

@@ -149,7 +149,7 @@ func handleRequests() {
 	})
 
 	handler := cors.New(cors.Options{
-		AllowOriginFunc: func(_ string) bool { return true },
+		AllowOriginFunc: func(origin string) bool { return originAllowed(origin) },
 		AllowedMethods: []string{
 			http.MethodOptions, http.MethodGet, http.MethodPost, http.MethodDelete, http.MethodPut, http.MethodPatch,
 		},
@@ -158,7 +158,8 @@ func handleRequests() {
 			"Access-Control-Allow-Headers", "Origin", "X-Requested-With", "Access-Control-Request-Method",
 			"Access-Control-Request-Headers",
 		},
-		AllowCredentials: true,
+		AllowCredentials:    true,
+		AllowPrivateNetwork: true,
 	}).Handler(r)
 
 	fullAddress := config.Options.Hostname + ":" + config.Options.Port

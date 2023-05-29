@@ -11,16 +11,8 @@ import (
 	"github.com/Mangatsu/server/pkg/db"
 	"github.com/Mangatsu/server/pkg/types/model"
 	"github.com/Mangatsu/server/pkg/utils"
-	"github.com/golang-jwt/jwt/v4"
+	"github.com/weppos/publicsuffix-go/publicsuffix"
 )
-
-type CustomClaims struct {
-	jwt.RegisteredClaims
-	ID      string
-	Subject string
-	Name    string
-	Roles   *int32
-}
 
 func parseQueryParams(r *http.Request) db.Filters {
 	order := db.Order(r.URL.Query().Get("order"))
@@ -97,26 +89,6 @@ func convertMetadata(metadata db.CombinedMetadata) MetadataResult {
 	}
 }
 
-// readJWT parses the JWT from an HTTP request's Cookie or Authorization header.
-func readJWT(r *http.Request) string {
-	jwtCookie, err := r.Cookie("mtsu.jwt")   // Mostly for web browsers
-	jwtAuth := r.Header.Get("Authorization") // Others such as mobile apps
-
-	token := ""
-	if err == nil {
-		token = jwtCookie.Value
-	} else {
-		token = jwtAuth
-	}
-
-	splitToken := strings.Fields(token)
-	if len(splitToken) == 2 {
-		return splitToken[1]
-	}
-
-	return ""
-}
-
 // hasAccess handles access based on the Visibility option. Role restricts access to the specified role.
 // NoRole (0) allows access to anonymous users if the Visibility is Public or Restricted (passphrase required).
 func hasAccess(w http.ResponseWriter, r *http.Request, role db.Role) (bool, *string) {
@@ -126,7 +98,7 @@ func hasAccess(w http.ResponseWriter, r *http.Request, role db.Role) (bool, *str
 	if token != "" {
 		access, userUUID := verifyJWT(token, role)
 		if access {
-			return access || publicAccess, userUUID
+			return access, userUUID
 		}
 		passphrase := "Passphrase " + config.Credentials.Passphrase
 		if config.Options.Visibility == config.Restricted && role == 0 && token == passphrase {
@@ -170,58 +142,12 @@ func loginHelper(w http.ResponseWriter, credentials Credentials, requiredRole db
 	return true, userUUID, role
 }
 
-func newJWT(userUUID string, sessionID string, expiresIn *int64, sessionName *string, role *int32) (string, error) {
-	if sessionID == "" {
-		if expiresIn != nil {
-			*expiresIn = utils.Clamp(*expiresIn, 30, 60*60*24*365)
-		}
-
-		newSessionID, err := db.NewSession(userUUID, expiresIn, sessionName)
-		if err != nil {
-			return "", err
-		}
-		sessionID = newSessionID
+// originAllowed returns true if the origin is allowed. If MTSU_STRICT_ACAO is false, it will always return true.
+func originAllowed(origin string) bool {
+	if !config.Options.StrictACAO {
+		return true
 	}
 
-	claims := jwt.NewWithClaims(jwt.SigningMethodHS256, CustomClaims{
-		ID:      sessionID,
-		Subject: userUUID,
-		Roles:   role,
-	})
-
-	token, err := claims.SignedString([]byte(config.Credentials.JWTSecret))
-	if err != nil {
-		return "", err
-	}
-
-	return token, err
-}
-
-func verifyJWT(tokenString string, role db.Role) (bool, *string) {
-	claims, ok, token, err := parseJWT(tokenString)
-
-	claimedRole := 0
-	if claims.Roles != nil {
-		claimedRole = int(*claims.Roles)
-	}
-
-	if err == nil && ok && token.Valid && db.VerifySession(claims.ID, claims.Subject) && claimedRole >= int(role) {
-		return true, &claims.Subject
-	}
-
-	return false, nil
-}
-
-func parseJWT(tokenString string) (CustomClaims, bool, *jwt.Token, error) {
-	token, err := jwt.ParseWithClaims(
-		tokenString, &CustomClaims{},
-		func(token *jwt.Token) (interface{}, error) { return []byte(config.Credentials.JWTSecret), nil },
-		jwt.WithValidMethods([]string{jwt.SigningMethodHS256.Name}),
-	)
-	if err != nil {
-		return CustomClaims{}, false, nil, err
-	}
-
-	claims, ok := token.Claims.(*CustomClaims)
-	return *claims, ok, token, err
+	domain, err := publicsuffix.Domain(origin)
+	return err == nil && domain == config.Options.Domain
 }

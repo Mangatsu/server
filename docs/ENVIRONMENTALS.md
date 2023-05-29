@@ -4,12 +4,18 @@ Usable options inside the **.env** or **docker-compose.yml**:
 _~~Struck out~~ values have no effect yet._
 
 - **MTSU_ENV**=production
-  - Environment: production, development
+    - Environment: production, development
 - **MTSU_LOG_LEVEL**=info
-  - Log level: debug, info, warn, error
+    - Log level: debug, info, warn, error
 - **MTSU_INITIAL_ADMIN_NAME**=admin
 - **MTSU_INITIAL_ADMIN_PW**=admin321
     - Credentials for the initial admin user. Recommended to change.
+- **MTSU_DOMAIN**: example.org.
+    - For example, if the address for the server is "api.example.com", and for the frontend "read.example.com", the value here should be "example.com" for the cookies to work properly between subdomains.
+    - https://developer.mozilla.org/en-US/docs/Web/HTTP/Cookies#define_where_cookies_are_sent
+- **MTSU_STRICT_ACAO**: 'true'
+    - When true, the server only allows authenticated connections from the MTSU_DOMAIN and its subdomains (eg .*.example.org). When false, connections from every origin is allowed.
+    - https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Access-Control-Allow-Origin
 - **MTSU_HOSTNAME**=localhost
 - **MTSU_PORT**=5050
     - Hostname and port for the server. Use **mtsuserver** as the hostname if using Docker Compose.
@@ -23,19 +29,19 @@ _~~Struck out~~ values have no effect yet._
     - Location of the data dir which includes the SQLite db and the cache for gallery images and thumbnails. Relative or absolute paths are accepted.
     - Doesn't need changing if using Docker Compose.
 - **MTSU_DISABLE_CACHE_SERVER**=false
-  - True to disable the internal cache server (serves media files and thumbnails). Useful if one wants to use the web server such as NGINX to serve the files.
+    - True to disable the internal cache server (serves media files and thumbnails). Useful if one wants to use the web server such as NGINX to serve the files.
 - **MTSU_CACHE_TTL**=336h
-  - Cache time to live (for example `336h` (2 weeks), `8h30m`). If a gallery is not viewed for this time, it will be purged from the cache.
+    - Cache time to live (for example `336h` (2 weeks), `8h30m`). If a gallery is not viewed for this time, it will be purged from the cache.
 - ~~**MTSU_CACHE_SIZE**~~=10000
-  - Max size of the cache where galleries are extracted from the library in MB. Can overflow a bit especially if set too low.
+    - Max size of the cache where galleries are extracted from the library in MB. Can overflow a bit especially if set too low.
 - **MTSU_DB_NAME**=mangatsu
-  - Name of the SQLite database file
+    - Name of the SQLite database file
 - ~~**MTSU_DB**~~=sqlite
-  - Database type: `sqlite`, `postgres`, `mysql` or `mariadb`
+    - Database type: `sqlite`, `postgres`, `mysql` or `mariadb`
 - ~~**MTSU_DB_HOST**~~=localhost
-  - Hostname of the database server.
+    - Hostname of the database server.
 - ~~**MTSU_DB_PORT**~~=5432
-  - Usually 5432 for PostgreSQL and 3306 for MySQL and MariaDB.
+    - Usually 5432 for PostgreSQL and 3306 for MySQL and MariaDB.
 - ~~**MTSU_DB_USER**~~=mtsu-user
 - ~~**MTSU_DB_PASSWORD**~~=s3cr3t
 - **MTSU_VISIBILITY**=public
@@ -55,8 +61,8 @@ _~~Struck out~~ values have no effect yet._
 ## 📝 Mangatsu Web - Configuration
 
 - **NEXT_PUBLIC_MANGATSU_API_URL**=https://mangatsu-api.example.com
-  - URL to the backend API server.
+    - URL to the backend API server.
 - **NEXT_MANGATSU_IMAGE_HOSTNAME**=mangatsu-api.example.com
-  - Hostname or the domain where images are hosted. Usually the same as the domain in the API URL above.
+    - Hostname or the domain where images are hosted. Usually the same as the domain in the API URL above.
 - **PORT**=3030
-  - Port to run the web client on. If you change this and also use Docker Compose, remember to update the first port of frontend's ports in the `docker-compose.yml` file.
+    - Port to run the web client on. If you change this and also use Docker Compose, remember to update the first port of frontend's ports in the `docker-compose.yml` file.
