@@ -29,6 +29,7 @@ type CacheOptions struct {
 }
 
 type OptionsModel struct {
+	Environment   log.Environment
 	Domain        string
 	Hostname      string
 	Port          string
@@ -42,6 +43,9 @@ type CredentialsModel struct {
 	JWTSecret  string
 	Passphrase string
 }
+
+var AppEnvironment log.Environment
+var LogLevel zapcore.Level
 
 // Options stores the global configuration for the server
 var Options *OptionsModel

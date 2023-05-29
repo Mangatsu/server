@@ -9,8 +9,10 @@ services:
       - '5050:5050' # container:host
     restart: always
     environment:
-      # Log level: error, warn, info, debug, trace
-      MTSU_LOG_LEVEL: warn
+      # Environment: production or development
+      MTSU_ENV: production
+      # Log level: debug, info, warn, error
+      MTSU_LOG_LEVEL: info
       # Credentials for the initial admin user. Changing them is recommended.
       MTSU_INITIAL_ADMIN_NAME: admin
       MTSU_INITIAL_ADMIN_PW: admin321

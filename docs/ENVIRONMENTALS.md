@@ -3,8 +3,10 @@ Usable options inside the **.env** or **docker-compose.yml**:
 
 _~~Struck out~~ values have no effect yet._
 
-- ~~**MTSU_LOG_LEVEL**~~=info
-  - Log level: error, warn, info, debug, trace
+- **MTSU_ENV**=production
+  - Environment: production, development
+- **MTSU_LOG_LEVEL**=info
+  - Log level: debug, info, warn, error
 - **MTSU_INITIAL_ADMIN_NAME**=admin
 - **MTSU_INITIAL_ADMIN_PW**=admin321
     - Credentials for the initial admin user. Recommended to change.

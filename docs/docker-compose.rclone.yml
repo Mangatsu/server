@@ -9,7 +9,8 @@ services:
       - '5050:5050' # container:host
     restart: always
     environment:
-      MTSU_LOG_LEVEL: warn
+      MTSU_ENV: production
+      MTSU_LOG_LEVEL: info
       MTSU_INITIAL_ADMIN_NAME: admin
       MTSU_INITIAL_ADMIN_PW: admin321
       MTSU_BASE_PATHS: freeform1;/archive
