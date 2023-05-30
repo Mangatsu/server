@@ -61,6 +61,9 @@
 - **[📚 Library directory structure](docs/LIBRARY.md)**
 
 ### 🐳 Docker setup (recommended)
+
+#### GitHub Container Registry: [server](https://github.com/Mangatsu/server/pkgs/container/server) & [web](https://github.com/Mangatsu/server/pkgs/container/server)
+
 #### DockerHub: [server](https://hub.docker.com/r/luukuton/mangatsu-server/) & [web](https://hub.docker.com/r/luukuton/mangatsu-web) images
 
 - Set up a webserver of your choice. NGINX is recommended.
