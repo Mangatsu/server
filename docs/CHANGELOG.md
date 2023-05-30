@@ -11,7 +11,7 @@ All notable changes of this project will be documented in this file.
 - [ghcr.io/mangatsu/web](https://github.com/Mangatsu/server/pkgs/container/server)
 
 ### Added
-- Add a more secure logic to handle CORS
+- More secure logic to handle CORS
     - An env `MTSU_STRICT_ACAO` ('true' or 'false') to disable or enable it
 
 ### Changed

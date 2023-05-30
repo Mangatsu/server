@@ -3,7 +3,7 @@ version: '3.8'
 services:
   backend:
     hostname: mtsuserver
-    image: luukuton/mangatsu-server:latest
+    image: ghcr.io/mangatsu/server:latest
     user: 1000:1000 # should have access to the volumes. For data dir, both read and write is required. For libraries only read is required.
     ports:
       - '5050:5050' # container:host
@@ -59,7 +59,7 @@ services:
 
   frontend:
     hostname: mtsuweb
-    image: luukuton/mangatsu-web:latest
+    image: ghcr.io/mangatsu/web:latest
     ports:
       - '3030:3030' # container:host
     restart: always
