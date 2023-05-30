@@ -4,6 +4,19 @@ All notable changes of this project will be documented in this file.
 
 > The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/), and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.6.1] - 2023-05-30
+
+**Released packages also on GHCR (GitHub Container Registry) alongside DockerHub:**
+- [ghcr.io/mangatsu/server](https://github.com/Mangatsu/server/pkgs/container/server)
+- [ghcr.io/mangatsu/web](https://github.com/Mangatsu/server/pkgs/container/server)
+
+### Added
+- Add a more secure logic to handle CORS
+    - An env `MTSU_STRICT_ACAO` ('true' or 'false') to disable or enable it
+
+### Changed
+- Update JWT package to v5
+
 ## [0.6.0] - 2023-05-29
 
 ### Added
