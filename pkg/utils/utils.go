@@ -13,6 +13,7 @@ func Clamp(value, min, max int64) int64 {
 	return value
 }
 
+// PeriodicTask loops the given function in separate thread between the given interval.
 func PeriodicTask(d time.Duration, f func()) {
 	go func() {
 		for {
