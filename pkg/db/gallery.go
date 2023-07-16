@@ -526,7 +526,7 @@ func GetGalleries(filters Filters, hidden bool, userUUID *string, count bool) ([
 	shuffle := filters.Seed != 0 && filters.Limit > 0
 	var pages []int64
 	if shuffle {
-		rand.Seed(filters.Seed)
+		rand.New(rand.NewSource(filters.Seed))
 		galleryCount, err := GetGalleryCount(filters, hidden, userUUID)
 		if err != nil {
 			return nil, err
