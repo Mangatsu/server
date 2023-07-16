@@ -29,14 +29,14 @@ func main() {
 
 	if users == nil || len(users) == 0 {
 		if err := db.Register(username, password, int64(db.Admin)); err != nil {
-			log.Z.Fatal("Error registering initial admin: ", zap.String("err", err.Error()))
+			log.Z.Fatal("error registering initial admin: ", zap.String("err", err.Error()))
 		}
 	}
 
 	// Parse libraries from the environmental and insert/update to the db.
 	libraries := config.ParseBasePaths()
 	if err = db.StorePaths(libraries); err != nil {
-		log.Z.Fatal("Error saving library to db: ", zap.String("err", err.Error()))
+		log.Z.Fatal("error saving library to db: ", zap.String("err", err.Error()))
 	}
 
 	cache.Init()
