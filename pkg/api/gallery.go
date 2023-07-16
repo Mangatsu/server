@@ -167,9 +167,17 @@ func returnGallery(w http.ResponseWriter, r *http.Request) {
 	}
 
 	galleryWithMeta := convertMetadata(gallery)
+	if r.URL.Query().Get("meta") == "true" {
+		resultToJSON(w, GalleryResult{
+			Meta:  galleryWithMeta,
+			Files: nil,
+			Count: 0,
+		})
+		return
+	}
+
 	galleryPath := config.BuildLibraryPath(galleryWithMeta.Library.Path, galleryWithMeta.ArchivePath)
 	files, count := cache.Read(galleryPath, galleryWithMeta.UUID)
-
 	resultToJSON(w, GalleryResult{
 		Meta:  galleryWithMeta,
 		Files: files,
