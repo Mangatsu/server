@@ -26,6 +26,6 @@ Use [Conventional Commits](https://www.conventionalcommits.org/en/v1.0.0/) when 
 - Go to `http://localhost:8080/pkg/#thirdparty`
 
 ## Requirements
-- Go 1.20+
+- Go 1.21+
 - SQLite3
 - Docker (optional)
