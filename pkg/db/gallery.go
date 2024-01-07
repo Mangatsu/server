@@ -780,8 +780,8 @@ func NeedsUpdate(archivePath string, updatedAt time.Time) (bool, string) {
 }
 
 // ArchivePathFound returns true if the given archive path is already in the database.
-func ArchivePathFound(archivePath string) bool {
-	stmt := SELECT(Gallery.ArchivePath).
+func ArchivePathFound(archivePath string) []model.Gallery {
+	stmt := SELECT(Gallery.UUID, Gallery.ArchivePath).
 		FROM(Gallery.Table).
 		WHERE(Gallery.ArchivePath.EQ(String(archivePath)))
 
@@ -791,10 +791,11 @@ func ArchivePathFound(archivePath string) bool {
 		log.Z.Debug("failed to query for archive path",
 			zap.String("archivePath", archivePath),
 			zap.String("err", err.Error()))
-		return false
+		return nil
 	}
 
-	return len(galleries) > 0
+	// ArchivePath is unique, so there should only be one result
+	return galleries
 }
 
 // MetaPathFound returns true if a gallery with the given meta path exists.
