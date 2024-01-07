@@ -2,7 +2,7 @@ package metadata
 
 import (
 	"encoding/json"
-	"io/fs"
+	"os"
 	"path"
 	"path/filepath"
 	"regexp"
@@ -131,7 +131,7 @@ type FuzzyResult struct {
 }
 
 // fuzzyMatchExternalMeta tries to find the metadata file besides it (fuzzy match).
-func fuzzyMatchExternalMeta(archivePath string, libraryPath string, f fs.FileInfo) (FuzzyResult, XMetadata) {
+func fuzzyMatchExternalMeta(archivePath string, libraryPath string, f os.DirEntry) (FuzzyResult, XMetadata) {
 	fuzzyResult := FuzzyResult{
 		MetaTitleMatch:     false,
 		Similarity:         0.0,

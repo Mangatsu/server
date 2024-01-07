@@ -3,8 +3,8 @@ package metadata
 import (
 	"errors"
 	"io/fs"
-	"io/ioutil"
 	"math"
+	"os"
 	"path/filepath"
 
 	"github.com/Mangatsu/server/internal/config"
@@ -159,7 +159,7 @@ func ParseMetadata(metaTypes map[MetaType]bool) {
 	// Fuzzy parsing for all archives that didn't have an exact match.
 	for _, noMatch := range archivesNoMatch {
 		onlyDir := filepath.Dir(noMatch.fullPath)
-		files, err := ioutil.ReadDir(onlyDir) // TODO: Replace with os.ReadDir as this is deprecated as of Go 1.16
+		files, err := os.ReadDir(onlyDir)
 		if err != nil {
 			log.Z.Debug("could not gallery read dir while fuzzy matching",
 				zap.String("path", onlyDir),
