@@ -252,12 +252,20 @@ func returnSessions(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	claims, _, _, err := parseJWT(readJWT(r))
+	if err != nil {
+		errorHandler(w, http.StatusInternalServerError, "")
+		return
+	}
+
 	resultToJSON(w, struct {
-		Data  []model.Session
-		Count int
+		Data           []model.Session
+		CurrentSession string
+		Count          int
 	}{
-		Data:  sessions,
-		Count: len(sessions),
+		Data:           sessions,
+		CurrentSession: claims.ID,
+		Count:          len(sessions),
 	})
 }
 
