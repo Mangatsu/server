@@ -82,7 +82,8 @@ func login(w http.ResponseWriter, r *http.Request) {
 		if !access {
 			return
 		}
-		token, err := newJWT(*userUUID, "", credentials.ExpiresIn, credentials.SessionName, role)
+
+		token, err := newJWT(*userUUID, credentials.ExpiresIn, credentials.SessionName, role)
 		if err != nil {
 			errorHandler(w, http.StatusInternalServerError, err.Error())
 			return
@@ -106,7 +107,6 @@ func login(w http.ResponseWriter, r *http.Request) {
 			Role:      role,
 			ExpiresIn: credentials.ExpiresIn,
 		})
-
 		return
 	} else if credentials.Passphrase == config.Credentials.Passphrase {
 		passphraseCookie := http.Cookie{

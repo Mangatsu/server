@@ -38,17 +38,14 @@ func readJWT(r *http.Request) string {
 	return ""
 }
 
-func newJWT(userUUID string, sessionID string, expiresIn *int64, sessionName *string, role *int32) (string, error) {
-	if sessionID == "" {
-		if expiresIn != nil {
-			*expiresIn = utils.Clamp(*expiresIn, 30, 60*60*24*365)
-		}
+func newJWT(userUUID string, expiresIn *int64, sessionName *string, role *int32) (string, error) {
+	if expiresIn != nil {
+		*expiresIn = utils.Clamp(*expiresIn, 30, 60*60*24*365)
+	}
 
-		newSessionID, err := db.NewSession(userUUID, expiresIn, sessionName)
-		if err != nil {
-			return "", err
-		}
-		sessionID = newSessionID
+	sessionID, err := db.NewSession(userUUID, expiresIn, sessionName)
+	if err != nil {
+		return "", err
 	}
 
 	claims := jwt.NewWithClaims(jwt.SigningMethodHS256, CustomClaims{
