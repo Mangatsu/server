@@ -1,17 +1,18 @@
 package db
 
 import (
-	"github.com/Mangatsu/server/pkg/types/model"
 	"strings"
+
+	"github.com/Mangatsu/server/pkg/types/model"
 )
 
 // SanitizeString returns the pointer of the string with all leading and trailing white space removed.
 // If the string is empty, it returns nil.
-func SanitizeString(s1 *string) *string {
-	if s1 == nil {
+func SanitizeString(content *string) *string {
+	if content == nil {
 		return nil
 	}
-	trimmed := strings.TrimSpace(*s1)
+	trimmed := strings.TrimSpace(*content)
 	if trimmed == "" {
 		return nil
 	}
