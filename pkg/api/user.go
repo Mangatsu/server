@@ -24,6 +24,12 @@ type Credentials struct {
 	SessionName *string `json:"session_name"`
 }
 
+type LoginResponse struct {
+	UUID      *string
+	Role      *int32
+	ExpiresIn *int64
+}
+
 const yearInSeconds = 365 * 24 * 60 * 60
 
 func register(w http.ResponseWriter, r *http.Request) {
@@ -95,11 +101,7 @@ func login(w http.ResponseWriter, r *http.Request) {
 
 		http.SetCookie(w, &jwtCookie)
 
-		resultToJSON(w, struct {
-			UUID      *string
-			Role      *int32
-			ExpiresIn *int64
-		}{
+		resultToJSON(w, LoginResponse{
 			UUID:      userUUID,
 			Role:      role,
 			ExpiresIn: credentials.ExpiresIn,
@@ -119,7 +121,11 @@ func login(w http.ResponseWriter, r *http.Request) {
 		}
 		http.SetCookie(w, &passphraseCookie)
 
-		fmt.Fprint(w, `{ "message": "successfully logged in anonymously" }`)
+		resultToJSON(w, LoginResponse{
+			UUID:      nil,
+			Role:      nil,
+			ExpiresIn: nil,
+		})
 		return
 	}
 
