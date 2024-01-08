@@ -1,9 +1,8 @@
 package metadata
 
 import (
+	"github.com/Mangatsu/server/pkg/utils"
 	"testing"
-
-	"github.com/Mangatsu/server/pkg/library"
 )
 
 func TestParseTitle(t *testing.T) {
@@ -60,7 +59,7 @@ func TestParseTitle(t *testing.T) {
 }
 
 func TestParseX(t *testing.T) {
-	json, err := library.ReadJSON("../../testdata/x.json")
+	json, err := utils.ReadJSON("../../testdata/x.json")
 	if err != nil {
 		t.Error("Reading x.json failed")
 		return
