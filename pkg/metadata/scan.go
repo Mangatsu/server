@@ -8,10 +8,12 @@ import (
 	"path/filepath"
 
 	"github.com/Mangatsu/server/internal/config"
+	"github.com/Mangatsu/server/pkg/constants"
 	"github.com/Mangatsu/server/pkg/db"
 	"github.com/Mangatsu/server/pkg/library"
 	"github.com/Mangatsu/server/pkg/log"
 	"github.com/Mangatsu/server/pkg/types/model"
+	"github.com/Mangatsu/server/pkg/utils"
 	"github.com/mholt/archiver/v4"
 	"go.uber.org/zap"
 )
@@ -71,9 +73,9 @@ func matchExternalMeta(metaTypes map[MetaType]bool, fullArchivePath string, libr
 		return nil, ""
 	}
 
-	externalJSON := library.ArchiveExtensions.ReplaceAllString(fullArchivePath, ".json")
+	externalJSON := constants.ArchiveExtensions.ReplaceAllString(fullArchivePath, ".json")
 
-	if !library.PathExists(externalJSON) {
+	if !utils.PathExists(externalJSON) {
 		archivesNoMatch = append(archivesNoMatch, NoMatchPaths{libraryPath: libraryPath, fullPath: fullArchivePath})
 		return nil, ""
 	}

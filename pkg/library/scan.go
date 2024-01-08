@@ -1,14 +1,14 @@
 package library
 
 import (
-	"errors"
 	"io/fs"
-	"os"
 	"path"
 	"path/filepath"
 	"strings"
 
 	"github.com/Mangatsu/server/internal/config"
+	"github.com/Mangatsu/server/pkg/cache"
+	"github.com/Mangatsu/server/pkg/constants"
 	"github.com/Mangatsu/server/pkg/db"
 	"github.com/Mangatsu/server/pkg/log"
 	"go.uber.org/zap"
@@ -24,8 +24,8 @@ func walk(libraryPath string, libraryID int32, libraryLayout config.Layout) fs.W
 			return nil
 		}
 
-		isImage := ImageExtensions.MatchString(d.Name())
-		isArchive := ArchiveExtensions.MatchString(d.Name())
+		isImage := constants.ImageExtensions.MatchString(d.Name())
+		isArchive := constants.ArchiveExtensions.MatchString(d.Name())
 		if !isArchive && !isImage {
 			return nil
 		}
@@ -39,8 +39,11 @@ func walk(libraryPath string, libraryID int32, libraryLayout config.Layout) fs.W
 		}
 
 		// Skip if already in database
-		if db.ArchivePathFound(relativePath) {
+		foundGallery := db.ArchivePathFound(relativePath)
+		if foundGallery != nil {
 			log.Z.Debug("skipping archive already in db", zap.String("name", d.Name()))
+
+			cache.ProcessingStatusCache.AddScanSkippedGallery(foundGallery[0].UUID)
 			return nil
 		}
 
@@ -60,14 +63,21 @@ func walk(libraryPath string, libraryID int32, libraryLayout config.Layout) fs.W
 		}
 
 		uuid, err := db.NewGallery(relativePath, libraryID, title, series)
+
 		if err != nil {
 			log.Z.Error("failed to add gallery to db",
 				zap.String("path", relativePath),
 				zap.String("err", err.Error()))
+
+			cache.ProcessingStatusCache.AddScanError(libraryPath, err.Error())
+
 		} else {
 			// Generates cover thumbnail
 			go ReadArchiveImages(config.BuildLibraryPath(libraryPath, relativePath), uuid, true)
+
 			log.Z.Debug("added gallery", zap.String("path", relativePath))
+
+			cache.ProcessingStatusCache.AddScanFoundGallery(uuid)
 		}
 
 		if isImage {
@@ -87,18 +97,17 @@ func ScanArchives() {
 		return
 	}
 
+	cache.ProcessingStatusCache.SetScanRunning(true)
+	defer cache.ProcessingStatusCache.SetScanRunning(false)
+
 	for _, library := range libraries {
 		err := filepath.WalkDir(library.Path, walk(library.Path, library.ID, config.Layout(library.Layout)))
 		if err != nil {
 			log.Z.Error("skipping library as an error occurred during scanning",
 				zap.String("path", library.Path),
 				zap.String("err", err.Error()))
+			cache.ProcessingStatusCache.AddScanError(library.Path, err.Error())
 			continue
 		}
 	}
-}
-
-func PathExists(pathTo string) bool {
-	_, err := os.OpenFile(pathTo, os.O_RDONLY, 0444)
-	return !errors.Is(err, os.ErrNotExist)
 }

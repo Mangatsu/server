@@ -7,7 +7,6 @@ import (
 	"time"
 
 	"github.com/Mangatsu/server/internal/config"
-	"github.com/Mangatsu/server/pkg/library"
 	"github.com/Mangatsu/server/pkg/log"
 	"github.com/djherbis/atime"
 	"github.com/google/uuid"
@@ -26,8 +25,8 @@ type GalleryCache struct {
 
 var galleryCache *GalleryCache
 
-// Init initializes the abstraction layer for the gallery cache.
-func Init() {
+// InitGalleryCache initializes the abstraction layer for the gallery cache.
+func InitGalleryCache() {
 	galleryCache = &GalleryCache{
 		Path:  config.BuildCachePath(),
 		Store: make(map[string]cacheValue),
@@ -88,7 +87,7 @@ func Read(archivePath string, galleryUUID string) ([]string, int) {
 	galleryCache.Store[galleryUUID].Mu.Lock()
 	defer galleryCache.Store[galleryUUID].Mu.Unlock()
 
-	files, count := library.ReadGallery(archivePath, galleryUUID)
+	files, count := extractGallery(archivePath, galleryUUID)
 	if count == 0 {
 		return files, count
 	}

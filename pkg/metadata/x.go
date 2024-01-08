@@ -9,6 +9,7 @@ import (
 	"strings"
 
 	"github.com/Mangatsu/server/internal/config"
+	"github.com/Mangatsu/server/pkg/constants"
 	"github.com/Mangatsu/server/pkg/db"
 	"github.com/Mangatsu/server/pkg/library"
 	"github.com/Mangatsu/server/pkg/log"
@@ -166,7 +167,7 @@ func fuzzyMatchExternalMeta(archivePath string, libraryPath string, f os.DirEntr
 	fuzzyResult.RelativeMetaPath = relativeMetaPath
 	relativeArchivePath := config.RelativePath(libraryPath, archivePath)
 	metaNoExt := metaExtensions.ReplaceAllString(f.Name(), "")
-	archiveNoExt := library.ArchiveExtensions.ReplaceAllString(path.Base(relativeArchivePath), "")
+	archiveNoExt := constants.ArchiveExtensions.ReplaceAllString(path.Base(relativeArchivePath), "")
 
 	archiveSimilarity := library.Similarity(archiveNoExt, metaNoExt)
 	titleSimilarity := library.Similarity(archiveNoExt, *exhGallery.GalleryInfo.Title)

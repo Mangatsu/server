@@ -1,42 +1,15 @@
-package library
+package utils
 
 import (
+	"github.com/Mangatsu/server/pkg/constants"
+	"github.com/Mangatsu/server/pkg/log"
+	"github.com/mholt/archiver/v4"
+	"go.uber.org/zap"
 	"io"
 	"io/fs"
 	"os"
 	"path/filepath"
-
-	"github.com/Mangatsu/server/internal/config"
-	"github.com/Mangatsu/server/pkg/log"
-	"github.com/mholt/archiver/v4"
-	"go.uber.org/zap"
 )
-
-func InitCache() {
-	cachePath := config.BuildCachePath()
-	if !PathExists(cachePath) {
-		err := os.Mkdir(cachePath, os.ModePerm)
-		if err != nil {
-			log.Z.Error("failed to create cache dir",
-				zap.String("path", cachePath),
-				zap.String("err", err.Error()))
-		}
-	}
-
-	thumbnailsPath := config.BuildCachePath("thumbnails")
-	if !PathExists(thumbnailsPath) {
-		err := os.Mkdir(thumbnailsPath, os.ModePerm)
-		if err != nil {
-			log.Z.Error("failed to create thumbnails cache dir",
-				zap.String("path", thumbnailsPath),
-				zap.String("err", err.Error()))
-		}
-	}
-}
-
-func ExtractPDF() {
-	// TODO: Add support for PDF files, Probably with https://github.com/gen2brain/go-fitz
-}
 
 // UniversalExtract extracts media files from zip, cbz, rar, cbr, tar (all its variants) archives.
 // Plain directories without compression are also supported. For PDF files, use ExtractPDF.
@@ -74,7 +47,7 @@ func UniversalExtract(dst string, archivePath string) ([]string, int) {
 			return err
 		}
 
-		if !ImageExtensions.MatchString(d.Name()) {
+		if !constants.ImageExtensions.MatchString(d.Name()) {
 			return nil
 		}
 
@@ -116,4 +89,8 @@ func UniversalExtract(dst string, archivePath string) ([]string, int) {
 	}
 
 	return files, count
+}
+
+func ExtractPDF() {
+	// TODO: Add support for PDF files, Probably with https://github.com/gen2brain/go-fitz
 }

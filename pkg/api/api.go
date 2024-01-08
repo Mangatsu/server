@@ -122,6 +122,7 @@ func handleRequests() {
 	r.HandleFunc(baseURL+"/users/me/sessions", returnSessions).Methods("GET")
 	r.HandleFunc(baseURL+"/users/me/sessions", deleteSession).Methods("DELETE")
 
+	r.HandleFunc(baseURL+"/status", returnProcessingStatus).Methods("GET")
 	r.HandleFunc(baseURL+"/scan", scanLibraries).Methods("GET")
 	r.HandleFunc(baseURL+"/thumbnails", generateThumbnails).Methods("GET")
 	r.HandleFunc(baseURL+"/meta", findMetadata).Methods("GET")

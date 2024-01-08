@@ -11,8 +11,10 @@ import (
 	"strings"
 
 	"github.com/Mangatsu/server/internal/config"
+	"github.com/Mangatsu/server/pkg/constants"
 	"github.com/Mangatsu/server/pkg/db"
 	"github.com/Mangatsu/server/pkg/log"
+	"github.com/Mangatsu/server/pkg/utils"
 	"github.com/chai2010/webp"
 	"github.com/disintegration/imaging"
 	"github.com/mholt/archiver/v4"
@@ -49,7 +51,7 @@ func thumbnailWalker(onlyCover bool) {
 // If onlyCover is true, only covers are generated and the name of cover is saved to db, otherwise covers are generated.
 func ReadArchiveImages(archivePath string, galleryUUID string, onlyCover bool) {
 	galleryThumbnailPath := config.BuildCachePath("thumbnails", galleryUUID)
-	if !PathExists(galleryThumbnailPath) {
+	if !utils.PathExists(galleryThumbnailPath) {
 		err := os.Mkdir(galleryThumbnailPath, os.ModePerm)
 		if err != nil {
 			log.Z.Error("could not create thumbnail dir",
@@ -90,7 +92,7 @@ func ReadArchiveImages(archivePath string, galleryUUID string, onlyCover bool) {
 
 		if d.IsDir() {
 			cacheInnerDir := config.BuildCachePath("thumbnails", galleryUUID, d.Name())
-			if !PathExists(cacheInnerDir) {
+			if !utils.PathExists(cacheInnerDir) {
 				if err = os.Mkdir(cacheInnerDir, os.ModePerm); err != nil {
 					log.Z.Error("could not create inner thumbnail dir",
 						zap.String("path", cacheInnerDir),
@@ -101,7 +103,7 @@ func ReadArchiveImages(archivePath string, galleryUUID string, onlyCover bool) {
 			return nil
 		}
 
-		if !ImageExtensions.MatchString(d.Name()) {
+		if !constants.ImageExtensions.MatchString(d.Name()) {
 			return nil
 		}
 		if !onlyCover && cover {

@@ -2,6 +2,7 @@ package api
 
 import (
 	"fmt"
+	"github.com/Mangatsu/server/pkg/cache"
 	"github.com/Mangatsu/server/pkg/db"
 	"github.com/Mangatsu/server/pkg/library"
 	"github.com/Mangatsu/server/pkg/metadata"
@@ -19,6 +20,16 @@ func scanLibraries(w http.ResponseWriter, r *http.Request) {
 
 	w.Header().Set("Content-Type", "application/json;charset=UTF-8")
 	fmt.Fprintf(w, `{ "message": "Started scanning for new archives." }`)
+}
+
+func returnProcessingStatus(w http.ResponseWriter, r *http.Request) {
+	access, _ := hasAccess(w, r, db.Admin)
+	if !access {
+		return
+	}
+
+	status := cache.ProcessingStatusCache
+	resultToJSON(w, status)
 }
 
 func generateThumbnails(w http.ResponseWriter, r *http.Request) {

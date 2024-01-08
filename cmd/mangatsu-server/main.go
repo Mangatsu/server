@@ -7,7 +7,6 @@ import (
 	"github.com/Mangatsu/server/pkg/api"
 	"github.com/Mangatsu/server/pkg/cache"
 	"github.com/Mangatsu/server/pkg/db"
-	"github.com/Mangatsu/server/pkg/library"
 	"github.com/Mangatsu/server/pkg/log"
 	"github.com/Mangatsu/server/pkg/utils"
 	"go.uber.org/zap"
@@ -17,7 +16,7 @@ func main() {
 	config.LoadEnv()
 	log.InitializeLogger(config.AppEnvironment, config.LogLevel)
 	config.SetEnv()
-	library.InitCache()
+	cache.InitPhysicalCache()
 	db.InitDB()
 	db.EnsureLatestVersion()
 
@@ -39,7 +38,8 @@ func main() {
 		log.Z.Fatal("error saving library to db: ", zap.String("err", err.Error()))
 	}
 
-	cache.Init()
+	cache.InitGalleryCache()
+	cache.InitProcessingStatusCache()
 
 	// Tasks
 	utils.PeriodicTask(time.Minute, cache.PruneCache)
