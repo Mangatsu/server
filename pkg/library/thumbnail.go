@@ -9,8 +9,10 @@ import (
 	"os"
 	"path"
 	"strings"
+	"sync"
 
 	"github.com/Mangatsu/server/internal/config"
+	"github.com/Mangatsu/server/pkg/cache"
 	"github.com/Mangatsu/server/pkg/constants"
 	"github.com/Mangatsu/server/pkg/db"
 	"github.com/Mangatsu/server/pkg/log"
@@ -21,18 +23,33 @@ import (
 	"go.uber.org/zap"
 )
 
-// GenerateThumbnails generates thumbnails for covers and pages in parallel.
+// GenerateThumbnails generates thumbnails for covers and pages in parallel. // TODO: ignore generated files or rewrite existing cache option
 func GenerateThumbnails(pages bool, force bool) {
-	// TODO: force / rewrite existing cache
-	go thumbnailWalker(true)
+	var wg sync.WaitGroup
+
+	cache.ProcessingStatusCache.SetThumbnailsRunning(true)
+
+	wg.Add(1)
+	go func() {
+		defer wg.Done()
+		thumbnailWalker(&wg, true)
+	}()
+
 	if pages {
-		go thumbnailWalker(false)
+		wg.Add(1)
+		go func() {
+			defer wg.Done()
+			thumbnailWalker(&wg, false)
+		}()
 	}
+
+	wg.Wait()
+	cache.ProcessingStatusCache.SetThumbnailsRunning(false)
 }
 
 // thumbnailWalker walks through the database and generates thumbnails for covers or pages depending on onlyCover param.
 // If force is set to false, already existing directories will be skipped.
-func thumbnailWalker(onlyCover bool) {
+func thumbnailWalker(wg *sync.WaitGroup, onlyCover bool) {
 	libraries, err := db.GetLibraries()
 	if err != nil {
 		log.Z.Error("could not get libraries for thumbnail generation", zap.String("err", err.Error()))
@@ -41,8 +58,15 @@ func thumbnailWalker(onlyCover bool) {
 
 	for _, library := range libraries {
 		for _, gallery := range library.Galleries {
+			wg.Add(1)
+
 			fullPath := config.BuildLibraryPath(library.Path, gallery.ArchivePath)
-			go ReadArchiveImages(fullPath, gallery.UUID, onlyCover)
+			gallery := gallery // Loop variables captured by 'func' literals in 'go' statements might have unexpected values
+
+			go func() {
+				defer wg.Done()
+				ReadArchiveImages(fullPath, gallery.UUID, onlyCover)
+			}()
 		}
 	}
 }
@@ -53,23 +77,26 @@ func ReadArchiveImages(archivePath string, galleryUUID string, onlyCover bool) {
 	galleryThumbnailPath := config.BuildCachePath("thumbnails", galleryUUID)
 	if !utils.PathExists(galleryThumbnailPath) {
 		err := os.Mkdir(galleryThumbnailPath, os.ModePerm)
+
 		if err != nil {
 			log.Z.Error("could not create thumbnail dir",
 				zap.String("path", galleryThumbnailPath),
 				zap.String("err", err.Error()))
+
 			return
 		}
 	}
 
-	fsys, err := archiver.FileSystem(nil, archivePath)
+	filesystem, err := archiver.FileSystem(nil, archivePath)
 	if err != nil {
 		log.Z.Error("failed to read path on trying to generate thumbnails",
 			zap.String("path", archivePath),
 			zap.String("err", err.Error()))
+
 		return
 	}
 
-	if dir, ok := fsys.(fs.ReadDirFile); ok {
+	if dir, ok := filesystem.(fs.ReadDirFile); ok {
 		entries, err := dir.ReadDir(0)
 		if err != nil {
 			log.Z.Error("failed to read dir", zap.String("err", err.Error()))
@@ -82,7 +109,7 @@ func ReadArchiveImages(archivePath string, galleryUUID string, onlyCover bool) {
 
 	cover := true
 	generatedCount := 0
-	err = fs.WalkDir(fsys, ".", func(s string, d fs.DirEntry, err error) error {
+	err = fs.WalkDir(filesystem, ".", func(s string, d fs.DirEntry, err error) error {
 		if err != nil {
 			return err
 		}
@@ -92,11 +119,13 @@ func ReadArchiveImages(archivePath string, galleryUUID string, onlyCover bool) {
 
 		if d.IsDir() {
 			cacheInnerDir := config.BuildCachePath("thumbnails", galleryUUID, d.Name())
+
 			if !utils.PathExists(cacheInnerDir) {
 				if err = os.Mkdir(cacheInnerDir, os.ModePerm); err != nil {
 					log.Z.Error("could not create inner thumbnail dir",
 						zap.String("path", cacheInnerDir),
 						zap.String("err", err.Error()))
+
 					return err
 				}
 			}
@@ -106,6 +135,7 @@ func ReadArchiveImages(archivePath string, galleryUUID string, onlyCover bool) {
 		if !constants.ImageExtensions.MatchString(d.Name()) {
 			return nil
 		}
+
 		if !onlyCover && cover {
 			cover = false
 			return nil
@@ -115,7 +145,7 @@ func ReadArchiveImages(archivePath string, galleryUUID string, onlyCover bool) {
 		n := strings.LastIndex(s, imgExtension)
 		imgName := s[:n]
 
-		content, err := ReadAll(fsys, s)
+		content, err := ReadAll(filesystem, s)
 		if err != nil {
 			return err
 		}
@@ -126,12 +156,17 @@ func ReadArchiveImages(archivePath string, galleryUUID string, onlyCover bool) {
 				zap.String("uuid", galleryUUID),
 				zap.String("name", d.Name()),
 				zap.String("err", err.Error()))
+
+			cache.ProcessingStatusCache.AddThumbnailError(galleryUUID, err.Error(), map[string]string{
+				"name": d.Name(),
+			})
 			return err
 		}
 
 		if onlyCover {
 			webpName := imgName + ".webp"
 			log.Z.Info("cover thumbnail generated", zap.String("img", webpName))
+			cache.ProcessingStatusCache.AddThumbnailGeneratedCover()
 
 			if err := db.SetThumbnail(galleryUUID, webpName); err != nil {
 				log.Z.Error("could not save cover thumbnail to db",
@@ -142,6 +177,7 @@ func ReadArchiveImages(archivePath string, galleryUUID string, onlyCover bool) {
 			}
 			return errors.New("terminate walk")
 		}
+		cache.ProcessingStatusCache.AddThumbnailGeneratedPage()
 		generatedCount++
 
 		return nil
@@ -150,6 +186,13 @@ func ReadArchiveImages(archivePath string, galleryUUID string, onlyCover bool) {
 		log.Z.Debug("failed to walk the dir when generating thumbnails", zap.String("err", err.Error()))
 	}
 	if !onlyCover {
+		err := db.SetPageThumbnails(galleryUUID, int32(generatedCount))
+		if err != nil {
+			log.Z.Error("could not save page thumbnails status to db",
+				zap.String("uuid", galleryUUID),
+				zap.String("err", err.Error()))
+		}
+
 		log.Z.Info("non-cover thumbnails generated for gallery",
 			zap.String("uuid", galleryUUID),
 			zap.Int("count", generatedCount))

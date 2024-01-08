@@ -94,6 +94,8 @@ func ScanArchives() {
 	libraries, err := db.GetOnlyLibraries()
 	if err != nil {
 		log.Z.Error("failed to find libraries to scan", zap.String("err", err.Error()))
+
+		cache.ProcessingStatusCache.AddScanError("library scan fail", err.Error(), nil)
 		return
 	}
 
@@ -106,7 +108,8 @@ func ScanArchives() {
 			log.Z.Error("skipping library as an error occurred during scanning",
 				zap.String("path", library.Path),
 				zap.String("err", err.Error()))
-			cache.ProcessingStatusCache.AddScanError(library.Path, err.Error())
+
+			cache.ProcessingStatusCache.AddScanError(library.Path, err.Error(), nil)
 			continue
 		}
 	}

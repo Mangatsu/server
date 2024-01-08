@@ -8,6 +8,7 @@ import (
 	"path/filepath"
 
 	"github.com/Mangatsu/server/internal/config"
+	"github.com/Mangatsu/server/pkg/cache"
 	"github.com/Mangatsu/server/pkg/constants"
 	"github.com/Mangatsu/server/pkg/db"
 	"github.com/Mangatsu/server/pkg/library"
@@ -28,7 +29,7 @@ const (
 
 // matchInternalMeta reads the internal metadata (info.json, info.txt or galleryinfo.txt) from the given archive.
 func matchInternalMeta(metaTypes map[MetaType]bool, fullArchivePath string) ([]byte, string, MetaType) {
-	fsys, err := archiver.FileSystem(nil, fullArchivePath)
+	filesystem, err := archiver.FileSystem(nil, fullArchivePath)
 	if err != nil {
 		log.Z.Error("could not open archive",
 			zap.String("path", fullArchivePath),
@@ -40,7 +41,7 @@ func matchInternalMeta(metaTypes map[MetaType]bool, fullArchivePath string) ([]b
 	var filename string
 	var metaType MetaType = ""
 
-	err = fs.WalkDir(fsys, ".", func(s string, d fs.DirEntry, err error) error {
+	err = fs.WalkDir(filesystem, ".", func(s string, d fs.DirEntry, err error) error {
 		if err != nil {
 			return err
 		}
@@ -55,7 +56,7 @@ func matchInternalMeta(metaTypes map[MetaType]bool, fullArchivePath string) ([]b
 
 		if metaType != "" {
 			filename = s
-			content, err = library.ReadAll(fsys, s)
+			content, err = library.ReadAll(filesystem, s)
 			if err != nil {
 				return err
 			}
@@ -130,6 +131,11 @@ func ParseMetadata(metaTypes map[MetaType]bool) {
 						log.Z.Debug("could not parse X meta",
 							zap.String("path", metaPath),
 							zap.String("err", err.Error()))
+
+						cache.ProcessingStatusCache.AddMetadataError(gallery.UUID, err.Error(), map[string]string{
+							"metaType": string(metaType),
+							"metaPath": metaPath,
+						})
 						continue
 					}
 				case EHDLMeta:
@@ -137,6 +143,11 @@ func ParseMetadata(metaTypes map[MetaType]bool) {
 						log.Z.Debug("could not parse EHDL meta",
 							zap.String("path", metaPath),
 							zap.String("err", err.Error()))
+
+						cache.ProcessingStatusCache.AddMetadataError(gallery.UUID, err.Error(), map[string]string{
+							"metaType": string(metaType),
+							"metaPath": metaPath,
+						})
 						continue
 					}
 				case HathMeta:
@@ -144,6 +155,11 @@ func ParseMetadata(metaTypes map[MetaType]bool) {
 						log.Z.Debug("could not parse Hath meta",
 							zap.String("path", metaPath),
 							zap.String("err", err.Error()))
+
+						cache.ProcessingStatusCache.AddMetadataError(gallery.UUID, err.Error(), map[string]string{
+							"metaType": string(metaType),
+							"metaPath": metaPath,
+						})
 						continue
 					}
 				}
@@ -152,6 +168,10 @@ func ParseMetadata(metaTypes map[MetaType]bool) {
 					log.Z.Debug("could not tag gallery",
 						zap.String("path", gallery.ArchivePath),
 						zap.String("err", err.Error()))
+
+					cache.ProcessingStatusCache.AddMetadataError(newGallery.UUID, err.Error(), map[string]string{
+						"path": gallery.ArchivePath,
+					})
 					continue
 				}
 			}
