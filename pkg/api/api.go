@@ -1,18 +1,20 @@
 package api
 
 import (
+	"database/sql"
 	"encoding/json"
+	"errors"
 	"fmt"
-	"net/http"
-	"reflect"
-	"time"
-
 	"github.com/Mangatsu/server/internal/config"
 	"github.com/Mangatsu/server/pkg/db"
 	"github.com/Mangatsu/server/pkg/log"
+	"github.com/go-jet/jet/v2/qrm"
 	"github.com/gorilla/mux"
 	"github.com/rs/cors"
 	"go.uber.org/zap"
+	"net/http"
+	"reflect"
+	"time"
 )
 
 // handleResult handles the result and returns if it was successful or not.
@@ -20,8 +22,13 @@ import (
 func handleResult(w http.ResponseWriter, result interface{}, err error, many bool) bool {
 	resultType := reflect.TypeOf(result)
 	if err != nil {
-		errorHandler(w, http.StatusInternalServerError, err.Error())
-		return true
+		if errors.Is(err, sql.ErrNoRows) || errors.Is(err, qrm.ErrNoRows) {
+			errorHandler(w, http.StatusNotFound, "")
+			return true
+		} else {
+			errorHandler(w, http.StatusInternalServerError, err.Error())
+			return true
+		}
 	}
 	if !many {
 		if result == nil {
