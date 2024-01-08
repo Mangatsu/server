@@ -4,13 +4,6 @@ import (
 	"bytes"
 	"errors"
 	"fmt"
-	"image"
-	"io/fs"
-	"os"
-	"path"
-	"strings"
-	"sync"
-
 	"github.com/Mangatsu/server/internal/config"
 	"github.com/Mangatsu/server/pkg/cache"
 	"github.com/Mangatsu/server/pkg/constants"
@@ -21,6 +14,12 @@ import (
 	"github.com/disintegration/imaging"
 	"github.com/mholt/archiver/v4"
 	"go.uber.org/zap"
+	"image"
+	"io/fs"
+	"os"
+	"path"
+	"strings"
+	"sync"
 )
 
 // GenerateThumbnails generates thumbnails for covers and pages in parallel. // TODO: ignore generated files or rewrite existing cache option
@@ -28,6 +27,13 @@ func GenerateThumbnails(pages bool, force bool) {
 	var wg sync.WaitGroup
 
 	cache.ProcessingStatusCache.SetThumbnailsRunning(true)
+	coverCount, pageCount, err := db.CountAllImages(false)
+	if err != nil {
+		log.Z.Error("could not get image count for thumbnail generation", zap.String("err", err.Error()))
+	} else {
+		log.Z.Info("thumbnail generation started", zap.Int("covers", coverCount), zap.Int("pages", pageCount))
+		cache.ProcessingStatusCache.SetTotalCoversAndPages(coverCount, pageCount)
+	}
 
 	wg.Add(1)
 	go func() {

@@ -845,3 +845,24 @@ func DeleteGallery(galleryUUID string) bool {
 	rowsAffected, _ := res.RowsAffected()
 	return rowsAffected > int64(0)
 }
+
+func CountAllImages(skipWithPageThumbnails bool) (int, int, error) {
+	stmt := SELECT(COUNT(Gallery.UUID).AS("CoverCount"), SUM(Gallery.ImageCount).AS("ImageCount")).
+		FROM(Gallery.Table)
+
+	if skipWithPageThumbnails {
+		stmt = stmt.WHERE(Gallery.PageThumbnails.GT(Int32(0)))
+	}
+
+	var counts struct {
+		CoverCount int
+		ImageCount int
+	}
+
+	err := stmt.Query(db(), &counts)
+	if err != nil {
+		return 0, 0, err
+	}
+
+	return counts.CoverCount, counts.ImageCount, nil
+}

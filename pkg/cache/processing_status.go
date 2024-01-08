@@ -15,12 +15,15 @@ type scanResult struct {
 
 type thumbnailResult struct {
 	Running         bool
+	TotalCovers     int
+	TotalPages      int
 	GeneratedCovers int
 	GeneratedPages  int
 	Errors          []processingError
 }
 
 type metadataResult struct {
+	// TODO: more information like progress and which sources are being used
 	Running bool
 	Errors  []processingError
 }
@@ -78,6 +81,11 @@ func (s *ProcessingStatus) SetThumbnailsRunning(running bool) {
 	s.Thumbnails.Running = running
 }
 
+func (s *ProcessingStatus) SetTotalCoversAndPages(coverCount int, pageCount int) {
+	ProcessingStatusCache.Thumbnails.TotalCovers = coverCount
+	ProcessingStatusCache.Thumbnails.TotalPages = pageCount
+}
+
 func (s *ProcessingStatus) AddThumbnailGeneratedCover() {
 	s.Thumbnails.GeneratedCovers++
 }
@@ -116,6 +124,8 @@ func (s *ProcessingStatus) Reset() {
 	}
 	s.Thumbnails = thumbnailResult{
 		Running:         false,
+		TotalCovers:     0,
+		TotalPages:      0,
 		GeneratedCovers: 0,
 		GeneratedPages:  0,
 		Errors:          make([]processingError, 0),
