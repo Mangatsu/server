@@ -2,7 +2,7 @@
 -- +goose StatementBegin
 SELECT 'up SQL query';
 ALTER TABLE gallery
-    ADD COLUMN deleted NOT NULL DEFAULT false;
+    ADD COLUMN deleted boolean NOT NULL DEFAULT false;
 -- +goose StatementEnd
 
 -- +goose Down
