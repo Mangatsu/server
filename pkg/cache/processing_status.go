@@ -3,6 +3,7 @@ package cache
 type processingError struct {
 	UUIDOrPath string
 	Error      string
+	Details    map[string]string
 }
 
 type scanResult struct {
@@ -65,10 +66,11 @@ func (s *ProcessingStatus) AddScanSkippedGallery(galleryUUID string) {
 	s.Scan.SkippedGalleries = append(s.Scan.SkippedGalleries, galleryUUID)
 }
 
-func (s *ProcessingStatus) AddScanError(uuidOrPath string, err string) {
+func (s *ProcessingStatus) AddScanError(uuidOrPath string, err string, details map[string]string) {
 	s.Scan.Errors = append(s.Scan.Errors, processingError{
 		UUIDOrPath: uuidOrPath,
 		Error:      err,
+		Details:    details,
 	})
 }
 
@@ -84,10 +86,11 @@ func (s *ProcessingStatus) AddThumbnailGeneratedPage() {
 	s.Thumbnails.GeneratedPages++
 }
 
-func (s *ProcessingStatus) AddThumbnailError(uuidOrPath string, err string) {
+func (s *ProcessingStatus) AddThumbnailError(uuidOrPath string, err string, details map[string]string) {
 	s.Thumbnails.Errors = append(s.Thumbnails.Errors, processingError{
 		UUIDOrPath: uuidOrPath,
 		Error:      err,
+		Details:    details,
 	})
 }
 
@@ -96,10 +99,11 @@ func (s *ProcessingStatus) SetMetadataRunning(running bool) {
 
 }
 
-func (s *ProcessingStatus) AddMetadataError(uuidOrPath string, err string) {
+func (s *ProcessingStatus) AddMetadataError(uuidOrPath string, err string, details map[string]string) {
 	s.Metadata.Errors = append(s.Metadata.Errors, processingError{
 		UUIDOrPath: uuidOrPath,
 		Error:      err,
+		Details:    details,
 	})
 }
 
