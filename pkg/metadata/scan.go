@@ -80,7 +80,7 @@ func matchExternalMeta(metaTypes map[MetaType]bool, fullArchivePath string, libr
 		return nil, ""
 	}
 
-	metaData, err := library.ReadJSON(externalJSON)
+	metaData, err := utils.ReadJSON(externalJSON)
 	if err != nil {
 		log.Z.Debug("could not read external metadata",
 			zap.String("path", externalJSON),

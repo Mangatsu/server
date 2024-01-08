@@ -2,19 +2,18 @@ package metadata
 
 import (
 	"encoding/json"
+	"github.com/Mangatsu/server/internal/config"
+	"github.com/Mangatsu/server/pkg/constants"
+	"github.com/Mangatsu/server/pkg/db"
+	"github.com/Mangatsu/server/pkg/log"
+	"github.com/Mangatsu/server/pkg/types/model"
+	"github.com/Mangatsu/server/pkg/utils"
+	"go.uber.org/zap"
 	"os"
 	"path"
 	"path/filepath"
 	"regexp"
 	"strings"
-
-	"github.com/Mangatsu/server/internal/config"
-	"github.com/Mangatsu/server/pkg/constants"
-	"github.com/Mangatsu/server/pkg/db"
-	"github.com/Mangatsu/server/pkg/library"
-	"github.com/Mangatsu/server/pkg/log"
-	"github.com/Mangatsu/server/pkg/types/model"
-	"go.uber.org/zap"
 )
 
 type Tags map[string][]string
@@ -146,7 +145,7 @@ func fuzzyMatchExternalMeta(archivePath string, libraryPath string, f os.DirEntr
 	archivePath = filepath.ToSlash(archivePath)
 	onlyDir := filepath.Dir(archivePath)
 
-	metaData, err := library.ReadJSON(config.BuildPath(onlyDir, f.Name()))
+	metaData, err := utils.ReadJSON(config.BuildPath(onlyDir, f.Name()))
 	if err != nil {
 		log.Z.Debug("failed to unmarshal x metadata", zap.String("err", err.Error()))
 		return fuzzyResult, XMetadata{}
@@ -169,9 +168,9 @@ func fuzzyMatchExternalMeta(archivePath string, libraryPath string, f os.DirEntr
 	metaNoExt := metaExtensions.ReplaceAllString(f.Name(), "")
 	archiveNoExt := constants.ArchiveExtensions.ReplaceAllString(path.Base(relativeArchivePath), "")
 
-	archiveSimilarity := library.Similarity(archiveNoExt, metaNoExt)
-	titleSimilarity := library.Similarity(archiveNoExt, *exhGallery.GalleryInfo.Title)
-	titleNativeSimilarity := library.Similarity(archiveNoExt, *exhGallery.GalleryInfo.TitleOriginal)
+	archiveSimilarity := utils.Similarity(archiveNoExt, metaNoExt)
+	titleSimilarity := utils.Similarity(archiveNoExt, *exhGallery.GalleryInfo.Title)
+	titleNativeSimilarity := utils.Similarity(archiveNoExt, *exhGallery.GalleryInfo.TitleOriginal)
 	fuzzyResult.MetaTitleMatch = *exhGallery.GalleryInfo.Title == archiveNoExt || *exhGallery.GalleryInfo.TitleOriginal == archiveNoExt
 
 	if fuzzyResult.MetaTitleMatch {
