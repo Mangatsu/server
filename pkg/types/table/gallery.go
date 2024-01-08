@@ -16,7 +16,7 @@ var Gallery = newGalleryTable("", "gallery", "")
 type galleryTable struct {
 	sqlite.Table
 
-	//Columns
+	// Columns
 	UUID            sqlite.ColumnString
 	LibraryID       sqlite.ColumnInteger
 	ArchivePath     sqlite.ColumnString
@@ -36,6 +36,8 @@ type galleryTable struct {
 	Thumbnail       sqlite.ColumnString
 	CreatedAt       sqlite.ColumnTimestamp
 	UpdatedAt       sqlite.ColumnTimestamp
+	Deleted         sqlite.ColumnBool
+	PageThumbnails  sqlite.ColumnInteger
 
 	AllColumns     sqlite.ColumnList
 	MutableColumns sqlite.ColumnList
@@ -55,6 +57,16 @@ func (a GalleryTable) AS(alias string) *GalleryTable {
 // Schema creates new GalleryTable with assigned schema name
 func (a GalleryTable) FromSchema(schemaName string) *GalleryTable {
 	return newGalleryTable(schemaName, a.TableName(), a.Alias())
+}
+
+// WithPrefix creates new GalleryTable with assigned table prefix
+func (a GalleryTable) WithPrefix(prefix string) *GalleryTable {
+	return newGalleryTable(a.SchemaName(), prefix+a.TableName(), a.TableName())
+}
+
+// WithSuffix creates new GalleryTable with assigned table suffix
+func (a GalleryTable) WithSuffix(suffix string) *GalleryTable {
+	return newGalleryTable(a.SchemaName(), a.TableName()+suffix, a.TableName())
 }
 
 func newGalleryTable(schemaName, tableName, alias string) *GalleryTable {
@@ -85,8 +97,10 @@ func newGalleryTableImpl(schemaName, tableName, alias string) galleryTable {
 		ThumbnailColumn       = sqlite.StringColumn("thumbnail")
 		CreatedAtColumn       = sqlite.TimestampColumn("created_at")
 		UpdatedAtColumn       = sqlite.TimestampColumn("updated_at")
-		allColumns            = sqlite.ColumnList{UUIDColumn, LibraryIDColumn, ArchivePathColumn, TitleColumn, TitleNativeColumn, TitleTranslatedColumn, CategoryColumn, SeriesColumn, ReleasedColumn, LanguageColumn, TranslatedColumn, NsfwColumn, HiddenColumn, ImageCountColumn, ArchiveSizeColumn, ArchiveHashColumn, ThumbnailColumn, CreatedAtColumn, UpdatedAtColumn}
-		mutableColumns        = sqlite.ColumnList{LibraryIDColumn, ArchivePathColumn, TitleColumn, TitleNativeColumn, TitleTranslatedColumn, CategoryColumn, SeriesColumn, ReleasedColumn, LanguageColumn, TranslatedColumn, NsfwColumn, HiddenColumn, ImageCountColumn, ArchiveSizeColumn, ArchiveHashColumn, ThumbnailColumn, CreatedAtColumn, UpdatedAtColumn}
+		DeletedColumn         = sqlite.BoolColumn("deleted")
+		PageThumbnailsColumn  = sqlite.IntegerColumn("page_thumbnails")
+		allColumns            = sqlite.ColumnList{UUIDColumn, LibraryIDColumn, ArchivePathColumn, TitleColumn, TitleNativeColumn, TitleTranslatedColumn, CategoryColumn, SeriesColumn, ReleasedColumn, LanguageColumn, TranslatedColumn, NsfwColumn, HiddenColumn, ImageCountColumn, ArchiveSizeColumn, ArchiveHashColumn, ThumbnailColumn, CreatedAtColumn, UpdatedAtColumn, DeletedColumn, PageThumbnailsColumn}
+		mutableColumns        = sqlite.ColumnList{LibraryIDColumn, ArchivePathColumn, TitleColumn, TitleNativeColumn, TitleTranslatedColumn, CategoryColumn, SeriesColumn, ReleasedColumn, LanguageColumn, TranslatedColumn, NsfwColumn, HiddenColumn, ImageCountColumn, ArchiveSizeColumn, ArchiveHashColumn, ThumbnailColumn, CreatedAtColumn, UpdatedAtColumn, DeletedColumn, PageThumbnailsColumn}
 	)
 
 	return galleryTable{
@@ -112,6 +126,8 @@ func newGalleryTableImpl(schemaName, tableName, alias string) galleryTable {
 		Thumbnail:       ThumbnailColumn,
 		CreatedAt:       CreatedAtColumn,
 		UpdatedAt:       UpdatedAtColumn,
+		Deleted:         DeletedColumn,
+		PageThumbnails:  PageThumbnailsColumn,
 
 		AllColumns:     allColumns,
 		MutableColumns: mutableColumns,

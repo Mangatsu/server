@@ -16,7 +16,7 @@ var User = newUserTable("", "user", "")
 type userTable struct {
 	sqlite.Table
 
-	//Columns
+	// Columns
 	UUID      sqlite.ColumnString
 	Username  sqlite.ColumnString
 	Password  sqlite.ColumnString
@@ -42,6 +42,16 @@ func (a UserTable) AS(alias string) *UserTable {
 // Schema creates new UserTable with assigned schema name
 func (a UserTable) FromSchema(schemaName string) *UserTable {
 	return newUserTable(schemaName, a.TableName(), a.Alias())
+}
+
+// WithPrefix creates new UserTable with assigned table prefix
+func (a UserTable) WithPrefix(prefix string) *UserTable {
+	return newUserTable(a.SchemaName(), prefix+a.TableName(), a.TableName())
+}
+
+// WithSuffix creates new UserTable with assigned table suffix
+func (a UserTable) WithSuffix(suffix string) *UserTable {
+	return newUserTable(a.SchemaName(), a.TableName()+suffix, a.TableName())
 }
 
 func newUserTable(schemaName, tableName, alias string) *UserTable {

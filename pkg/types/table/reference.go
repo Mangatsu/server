@@ -16,7 +16,7 @@ var Reference = newReferenceTable("", "reference", "")
 type referenceTable struct {
 	sqlite.Table
 
-	//Columns
+	// Columns
 	GalleryUUID  sqlite.ColumnString
 	MetaInternal sqlite.ColumnBool
 	MetaPath     sqlite.ColumnString
@@ -44,6 +44,16 @@ func (a ReferenceTable) AS(alias string) *ReferenceTable {
 // Schema creates new ReferenceTable with assigned schema name
 func (a ReferenceTable) FromSchema(schemaName string) *ReferenceTable {
 	return newReferenceTable(schemaName, a.TableName(), a.Alias())
+}
+
+// WithPrefix creates new ReferenceTable with assigned table prefix
+func (a ReferenceTable) WithPrefix(prefix string) *ReferenceTable {
+	return newReferenceTable(a.SchemaName(), prefix+a.TableName(), a.TableName())
+}
+
+// WithSuffix creates new ReferenceTable with assigned table suffix
+func (a ReferenceTable) WithSuffix(suffix string) *ReferenceTable {
+	return newReferenceTable(a.SchemaName(), a.TableName()+suffix, a.TableName())
 }
 
 func newReferenceTable(schemaName, tableName, alias string) *ReferenceTable {

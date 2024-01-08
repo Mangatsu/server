@@ -16,7 +16,7 @@ var Session = newSessionTable("", "session", "")
 type sessionTable struct {
 	sqlite.Table
 
-	//Columns
+	// Columns
 	ID        sqlite.ColumnString
 	UserUUID  sqlite.ColumnString
 	Name      sqlite.ColumnString
@@ -40,6 +40,16 @@ func (a SessionTable) AS(alias string) *SessionTable {
 // Schema creates new SessionTable with assigned schema name
 func (a SessionTable) FromSchema(schemaName string) *SessionTable {
 	return newSessionTable(schemaName, a.TableName(), a.Alias())
+}
+
+// WithPrefix creates new SessionTable with assigned table prefix
+func (a SessionTable) WithPrefix(prefix string) *SessionTable {
+	return newSessionTable(a.SchemaName(), prefix+a.TableName(), a.TableName())
+}
+
+// WithSuffix creates new SessionTable with assigned table suffix
+func (a SessionTable) WithSuffix(suffix string) *SessionTable {
+	return newSessionTable(a.SchemaName(), a.TableName()+suffix, a.TableName())
 }
 
 func newSessionTable(schemaName, tableName, alias string) *SessionTable {

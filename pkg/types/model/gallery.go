@@ -31,4 +31,6 @@ type Gallery struct {
 	Thumbnail       *string
 	CreatedAt       time.Time
 	UpdatedAt       time.Time
+	Deleted         bool
+	PageThumbnails  *int32
 }
