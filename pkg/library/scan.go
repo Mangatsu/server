@@ -1,18 +1,43 @@
 package library
 
 import (
-	"io/fs"
-	"path"
-	"path/filepath"
-	"strings"
-
 	"github.com/Mangatsu/server/internal/config"
 	"github.com/Mangatsu/server/pkg/cache"
 	"github.com/Mangatsu/server/pkg/constants"
 	"github.com/Mangatsu/server/pkg/db"
 	"github.com/Mangatsu/server/pkg/log"
+	"github.com/Mangatsu/server/pkg/utils"
+	"github.com/mholt/archiver/v4"
 	"go.uber.org/zap"
+	"io/fs"
+	"path"
+	"path/filepath"
+	"strings"
 )
+
+func countImages(archivePath string) (int64, error) {
+	filesystem, err := archiver.FileSystem(nil, archivePath)
+	var fileCount int64
+
+	err = fs.WalkDir(filesystem, ".", func(s string, d fs.DirEntry, err error) error {
+		if err != nil {
+			return err
+		}
+
+		if !d.IsDir() && constants.ImageExtensions.MatchString(d.Name()) {
+			fileCount++
+		}
+
+		return nil
+	})
+
+	if err != nil {
+		log.Z.Error("could not count files in archive", zap.String("path", archivePath), zap.String("err", err.Error()))
+		return 0, err
+	}
+
+	return fileCount, nil
+}
 
 func walk(libraryPath string, libraryID int32, libraryLayout config.Layout) fs.WalkDirFunc {
 	return func(s string, d fs.DirEntry, err error) error {
@@ -32,6 +57,7 @@ func walk(libraryPath string, libraryID int32, libraryLayout config.Layout) fs.W
 
 		s = filepath.ToSlash(s)
 		relativePath := config.RelativePath(libraryPath, s)
+		fullPath := config.BuildLibraryPath(libraryPath, relativePath)
 
 		// If an image is found, the parent dir will be considered as a gallery.
 		if isImage {
@@ -55,25 +81,43 @@ func walk(libraryPath string, libraryID int32, libraryLayout config.Layout) fs.W
 		}
 
 		var title string
+		var size int64
+
 		if isImage {
 			title = path.Base(relativePath)
+
+			if size, err = utils.DirSize(fullPath); err != nil {
+				log.Z.Error("failed to get dir size", zap.String("path", fullPath), zap.String("err", err.Error()))
+			}
 		} else {
 			n := strings.LastIndex(d.Name(), path.Ext(d.Name()))
 			title = d.Name()[:n]
+
+			if size, err = utils.FileSize(fullPath); err != nil {
+				log.Z.Error("failed to get file size", zap.String("path", fullPath), zap.String("err", err.Error()))
+			}
 		}
 
-		uuid, err := db.NewGallery(relativePath, libraryID, title, series)
+		imageCount, err := countImages(fullPath)
+		if err != nil {
+			log.Z.Error("failed to count images", zap.String("path", fullPath), zap.String("err", err.Error()))
+		}
+
+		uuid, err := db.NewGallery(relativePath, libraryID, title, series, size, imageCount)
 
 		if err != nil {
 			log.Z.Error("failed to add gallery to db",
 				zap.String("path", relativePath),
 				zap.String("err", err.Error()))
 
-			cache.ProcessingStatusCache.AddScanError(libraryPath, err.Error())
+			cache.ProcessingStatusCache.AddScanError(relativePath, err.Error(), map[string]string{
+				"libraryID": string(libraryID),
+				"title":     title,
+			})
 
 		} else {
 			// Generates cover thumbnail
-			go ReadArchiveImages(config.BuildLibraryPath(libraryPath, relativePath), uuid, true)
+			go ReadArchiveImages(fullPath, uuid, true)
 
 			log.Z.Debug("added gallery", zap.String("path", relativePath))
 

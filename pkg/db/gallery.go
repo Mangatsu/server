@@ -75,7 +75,7 @@ const (
 )
 
 // NewGallery creates a new gallery
-func NewGallery(archivePath string, libraryID int32, title string, series string) (string, error) {
+func NewGallery(archivePath string, libraryID int32, title string, series string, size int64, imageCount int64) (string, error) {
 	galleryUUID, err := uuid.NewRandom()
 	if err != nil {
 		return "", err
@@ -85,13 +85,13 @@ func NewGallery(archivePath string, libraryID int32, title string, series string
 	var stmt InsertStatement
 	if series != "" {
 		stmt = Gallery.
-			INSERT(Gallery.UUID, Gallery.ArchivePath, Gallery.Title, Gallery.LibraryID, Gallery.Series, Gallery.CreatedAt, Gallery.UpdatedAt).
-			VALUES(galleryUUID.String(), archivePath, title, libraryID, series, now, now).
+			INSERT(Gallery.UUID, Gallery.ArchivePath, Gallery.Title, Gallery.LibraryID, Gallery.Series, Gallery.ArchiveSize, Gallery.ImageCount, Gallery.CreatedAt, Gallery.UpdatedAt).
+			VALUES(galleryUUID.String(), archivePath, title, libraryID, series, size, imageCount, now, now).
 			RETURNING(Gallery.UUID)
 	} else {
 		stmt = Gallery.
-			INSERT(Gallery.UUID, Gallery.ArchivePath, Gallery.Title, Gallery.LibraryID, Gallery.CreatedAt, Gallery.UpdatedAt).
-			VALUES(galleryUUID.String(), archivePath, title, libraryID, now, now).
+			INSERT(Gallery.UUID, Gallery.ArchivePath, Gallery.Title, Gallery.LibraryID, Gallery.ArchiveSize, Gallery.ImageCount, Gallery.CreatedAt, Gallery.UpdatedAt).
+			VALUES(galleryUUID.String(), archivePath, title, libraryID, size, imageCount, now, now).
 			RETURNING(Gallery.UUID)
 	}
 
@@ -100,9 +100,11 @@ func NewGallery(archivePath string, libraryID int32, title string, series string
 	if err != nil {
 		return "", err
 	}
+
 	if len(galleries) == 0 {
 		return "", sql.ErrNoRows
 	}
+
 	return galleries[0].UUID, nil
 }
 
@@ -398,6 +400,17 @@ func SetFavoriteGroup(favoriteGroup string, galleryUUID string, userUUID string)
 func SetThumbnail(uuid string, thumbnail string) error {
 	now := time.Now()
 	galleryModel := model.Gallery{Thumbnail: &thumbnail, UpdatedAt: now}
+	stmt := Gallery.UPDATE(Gallery.Thumbnail, Gallery.UpdatedAt).
+		MODEL(galleryModel).
+		WHERE(Gallery.UUID.EQ(String(uuid)))
+
+	_, err := stmt.Exec(db())
+	return err
+}
+
+func SetPageThumbnails(uuid string, pageThumbnails int32) error {
+	now := time.Now()
+	galleryModel := model.Gallery{PageThumbnails: &pageThumbnails, UpdatedAt: now}
 	stmt := Gallery.UPDATE(Gallery.Thumbnail, Gallery.UpdatedAt).
 		MODEL(galleryModel).
 		WHERE(Gallery.UUID.EQ(String(uuid)))
@@ -760,7 +773,7 @@ func GetSeries() ([]string, error) {
 	return series, err
 }
 
-// NeedsUpdate returns true if the gallery needs to be updated. Currently, only the timestamp is checked.
+// NeedsUpdate returns true if the gallery needs to be updated. Currently only the timestamp is checked.
 func NeedsUpdate(archivePath string, updatedAt time.Time) (bool, string) {
 	// TODO: Possibly also check for ArchiveSize and ArchiveHash?
 	stmt := SELECT(Gallery.AllColumns).FROM(Gallery.Table).WHERE(Gallery.ArchivePath.EQ(String(archivePath)))
