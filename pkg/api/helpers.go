@@ -105,7 +105,7 @@ func hasAccess(w http.ResponseWriter, r *http.Request, role db.Role) (bool, *str
 			return true, nil
 		}
 
-		errorHandler(w, http.StatusUnauthorized, "")
+		errorHandler(w, http.StatusUnauthorized, "", r.URL.Path)
 		return publicAccess, nil
 	}
 
@@ -127,7 +127,7 @@ func hasAccess(w http.ResponseWriter, r *http.Request, role db.Role) (bool, *str
 		return true, nil
 	}
 
-	errorHandler(w, http.StatusUnauthorized, "")
+	errorHandler(w, http.StatusUnauthorized, "", r.URL.Path)
 	return false, nil
 }
 
@@ -135,7 +135,7 @@ func hasAccess(w http.ResponseWriter, r *http.Request, role db.Role) (bool, *str
 func loginHelper(w http.ResponseWriter, credentials Credentials, requiredRole db.Role) (bool, *string, *int32) {
 	userUUID, role, err := db.Login(credentials.Username, credentials.Password, requiredRole)
 	if err != nil || userUUID == nil {
-		errorHandler(w, http.StatusUnauthorized, "")
+		errorHandler(w, http.StatusUnauthorized, "", "")
 		return false, nil, nil
 	}
 

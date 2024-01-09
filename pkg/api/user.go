@@ -8,11 +8,9 @@ import (
 
 	"github.com/Mangatsu/server/internal/config"
 	"github.com/Mangatsu/server/pkg/db"
-	"github.com/Mangatsu/server/pkg/log"
 	"github.com/Mangatsu/server/pkg/types/model"
 	"github.com/Mangatsu/server/pkg/utils"
 	"github.com/gorilla/mux"
-	"go.uber.org/zap"
 )
 
 type Credentials struct {
@@ -36,18 +34,18 @@ func register(w http.ResponseWriter, r *http.Request) {
 	credentials := &Credentials{}
 	err := json.NewDecoder(r.Body).Decode(credentials)
 	if err != nil || credentials.Username == "" || credentials.Password == "" {
-		errorHandler(w, http.StatusBadRequest, "")
+		errorHandler(w, http.StatusBadRequest, "", r.URL.Path)
 		return
 	}
 
 	if !config.Options.Registrations || credentials.Role != nil {
 		token := readJWT(r)
 		if token == "" {
-			errorHandler(w, http.StatusBadRequest, "")
+			errorHandler(w, http.StatusBadRequest, "", r.URL.Path)
 			return
 		}
 		if access, _ := verifyJWT(token, db.Admin); !access {
-			errorHandler(w, http.StatusUnauthorized, "")
+			errorHandler(w, http.StatusUnauthorized, "", r.URL.Path)
 			return
 		}
 	}
@@ -56,8 +54,7 @@ func register(w http.ResponseWriter, r *http.Request) {
 	if credentials.Role != nil {
 		role, err = strconv.ParseInt(*credentials.Role, 10, 8)
 		if err != nil {
-			log.Z.Debug("failed to parse role value when registering", zap.String("err", err.Error()))
-			errorHandler(w, http.StatusBadRequest, "")
+			errorHandler(w, http.StatusBadRequest, "failed to parse role value when registering: "+err.Error(), r.URL.Path)
 			return
 		}
 	}
@@ -73,7 +70,7 @@ func login(w http.ResponseWriter, r *http.Request) {
 	credentials := &Credentials{}
 	err := json.NewDecoder(r.Body).Decode(credentials)
 	if err != nil {
-		errorHandler(w, http.StatusBadRequest, "")
+		errorHandler(w, http.StatusBadRequest, "", r.URL.Path)
 		return
 	}
 
@@ -85,7 +82,7 @@ func login(w http.ResponseWriter, r *http.Request) {
 
 		token, err := newJWT(*userUUID, credentials.ExpiresIn, credentials.SessionName, role)
 		if err != nil {
-			errorHandler(w, http.StatusInternalServerError, err.Error())
+			errorHandler(w, http.StatusInternalServerError, err.Error(), r.URL.Path)
 			return
 		}
 
@@ -106,7 +103,7 @@ func login(w http.ResponseWriter, r *http.Request) {
 			UUID:      userUUID,
 			Role:      role,
 			ExpiresIn: credentials.ExpiresIn,
-		})
+		}, r.URL.Path)
 		return
 	} else if credentials.Passphrase == config.Credentials.Passphrase {
 		passphraseCookie := http.Cookie{
@@ -125,23 +122,23 @@ func login(w http.ResponseWriter, r *http.Request) {
 			UUID:      nil,
 			Role:      nil,
 			ExpiresIn: nil,
-		})
+		}, r.URL.Path)
 		return
 	}
 
-	errorHandler(w, http.StatusBadRequest, "")
+	errorHandler(w, http.StatusBadRequest, "", r.URL.Path)
 }
 
 func logout(w http.ResponseWriter, r *http.Request) {
 	token := readJWT(r)
 	if token == "" {
-		errorHandler(w, http.StatusBadRequest, "")
+		errorHandler(w, http.StatusBadRequest, "no token found", r.URL.Path)
 		return
 	}
 
 	claims, ok, _, err := parseJWT(token)
 	if err != nil || !ok {
-		errorHandler(w, http.StatusUnauthorized, "")
+		errorHandler(w, http.StatusUnauthorized, "", r.URL.Path)
 		return
 	}
 
@@ -170,14 +167,14 @@ func logout(w http.ResponseWriter, r *http.Request) {
 func updateUser(w http.ResponseWriter, r *http.Request) {
 	userForm := &db.UserForm{}
 	if err := json.NewDecoder(r.Body).Decode(userForm); err != nil {
-		errorHandler(w, http.StatusBadRequest, "")
+		errorHandler(w, http.StatusBadRequest, err.Error(), r.URL.Path)
 		return
 	}
 
 	params := mux.Vars(r)
 	userUUID := params["uuid"]
 	if userUUID == "" {
-		errorHandler(w, http.StatusBadRequest, "")
+		errorHandler(w, http.StatusBadRequest, "", r.URL.Path)
 		return
 	}
 
@@ -189,7 +186,7 @@ func updateUser(w http.ResponseWriter, r *http.Request) {
 	} else {
 		access, loggedInUUID := hasAccess(w, r, db.Viewer)
 		if *loggedInUUID != userUUID {
-			errorHandler(w, http.StatusUnauthorized, "")
+			errorHandler(w, http.StatusUnauthorized, "", r.URL.Path)
 			return
 		}
 		if !access {
@@ -198,7 +195,7 @@ func updateUser(w http.ResponseWriter, r *http.Request) {
 	}
 
 	if err := db.UpdateUser(userUUID, userForm); err != nil {
-		errorHandler(w, http.StatusInternalServerError, err.Error())
+		errorHandler(w, http.StatusInternalServerError, err.Error(), r.URL.Path)
 		return
 	}
 
@@ -213,7 +210,7 @@ func returnUsers(w http.ResponseWriter, r *http.Request) {
 	}
 
 	users, err := db.GetUsers()
-	if handleResult(w, users, err, true) {
+	if handleResult(w, users, err, true, r.URL.Path) {
 		return
 	}
 
@@ -223,7 +220,7 @@ func returnUsers(w http.ResponseWriter, r *http.Request) {
 	}{
 		Data:  users,
 		Count: len(users),
-	})
+	}, r.URL.Path)
 }
 
 // deleteUser deletes a user from the database. Only for admins.
@@ -237,7 +234,7 @@ func deleteUser(w http.ResponseWriter, r *http.Request) {
 	userUUID := params["uuid"]
 	err := db.DeleteUser(userUUID)
 	if err != nil {
-		errorHandler(w, http.StatusBadRequest, "")
+		errorHandler(w, http.StatusBadRequest, err.Error(), r.URL.Path)
 		return
 	}
 }
@@ -249,18 +246,18 @@ func returnSessions(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	if userUUID == nil {
-		errorHandler(w, http.StatusBadRequest, "")
+		errorHandler(w, http.StatusBadRequest, "", r.URL.Path)
 		return
 	}
 
 	sessions, err := db.GetSessions(*userUUID)
-	if handleResult(w, sessions, err, true) {
+	if handleResult(w, sessions, err, true, r.URL.Path) {
 		return
 	}
 
 	claims, _, _, err := parseJWT(readJWT(r))
 	if err != nil {
-		errorHandler(w, http.StatusInternalServerError, "")
+		errorHandler(w, http.StatusInternalServerError, err.Error(), r.URL.Path)
 		return
 	}
 
@@ -272,7 +269,7 @@ func returnSessions(w http.ResponseWriter, r *http.Request) {
 		Data:           sessions,
 		CurrentSession: claims.ID,
 		Count:          len(sessions),
-	})
+	}, r.URL.Path)
 }
 
 // deleteSession deletes user's session from the database.
@@ -282,18 +279,18 @@ func deleteSession(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	if userUUID == nil {
-		errorHandler(w, http.StatusBadRequest, "")
+		errorHandler(w, http.StatusBadRequest, "", r.URL.Path)
 		return
 	}
 
 	credentials := &struct{ SessionID string }{}
 	if err := json.NewDecoder(r.Body).Decode(credentials); err != nil {
-		errorHandler(w, http.StatusBadRequest, "")
+		errorHandler(w, http.StatusBadRequest, "", r.URL.Path)
 		return
 	}
 
 	if err := db.DeleteSession(credentials.SessionID, *userUUID); err != nil {
-		errorHandler(w, http.StatusBadRequest, "")
+		errorHandler(w, http.StatusBadRequest, err.Error(), r.URL.Path)
 		return
 	}
 }
@@ -306,14 +303,14 @@ func returnFavoriteGroups(w http.ResponseWriter, r *http.Request) {
 	}
 
 	favoriteGroups, err := db.GetFavoriteGroups(*userUUID)
-	if handleResult(w, favoriteGroups, err, true) {
+	if handleResult(w, favoriteGroups, err, true, r.URL.Path) {
 		return
 	}
 
 	resultToJSON(w, GenericStringResult{
 		Data:  favoriteGroups,
 		Count: len(favoriteGroups),
-	})
+	}, r.URL.Path)
 }
 
 // setFavorite sets a personal favorite group for a gallery.
@@ -325,12 +322,12 @@ func setFavorite(w http.ResponseWriter, r *http.Request) {
 
 	params := mux.Vars(r)
 	if params["uuid"] == "" {
-		errorHandler(w, http.StatusBadRequest, "")
+		errorHandler(w, http.StatusBadRequest, "uuid is required", r.URL.Path)
 		return
 	}
 
 	if err := db.SetFavoriteGroup(params["name"], params["uuid"], *userUUID); err != nil {
-		errorHandler(w, http.StatusInternalServerError, err.Error())
+		errorHandler(w, http.StatusInternalServerError, err.Error(), r.URL.Path)
 		return
 	}
 	fmt.Fprintf(w, `{ "message": "favorite group updated" }`)
@@ -345,12 +342,12 @@ func updateProgress(w http.ResponseWriter, r *http.Request) {
 	params := mux.Vars(r)
 	progress, err := strconv.ParseInt(params["progress"], 10, 32)
 	if err != nil || params["uuid"] == "" {
-		errorHandler(w, http.StatusBadRequest, err.Error())
+		errorHandler(w, http.StatusBadRequest, err.Error(), r.URL.Path)
 		return
 	}
 
 	if err = db.UpdateProgress(int32(progress), params["uuid"], *userUUID); err != nil {
-		errorHandler(w, http.StatusInternalServerError, err.Error())
+		errorHandler(w, http.StatusInternalServerError, err.Error(), r.URL.Path)
 		return
 	}
 	fmt.Fprintf(w, `{ "message": "progress updated" }`)

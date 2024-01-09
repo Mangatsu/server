@@ -75,7 +75,7 @@ func returnGalleries(w http.ResponseWriter, r *http.Request) {
 
 	queryParams := parseQueryParams(r)
 	galleries, err := db.GetGalleries(queryParams, true, userUUID, false)
-	if handleResult(w, galleries, err, true) {
+	if handleResult(w, galleries, err, true, r.RequestURI) {
 		return
 	}
 
@@ -122,7 +122,7 @@ func returnGalleries(w http.ResponseWriter, r *http.Request) {
 		}{
 			Data:  groupedResult,
 			Count: count,
-		})
+		}, r.RequestURI)
 		return
 	}
 
@@ -132,7 +132,7 @@ func returnGalleries(w http.ResponseWriter, r *http.Request) {
 	}{
 		Data:  galleriesResult,
 		Count: count,
-	})
+	}, r.RequestURI)
 }
 
 // returnGalleryCount returns the amount of galleries.
@@ -144,11 +144,11 @@ func returnGalleryCount(w http.ResponseWriter, r *http.Request) {
 
 	queryParams := parseQueryParams(r)
 	count, err := db.GetGalleryCount(queryParams, true, userUUID)
-	if handleResult(w, count, err, false) {
+	if handleResult(w, count, err, false, r.URL.Path) {
 		return
 	}
 
-	resultToJSON(w, struct{ Count int64 }{Count: count})
+	resultToJSON(w, struct{ Count int64 }{Count: count}, r.URL.Path)
 }
 
 // returnGallery returns one gallery as JSON.
@@ -162,7 +162,7 @@ func returnGallery(w http.ResponseWriter, r *http.Request) {
 	galleryUUID := params["uuid"]
 
 	gallery, err := db.GetGallery(&galleryUUID, userUUID)
-	if handleResult(w, gallery, err, false) {
+	if handleResult(w, gallery, err, false, r.RequestURI) {
 		return
 	}
 
@@ -172,7 +172,7 @@ func returnGallery(w http.ResponseWriter, r *http.Request) {
 			Meta:  galleryWithMeta,
 			Files: nil,
 			Count: 0,
-		})
+		}, r.RequestURI)
 		return
 	}
 
@@ -182,7 +182,7 @@ func returnGallery(w http.ResponseWriter, r *http.Request) {
 		Meta:  galleryWithMeta,
 		Files: files,
 		Count: count,
-	})
+	}, r.RequestURI)
 }
 
 // returnRandomGallery returns one random gallery as JSON in the same way as returnGallery.
@@ -193,7 +193,7 @@ func returnRandomGallery(w http.ResponseWriter, r *http.Request) {
 	}
 
 	gallery, err := db.GetGallery(nil, userUUID)
-	if handleResult(w, gallery, err, false) {
+	if handleResult(w, gallery, err, false, r.URL.Path) {
 		return
 	}
 
@@ -205,7 +205,7 @@ func returnRandomGallery(w http.ResponseWriter, r *http.Request) {
 		Meta:  galleryWithMeta,
 		Files: files,
 		Count: count,
-	})
+	}, r.URL.Path)
 }
 
 // returnTags returns all tags as JSON.
@@ -215,11 +215,11 @@ func returnTags(w http.ResponseWriter, r *http.Request) {
 	}
 
 	tags, _, err := db.GetTags("", true)
-	if handleResult(w, tags, err, true) {
+	if handleResult(w, tags, err, true, r.RequestURI) {
 		return
 	}
 
-	resultToJSON(w, tags)
+	resultToJSON(w, tags, r.RequestURI)
 }
 
 // returnCategories returns all public categories as JSON.
@@ -229,14 +229,14 @@ func returnCategories(w http.ResponseWriter, r *http.Request) {
 	}
 
 	categories, err := db.GetCategories()
-	if handleResult(w, categories, err, true) {
+	if handleResult(w, categories, err, true, r.RequestURI) {
 		return
 	}
 
 	resultToJSON(w, GenericStringResult{
 		Data:  categories,
 		Count: len(categories),
-	})
+	}, r.RequestURI)
 }
 
 // returnSeries returns all series as JSON.
@@ -246,14 +246,14 @@ func returnSeries(w http.ResponseWriter, r *http.Request) {
 	}
 
 	series, err := db.GetSeries()
-	if handleResult(w, series, err, true) {
+	if handleResult(w, series, err, true, r.RequestURI) {
 		return
 	}
 
 	resultToJSON(w, GenericStringResult{
 		Data:  series,
 		Count: len(series),
-	})
+	}, r.RequestURI)
 }
 
 // updateGallery updates a gallery and its reference and tags.
@@ -268,13 +268,13 @@ func updateGallery(w http.ResponseWriter, r *http.Request) {
 	params := mux.Vars(r)
 	galleryUUID := params["uuid"]
 	if galleryUUID == "" {
-		errorHandler(w, http.StatusBadRequest, "")
+		errorHandler(w, http.StatusBadRequest, "gallery uuid is required", r.URL.Path)
 		return
 	}
 
 	formData := &UpdateGalleryForm{}
 	if err := json.NewDecoder(r.Body).Decode(formData); err != nil {
-		errorHandler(w, http.StatusBadRequest, "")
+		errorHandler(w, http.StatusBadRequest, err.Error(), r.URL.Path)
 		return
 	}
 
@@ -315,7 +315,7 @@ func updateGallery(w http.ResponseWriter, r *http.Request) {
 	}
 
 	if err := db.UpdateGallery(newGallery, tags, newReference, false); err != nil {
-		errorHandler(w, http.StatusInternalServerError, err.Error())
+		errorHandler(w, http.StatusInternalServerError, err.Error(), r.URL.Path)
 		return
 	}
 	fmt.Fprintf(w, `{ "message": "gallery updated" }`)

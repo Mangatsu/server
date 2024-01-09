@@ -19,20 +19,20 @@ import (
 
 // handleResult handles the result and returns if it was successful or not.
 // InternalServerError will be set if any error found. NotFound is set if the result is nil or empty.
-func handleResult(w http.ResponseWriter, result interface{}, err error, many bool) bool {
+func handleResult(w http.ResponseWriter, result interface{}, err error, many bool, endpoint string) bool {
 	resultType := reflect.TypeOf(result)
 	if err != nil {
 		if errors.Is(err, sql.ErrNoRows) || errors.Is(err, qrm.ErrNoRows) {
-			errorHandler(w, http.StatusNotFound, "")
+			errorHandler(w, http.StatusNotFound, "", endpoint)
 			return true
 		} else {
-			errorHandler(w, http.StatusInternalServerError, err.Error())
+			errorHandler(w, http.StatusInternalServerError, err.Error(), endpoint)
 			return true
 		}
 	}
 	if !many {
 		if result == nil {
-			errorHandler(w, http.StatusNotFound, "")
+			errorHandler(w, http.StatusNotFound, "", endpoint)
 			return true
 		}
 		if resultType.Kind() == reflect.Slice {
@@ -41,7 +41,7 @@ func handleResult(w http.ResponseWriter, result interface{}, err error, many boo
 			}
 			list := reflect.ValueOf(result)
 			if list.Len() == 0 {
-				errorHandler(w, http.StatusNotFound, "")
+				errorHandler(w, http.StatusNotFound, "", endpoint)
 				return true
 			}
 		}
@@ -49,14 +49,14 @@ func handleResult(w http.ResponseWriter, result interface{}, err error, many boo
 	return false
 }
 
-func resultToJSON(w http.ResponseWriter, result interface{}) {
+func resultToJSON(w http.ResponseWriter, result interface{}, endpoint string) {
 	w.Header().Set("Content-Type", "application/json;charset=UTF-8")
 	if err := json.NewEncoder(w).Encode(result); err != nil {
-		errorHandler(w, http.StatusInternalServerError, err.Error())
+		errorHandler(w, http.StatusInternalServerError, err.Error(), endpoint)
 	}
 }
 
-func returnInfo(w http.ResponseWriter, _ *http.Request) {
+func returnInfo(w http.ResponseWriter, r *http.Request) {
 	resultToJSON(w, struct {
 		APIVersion    int
 		ServerVersion string
@@ -67,7 +67,7 @@ func returnInfo(w http.ResponseWriter, _ *http.Request) {
 		ServerVersion: "0.7.0",
 		Visibility:    config.Options.Visibility,
 		Registrations: config.Options.Registrations,
-	})
+	}, r.URL.Path)
 }
 
 // Returns statistics as JSON.
@@ -85,7 +85,7 @@ func returnRoot(w http.ResponseWriter, _ *http.Request) {
 }
 
 // Handles errors. Argument msg is only used with 400 and 500.
-func errorHandler(w http.ResponseWriter, status int, msg string) {
+func errorHandler(w http.ResponseWriter, status int, msg string, endpoint string) {
 	switch status {
 	case http.StatusNotFound:
 		w.WriteHeader(status)
@@ -105,7 +105,13 @@ func errorHandler(w http.ResponseWriter, status int, msg string) {
 		log.Z.Error(msg, zap.Int("status", status))
 		return
 	}
-	log.Z.Debug(msg, zap.Int("status", status))
+
+	log.Z.Debug(
+		"api request",
+		zap.String("endpoint", endpoint),
+		zap.Int("status", status),
+		zap.String("msg", msg),
+	)
 }
 
 // Handles HTTP(S) requests.
@@ -153,7 +159,7 @@ func handleRequests() {
 
 	// General 404
 	r.NotFoundHandler = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		errorHandler(w, http.StatusNotFound, r.RequestURI)
+		errorHandler(w, http.StatusNotFound, "", r.RequestURI)
 	})
 
 	handler := cors.New(cors.Options{

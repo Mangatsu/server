@@ -29,7 +29,7 @@ func returnProcessingStatus(w http.ResponseWriter, r *http.Request) {
 	}
 
 	status := cache.ProcessingStatusCache
-	resultToJSON(w, status)
+	resultToJSON(w, status, r.URL.Path)
 }
 
 func generateThumbnails(w http.ResponseWriter, r *http.Request) {
@@ -73,5 +73,5 @@ func findMetadata(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	errorHandler(w, http.StatusBadRequest, "no sources specified")
+	errorHandler(w, http.StatusBadRequest, "no sources specified", r.URL.Path)
 }
