@@ -3,14 +3,15 @@ package api
 import (
 	"encoding/json"
 	"fmt"
-	"net/http"
-	"strconv"
-
 	"github.com/Mangatsu/server/internal/config"
 	"github.com/Mangatsu/server/pkg/db"
+	"github.com/Mangatsu/server/pkg/log"
 	"github.com/Mangatsu/server/pkg/types/model"
 	"github.com/Mangatsu/server/pkg/utils"
 	"github.com/gorilla/mux"
+	"go.uber.org/zap"
+	"net/http"
+	"strconv"
 )
 
 type Credentials struct {
@@ -118,10 +119,11 @@ func login(w http.ResponseWriter, r *http.Request) {
 		}
 		http.SetCookie(w, &passphraseCookie)
 
+		expiresIn := int64(yearInSeconds)
 		resultToJSON(w, LoginResponse{
 			UUID:      nil,
 			Role:      nil,
-			ExpiresIn: nil,
+			ExpiresIn: &expiresIn,
 		}, r.URL.Path)
 		return
 	}
