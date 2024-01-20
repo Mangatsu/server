@@ -80,13 +80,17 @@ func verifyJWT(tokenString string, role db.Role) (bool, *string) {
 func parseJWT(tokenString string) (CustomClaims, bool, *jwt.Token, error) {
 	token, err := jwt.ParseWithClaims(
 		tokenString, &CustomClaims{},
-		func(token *jwt.Token) (interface{}, error) { return []byte(config.Credentials.JWTSecret), nil },
+		func(token *jwt.Token) (interface{}, error) {
+			return []byte(config.Credentials.JWTSecret), nil
+		},
 		jwt.WithValidMethods([]string{jwt.SigningMethodHS256.Name}),
 	)
+
 	if err != nil {
 		return CustomClaims{}, false, nil, err
 	}
 
 	claims, ok := token.Claims.(*CustomClaims)
+
 	return *claims, ok, token, err
 }
