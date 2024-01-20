@@ -411,7 +411,7 @@ func SetThumbnail(uuid string, thumbnail string) error {
 func SetPageThumbnails(uuid string, pageThumbnails int32) error {
 	now := time.Now()
 	galleryModel := model.Gallery{PageThumbnails: &pageThumbnails, UpdatedAt: now}
-	stmt := Gallery.UPDATE(Gallery.Thumbnail, Gallery.UpdatedAt).
+	stmt := Gallery.UPDATE(Gallery.PageThumbnails, Gallery.UpdatedAt).
 		MODEL(galleryModel).
 		WHERE(Gallery.UUID.EQ(String(uuid)))
 
