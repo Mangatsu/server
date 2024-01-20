@@ -99,6 +99,9 @@ func errorHandler(w http.ResponseWriter, status int, msg string, endpoint string
 	case http.StatusUnauthorized:
 		w.WriteHeader(status)
 		fmt.Fprintf(w, `{ "code": %d, "message": "unauthorized" }`, status)
+	case http.StatusGone:
+		w.WriteHeader(status)
+		fmt.Fprintf(w, `{ "code": %d, "message": "gone" }`, status)
 	default:
 		w.WriteHeader(http.StatusInternalServerError)
 		fmt.Fprintf(w, `{ "status": %d, "message": "internal server error" }`, http.StatusInternalServerError)
