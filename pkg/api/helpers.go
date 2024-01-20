@@ -92,7 +92,7 @@ func convertMetadata(metadata db.CombinedMetadata) MetadataResult {
 // hasAccess handles access based on the Visibility option. Role restricts access to the specified role.
 // NoRole (0) allows access to anonymous users if the Visibility is Public or Restricted (passphrase required).
 func hasAccess(w http.ResponseWriter, r *http.Request, role db.Role) (bool, *string) {
-	publicAccess := config.Options.Visibility == config.Public && role == 0
+	publicAccess := config.Options.Visibility == config.Public && role == db.NoRole
 
 	token := readJWT(r)
 	if token != "" {
@@ -100,13 +100,18 @@ func hasAccess(w http.ResponseWriter, r *http.Request, role db.Role) (bool, *str
 		if access {
 			return access, userUUID
 		}
-		passphrase := "Passphrase " + config.Credentials.Passphrase
-		if config.Options.Visibility == config.Restricted && role == 0 && token == passphrase {
+
+		if publicAccess {
+			return true, nil
+		}
+
+		restrictedAccess := config.Options.Visibility == config.Restricted && role == db.NoRole
+		if restrictedAccess && token == config.Credentials.Passphrase {
 			return true, nil
 		}
 
 		errorHandler(w, http.StatusUnauthorized, "", r.URL.Path)
-		return publicAccess, nil
+		return false, nil
 	}
 
 	// Username & password auth
@@ -116,9 +121,10 @@ func hasAccess(w http.ResponseWriter, r *http.Request, role db.Role) (bool, *str
 		if err == nil && credentials.Username != "" && credentials.Password != "" {
 			access, userUUID, _ := loginHelper(w, *credentials, role)
 			if !access {
+				errorHandler(w, http.StatusUnauthorized, "", r.URL.Path)
 				return false, nil
 			}
-			return access || publicAccess, userUUID
+			return access, userUUID
 		}
 	}
 
