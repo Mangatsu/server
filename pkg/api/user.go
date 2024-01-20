@@ -133,15 +133,14 @@ func login(w http.ResponseWriter, r *http.Request) {
 
 func logout(w http.ResponseWriter, r *http.Request) {
 	token := readJWT(r)
-	if token == "" {
-		errorHandler(w, http.StatusBadRequest, "no token found", r.URL.Path)
-		return
-	}
+	if token != "" {
+		claims, ok, _, _ := parseJWT(token)
 
-	claims, ok, _, err := parseJWT(token)
-	if err != nil || !ok {
-		errorHandler(w, http.StatusUnauthorized, "", r.URL.Path)
-		return
+		if ok && claims.ID != "" && claims.Subject != "" && claims.Roles != nil {
+			if err := db.Logout(claims.ID, claims.Subject); err != nil {
+				log.Z.Debug("failed to logout", zap.String("err", err.Error()))
+			}
+		}
 	}
 
 	cookie := http.Cookie{
@@ -155,12 +154,6 @@ func logout(w http.ResponseWriter, r *http.Request) {
 		SameSite: http.SameSiteNoneMode,
 	}
 	http.SetCookie(w, &cookie)
-
-	if err = db.Logout(claims.ID, claims.Subject); err != nil {
-		w.WriteHeader(http.StatusGone)
-		fmt.Fprintf(w, `{ "code": %d, "message": "gone" }`, http.StatusGone)
-		return
-	}
 
 	fmt.Fprint(w, `{ "message": "successfully logged out" }`)
 }
