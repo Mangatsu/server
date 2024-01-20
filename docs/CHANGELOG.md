@@ -19,6 +19,10 @@ All notable changes of this project will be documented in this file.
 - a bug with returning 401 when not needed
 - setting thumbnail count when generating thumbnails
 
+### Changed
+
+- updated dependencies
+
 ## [0.7.0] - 2024-01-09
 
 ### Added
