@@ -27,7 +27,7 @@ func main() {
 	}
 
 	if users == nil || len(users) == 0 {
-		if err := db.Register(username, password, int64(db.Admin)); err != nil {
+		if err := db.Register(username, password, db.SuperAdmin); err != nil {
 			log.Z.Fatal("error registering initial admin: ", zap.String("err", err.Error()))
 		}
 	}

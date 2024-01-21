@@ -26,13 +26,14 @@ type FavoriteGroups struct {
 	Data []string `json:"Data"`
 }
 
-type Role int8
+type Role uint8
 
 const (
-	Admin  Role = 100
-	Member      = 20
-	Viewer      = 10
-	NoRole      = 0
+	SuperAdmin Role = 110
+	Admin      Role = 100
+	Member     Role = 20
+	Viewer     Role = 10
+	NoRole     Role = 0
 )
 
 // GetUser returns a user from the database.
@@ -81,7 +82,7 @@ func GetFavoriteGroups(userUUID string) ([]string, error) {
 }
 
 // Register registers a new user.
-func Register(username string, password string, role int64) error {
+func Register(username string, password string, role Role) error {
 	now := time.Now()
 
 	hashSalt, err := utils.DefaultArgon2idHash().GenerateHash([]byte(password), nil)
@@ -185,7 +186,7 @@ func UpdateUser(userUUID string, userForm *UserForm) error {
 		if err != nil {
 			return err
 		}
-		role = utils.Clamp(role, NoRole, int64(Admin))
+		role = utils.Clamp(role, int64(NoRole), int64(Admin))
 
 		updateUserStmt := User.
 			UPDATE(User.Role, User.UpdatedAt).
@@ -228,9 +229,9 @@ func UpdateUser(userUUID string, userForm *UserForm) error {
 	return err
 }
 
-// DeleteUser removes user. Admins cannot be deleted, they have to demoted first.
+// DeleteUser removes user. Super admin users cannot be deleted.
 func DeleteUser(userUUID string) error {
-	stmt := User.DELETE().WHERE(User.UUID.EQ(String(userUUID)).AND(User.Role.NOT_EQ(Int8(int8(Admin)))))
+	stmt := User.DELETE().WHERE(User.UUID.EQ(String(userUUID)).AND(User.Role.LT_EQ(Int8(int8(Admin)))))
 	_, err := stmt.Exec(db())
 	return err
 }

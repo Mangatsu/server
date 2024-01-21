@@ -74,7 +74,8 @@ func register(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if err = db.Register(credentials.Username, credentials.Password, utils.Clamp(role, 0, int64(db.Admin))); err != nil {
+	err = db.Register(credentials.Username, credentials.Password, db.Role(utils.Clamp(role, 0, int64(db.Admin))))
+	if err != nil {
 		if strings.Contains(err.Error(), "UNIQUE constraint failed") {
 			errorHandler(w, http.StatusConflict, "username already in use", r.URL.Path)
 		} else {
