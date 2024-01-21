@@ -5,23 +5,34 @@ All notable changes of this project will be documented in this file.
 > The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and this project adheres
 > to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.7.2] - 2024-01-21
+
+### Added
+
+- Automatically migrating bcrypt passwords to argon2
+- Username, password, session name, cookie age validations
+
+### Changed
+
+- Bcrypt to Argon2id for hashing passwords
+
 ## [0.7.1] - 2024-01-21
 
 ### Added
 
-- return expiredIn value (unix time) for anonymous login as well
-- on logout, clear the cookie even if the token is incorrect
-- status gone (410) to errorHandler
+- Return expiredIn value (unix time) for anonymous login as well
+- On logout, clear the cookie even if the token is incorrect
+- Status gone (410) to errorHandler
 
 ### Fixed
 
-- regression where restricted/anonymous access was not working
-- a bug with returning 401 when not needed
-- setting thumbnail count when generating thumbnails
+- Regression where restricted/anonymous access was not working
+- A bug with returning 401 when not needed
+- Setting thumbnail count when generating thumbnails
 
 ### Changed
 
-- updated dependencies
+- Updated dependencies
 
 ## [0.7.0] - 2024-01-09
 
