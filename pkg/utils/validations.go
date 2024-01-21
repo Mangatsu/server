@@ -8,7 +8,7 @@ import (
 var wideRe = regexp.MustCompile(`^[\p{L}\p{N}\p{Pd}\p{Pc}\p{Zs}\p{Sc}\p{Sk}!?@#$%^&*+]+$`)
 
 // The username can contain alphanumeric characters, dashes and underscores.
-var usernameRe = regexp.MustCompile(`^[a-zA-Z0-9_-]$`)
+var usernameRe = regexp.MustCompile(`^[a-zA-Z0-9_-]+$`)
 
 // The password can contain almost all characters except control characters, whitespace and quotes.
 var passwordRe = regexp.MustCompile(`^[^\x00-\x1F\x7F\s'"]+$`)
