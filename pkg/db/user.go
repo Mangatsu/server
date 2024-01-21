@@ -4,10 +4,6 @@ import (
 	"crypto/rand"
 	"database/sql"
 	"encoding/base64"
-	"io"
-	"strconv"
-	"time"
-
 	"github.com/Mangatsu/server/pkg/log"
 	"github.com/Mangatsu/server/pkg/types/model"
 	. "github.com/Mangatsu/server/pkg/types/table"
@@ -15,7 +11,9 @@ import (
 	. "github.com/go-jet/jet/v2/sqlite"
 	"github.com/google/uuid"
 	"go.uber.org/zap"
-	"golang.org/x/crypto/bcrypt"
+	"io"
+	"strconv"
+	"time"
 )
 
 type UserForm struct {
@@ -85,18 +83,22 @@ func GetFavoriteGroups(userUUID string) ([]string, error) {
 // Register registers a new user.
 func Register(username string, password string, role int64) error {
 	now := time.Now()
-	hashedPassword, err := bcrypt.GenerateFromPassword([]byte(password), 12)
+
+	hashSalt, err := utils.DefaultArgon2idHash().GenerateHash([]byte(password), nil)
 	if err != nil {
+		log.Z.Error("failed to hash password", zap.Error(err), zap.String("username", username))
 		return err
 	}
+
 	userUUID, err := uuid.NewRandom()
 	if err != nil {
+		log.Z.Error("failed to generate UUID", zap.Error(err), zap.String("username", username))
 		return err
 	}
 
 	insertUser := User.
-		INSERT(User.UUID, User.Username, User.Password, User.Role, User.CreatedAt, User.UpdatedAt).
-		VALUES(userUUID.String(), username, hashedPassword, role, now, now)
+		INSERT(User.UUID, User.Username, User.Password, User.Salt, User.Role, User.CreatedAt, User.UpdatedAt).
+		VALUES(userUUID.String(), username, hashSalt.Hash, hashSalt.Salt, role, now, now)
 
 	_, err = insertUser.Exec(db())
 	return err
@@ -118,11 +120,12 @@ func Login(username string, password string, role Role) (*string, *int32, error)
 		return nil, nil, nil
 	}
 
-	if err = bcrypt.CompareHashAndPassword([]byte(result[0].Password), []byte(password)); err != nil {
-		return nil, nil, err
+	ok := utils.DefaultArgon2idHash().Compare(result[0].Password, result[0].Salt, []byte(password))
+	if !ok {
+		return nil, nil, nil
 	}
 
-	return &result[0].UUID, &result[0].Role, err
+	return &result[0].UUID, &result[0].Role, nil
 }
 
 // Logout logs out a user by removing a session.
@@ -210,10 +213,10 @@ func UpdateUser(userUUID string, userForm *UserForm) error {
 	}
 
 	if userForm.Password != nil && *userForm.Password != "" {
-		hashedPassword, err := bcrypt.GenerateFromPassword([]byte(*userForm.Password), 12)
+		hashSalt, err := utils.DefaultArgon2idHash().GenerateHash([]byte(*userForm.Password), nil)
 		updateUserStmt := User.
-			UPDATE(User.Password, User.UpdatedAt).
-			SET(hashedPassword, now).
+			UPDATE(User.Password, User.Salt, User.UpdatedAt).
+			SET(hashSalt.Hash, hashSalt.Salt, now).
 			WHERE(User.UUID.EQ(String(userUUID)))
 		if _, err = updateUserStmt.Exec(tx); err != nil {
 			return err
@@ -249,8 +252,57 @@ func DeleteSession(id string, userUUID string) error {
 
 // PruneExpiredSessions removes all expired sessions.
 func PruneExpiredSessions() {
+	// unixepoch() returns the current unix time in seconds
 	stmt := Session.DELETE().WHERE(BoolExp(Raw("unixepoch() > session.expires_at")))
 	if _, err := stmt.Exec(db()); err != nil {
 		log.Z.Error("failed to prune expired sessions", zap.String("err", err.Error()))
 	}
+}
+
+// MigratePassword migrates password from bcrypt to argon2id with salt.
+func MigratePassword(username string, password string) error {
+	selectStmt := SELECT(
+		User.Password,
+		User.BcryptPw,
+	).FROM(
+		User.Table,
+	).WHERE(
+		User.Username.EQ(String(username)),
+	)
+
+	var user []model.User
+	err := selectStmt.Query(db(), &user)
+	if err != nil {
+		log.Z.Debug("failed to query user while migrating", zap.Error(err), zap.String("username", username))
+		return sql.ErrNoRows
+	}
+
+	if len(user) == 0 {
+		log.Z.Debug("no user found while migrating", zap.String("username", username))
+		return sql.ErrNoRows
+	}
+
+	// Returns if the password is already migrated
+	if len(user[0].Password) > 0 {
+		return nil
+	}
+
+	argon2idHashSalt, err := utils.DefaultArgon2idHash().GenerateHash([]byte(password), nil)
+
+	if err != nil {
+		log.Z.Error("failed to hash password while migrating", zap.Error(err), zap.String("username", username))
+		return err
+	}
+
+	updateStmt := User.
+		UPDATE(User.Password, User.Salt, User.BcryptPw, User.UpdatedAt).
+		SET(argon2idHashSalt.Hash, argon2idHashSalt.Salt, NULL, time.Now()).
+		WHERE(User.Username.EQ(String(username)))
+
+	_, err = updateStmt.Exec(db())
+	if err != nil {
+		log.Z.Error("failed to update password while migrating", zap.Error(err), zap.String("username", username))
+	}
+
+	return err
 }

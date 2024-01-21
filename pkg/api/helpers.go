@@ -1,17 +1,18 @@
 package api
 
 import (
+	"database/sql"
 	"encoding/json"
-	"math"
-	"net/http"
-	"strconv"
-	"strings"
-
+	"errors"
 	"github.com/Mangatsu/server/internal/config"
 	"github.com/Mangatsu/server/pkg/db"
 	"github.com/Mangatsu/server/pkg/types/model"
 	"github.com/Mangatsu/server/pkg/utils"
 	"github.com/weppos/publicsuffix-go/publicsuffix"
+	"math"
+	"net/http"
+	"strconv"
+	"strings"
 )
 
 func parseQueryParams(r *http.Request) db.Filters {
@@ -139,6 +140,16 @@ func hasAccess(w http.ResponseWriter, r *http.Request, role db.Role) (bool, *str
 
 // loginHelper handles login
 func loginHelper(w http.ResponseWriter, credentials Credentials, requiredRole db.Role) (bool, *string, *int32) {
+	err := db.MigratePassword(credentials.Username, credentials.Password)
+	if err != nil {
+		if errors.Is(err, sql.ErrNoRows) {
+			errorHandler(w, http.StatusUnauthorized, "", "")
+		} else {
+			errorHandler(w, http.StatusInternalServerError, err.Error(), "")
+		}
+		return false, nil, nil
+	}
+
 	userUUID, role, err := db.Login(credentials.Username, credentials.Password, requiredRole)
 	if err != nil || userUUID == nil {
 		errorHandler(w, http.StatusUnauthorized, "", "")

@@ -20,7 +20,9 @@ type userTable struct {
 	UUID      sqlite.ColumnString
 	Username  sqlite.ColumnString
 	Password  sqlite.ColumnString
+	Salt      sqlite.ColumnString
 	Role      sqlite.ColumnInteger
+	BcryptPw  sqlite.ColumnString
 	CreatedAt sqlite.ColumnTimestamp
 	UpdatedAt sqlite.ColumnTimestamp
 
@@ -66,11 +68,13 @@ func newUserTableImpl(schemaName, tableName, alias string) userTable {
 		UUIDColumn      = sqlite.StringColumn("uuid")
 		UsernameColumn  = sqlite.StringColumn("username")
 		PasswordColumn  = sqlite.StringColumn("password")
+		SaltColumn      = sqlite.StringColumn("salt")
 		RoleColumn      = sqlite.IntegerColumn("role")
+		BcryptPwColumn  = sqlite.StringColumn("bcrypt_pw")
 		CreatedAtColumn = sqlite.TimestampColumn("created_at")
 		UpdatedAtColumn = sqlite.TimestampColumn("updated_at")
-		allColumns      = sqlite.ColumnList{UUIDColumn, UsernameColumn, PasswordColumn, RoleColumn, CreatedAtColumn, UpdatedAtColumn}
-		mutableColumns  = sqlite.ColumnList{UsernameColumn, PasswordColumn, RoleColumn, CreatedAtColumn, UpdatedAtColumn}
+		allColumns      = sqlite.ColumnList{UUIDColumn, UsernameColumn, PasswordColumn, SaltColumn, RoleColumn, BcryptPwColumn, CreatedAtColumn, UpdatedAtColumn}
+		mutableColumns  = sqlite.ColumnList{UUIDColumn, UsernameColumn, PasswordColumn, SaltColumn, RoleColumn, BcryptPwColumn, CreatedAtColumn, UpdatedAtColumn}
 	)
 
 	return userTable{
@@ -80,7 +84,9 @@ func newUserTableImpl(schemaName, tableName, alias string) userTable {
 		UUID:      UUIDColumn,
 		Username:  UsernameColumn,
 		Password:  PasswordColumn,
+		Salt:      SaltColumn,
 		Role:      RoleColumn,
+		BcryptPw:  BcryptPwColumn,
 		CreatedAt: CreatedAtColumn,
 		UpdatedAt: UpdatedAtColumn,
 

@@ -12,10 +12,12 @@ import (
 )
 
 type User struct {
-	UUID      string `sql:"primary_key"`
+	UUID      string
 	Username  string
-	Password  string
+	Password  []byte
+	Salt      []byte
 	Role      int32
+	BcryptPw  *string
 	CreatedAt time.Time
 	UpdatedAt time.Time
 }

@@ -2,111 +2,119 @@
 -- +goose StatementBegin
 PRAGMA foreign_keys = TRUE;
 
-CREATE TABLE IF NOT EXISTS library (
-    id integer UNIQUE NOT NULL,
-    path text UNIQUE NOT NULL,
-    layout text NOT NULL,
+CREATE TABLE IF NOT EXISTS library
+(
+    id     integer UNIQUE NOT NULL,
+    path   text UNIQUE    NOT NULL,
+    layout text           NOT NULL,
     PRIMARY KEY (id)
 );
 
-CREATE TABLE IF NOT EXISTS gallery (
-    uuid text UNIQUE NOT NULL,
-    library_id integer NOT NULL,
+CREATE TABLE IF NOT EXISTS gallery
+(
+    uuid         text UNIQUE NOT NULL,
+    library_id   integer     NOT NULL,
     archive_path text UNIQUE NOT NULL,
-    title text NOT NULL,
+    title        text        NOT NULL,
     title_native text,
-    title_short text,
-    released text,
-    circle text,
-    artists text,
-    series text,
-    category text,
-    language text,
-    translated boolean,
-    image_count int,
+    title_short  text,
+    released     text,
+    circle       text,
+    artists      text,
+    series       text,
+    category     text,
+    language     text,
+    translated   boolean,
+    image_count  int,
     archive_size int,
     archive_hash text,
-    thumbnail text,
-    nsfw boolean NOT NULL DEFAULT false,
-    hidden boolean NOT NULL DEFAULT false,
-    created_at datetime NOT NULL,
-    updated_at datetime NOT NULL,
-    PRIMARY KEY(uuid),
-    FOREIGN KEY(library_id)
-        REFERENCES library(id)
+    thumbnail    text,
+    nsfw         boolean     NOT NULL DEFAULT false,
+    hidden       boolean     NOT NULL DEFAULT false,
+    created_at   datetime    NOT NULL,
+    updated_at   datetime    NOT NULL,
+    PRIMARY KEY (uuid),
+    FOREIGN KEY (library_id)
+        REFERENCES library (id)
 );
 
-CREATE TABLE IF NOT EXISTS tag (
-    id integer PRIMARY KEY AUTOINCREMENT NOT NULL,
-    namespace text NOT NULL,
-    name text NOT NULL,
+CREATE TABLE IF NOT EXISTS tag
+(
+    id        integer PRIMARY KEY AUTOINCREMENT NOT NULL,
+    namespace text                              NOT NULL,
+    name      text                              NOT NULL,
     CONSTRAINT unique_tag UNIQUE (namespace, name)
 );
 
-CREATE TABLE IF NOT EXISTS gallery_tag (
-    gallery_uuid text NOT NULL,
-    tag_id integer NOT NULL,
+CREATE TABLE IF NOT EXISTS gallery_tag
+(
+    gallery_uuid text    NOT NULL,
+    tag_id       integer NOT NULL,
     CONSTRAINT unique_tag UNIQUE (gallery_uuid, tag_id),
     CONSTRAINT gallery
-       FOREIGN KEY(gallery_uuid)
-           REFERENCES gallery(uuid)
-           ON DELETE CASCADE,
+        FOREIGN KEY (gallery_uuid)
+            REFERENCES gallery (uuid)
+            ON DELETE CASCADE,
     CONSTRAINT tag
-       FOREIGN KEY(tag_id)
-           REFERENCES tag(id)
-           ON DELETE CASCADE
+        FOREIGN KEY (tag_id)
+            REFERENCES tag (id)
+            ON DELETE CASCADE
 );
 
-CREATE TABLE IF NOT EXISTS reference (
-    gallery_uuid text UNIQUE NOT NULL,
-    meta_internal boolean NOT NULL DEFAULT false,
-    meta_path text,
-    meta_match integer,
-    urls text,
-    exh_gid int,
-    exh_token text,
-    anilist_id int,
-    PRIMARY KEY(gallery_uuid),
+CREATE TABLE IF NOT EXISTS reference
+(
+    gallery_uuid  text UNIQUE NOT NULL,
+    meta_internal boolean     NOT NULL DEFAULT false,
+    meta_path     text,
+    meta_match    integer,
+    urls          text,
+    exh_gid       int,
+    exh_token     text,
+    anilist_id    int,
+    PRIMARY KEY (gallery_uuid),
     CONSTRAINT gallery
-        FOREIGN KEY(gallery_uuid)
-            REFERENCES gallery(uuid)
+        FOREIGN KEY (gallery_uuid)
+            REFERENCES gallery (uuid)
             ON DELETE CASCADE
 );
 
-CREATE TABLE IF NOT EXISTS user (
-    uuid text UNIQUE NOT NULL,
-    username text UNIQUE NOT NULL,
-    password text NOT NULL,
-    role integer NOT NULL DEFAULT 10,
-    created_at datetime NOT NULL,
-    updated_at datetime NOT NULL,
-    PRIMARY KEY(uuid)
+CREATE TABLE IF NOT EXISTS user
+(
+    uuid       text UNIQUE NOT NULL,
+    username   text UNIQUE NOT NULL,
+    password   text        NOT NULL,
+    role       integer     NOT NULL DEFAULT 10,
+    created_at datetime    NOT NULL,
+    updated_at datetime    NOT NULL,
+    PRIMARY KEY (uuid)
 );
 
-CREATE TABLE IF NOT EXISTS session (
-    id text NOT NULL,
-    user_uuid text NOT NULL,
-    name text,
+CREATE TABLE IF NOT EXISTS session
+(
+    id         text NOT NULL,
+    user_uuid  text NOT NULL,
+    name       text,
     expires_at datetime,
-    PRIMARY KEY(id, user_uuid),
+    PRIMARY KEY (id, user_uuid),
     CONSTRAINT user
-        FOREIGN KEY(user_uuid)
-            REFERENCES user(uuid)
+        FOREIGN KEY (user_uuid)
+            REFERENCES user (uuid)
             ON DELETE CASCADE
 );
 
-CREATE TABLE IF NOT EXISTS gallery_pref (
-    user_uuid text NOT NULL,
-    gallery_uuid text NOT NULL,
-    progress integer NOT NULL DEFAULT 0,
+CREATE TABLE IF NOT EXISTS gallery_pref
+(
+    user_uuid      text     NOT NULL,
+    gallery_uuid   text     NOT NULL,
+    progress       integer  NOT NULL DEFAULT 0,
     favorite_group text,
-    updated_at datetime NOT NULL,
-    PRIMARY KEY(user_uuid, gallery_uuid),
-    FOREIGN KEY(gallery_uuid)
-        REFERENCES gallery(uuid),
+    updated_at     datetime NOT NULL,
+    PRIMARY KEY (user_uuid, gallery_uuid),
+    FOREIGN KEY (gallery_uuid)
+        REFERENCES gallery (uuid),
     CONSTRAINT user
-        FOREIGN KEY(user_uuid)
-            REFERENCES user(uuid)
+        FOREIGN KEY (user_uuid)
+            REFERENCES user (uuid)
             ON DELETE CASCADE
 );
 
