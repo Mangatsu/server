@@ -19,7 +19,7 @@ func scanLibraries(w http.ResponseWriter, r *http.Request) {
 	go library.ScanArchives()
 
 	w.Header().Set("Content-Type", "application/json;charset=UTF-8")
-	fmt.Fprintf(w, `{ "message": "Started scanning for new archives." }`)
+	fmt.Fprintf(w, `{ "message": "started scanning for new archives." }`)
 }
 
 func returnProcessingStatus(w http.ResponseWriter, r *http.Request) {
@@ -43,7 +43,7 @@ func generateThumbnails(w http.ResponseWriter, r *http.Request) {
 	go library.GenerateThumbnails(pages == "true", force == "true")
 
 	w.Header().Set("Content-Type", "application/json;charset=UTF-8")
-	fmt.Fprintf(w, `{ "message": "Started generateting thumbnails. Prioritizing covers." }`)
+	fmt.Fprintf(w, `{ "message": "started generateting thumbnails. Prioritizing covers." }`)
 }
 
 func findMetadata(w http.ResponseWriter, r *http.Request) {

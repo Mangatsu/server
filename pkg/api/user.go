@@ -12,6 +12,7 @@ import (
 	"go.uber.org/zap"
 	"net/http"
 	"strconv"
+	"strings"
 )
 
 type Credentials struct {
@@ -28,8 +29,6 @@ type LoginResponse struct {
 	Role      *int32
 	ExpiresIn *int64
 }
-
-const yearInSeconds = 365 * 24 * 60 * 60
 
 func register(w http.ResponseWriter, r *http.Request) {
 	credentials := &Credentials{}
@@ -59,12 +58,32 @@ func register(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 	}
-	if err = db.Register(credentials.Username, credentials.Password, utils.Clamp(role, 0, int64(db.Admin))); err != nil {
-		w.WriteHeader(http.StatusConflict)
-		fmt.Fprintf(w, `{ "Username already in use" }`)
+
+	if !utils.IsValidUsername(credentials.Username) {
+		errorHandler(w, http.StatusBadRequest, "username not valid", r.URL.Path)
 		return
 	}
-	fmt.Fprintf(w, `{ "message": "Successfully registered" }`)
+
+	if !utils.IsValidPassword(credentials.Password) {
+		errorHandler(w, http.StatusBadRequest, "password not valid", r.URL.Path)
+		return
+	}
+
+	if !utils.IsValidSessionName(credentials.SessionName) {
+		errorHandler(w, http.StatusBadRequest, "session name not valid", r.URL.Path)
+		return
+	}
+
+	if err = db.Register(credentials.Username, credentials.Password, utils.Clamp(role, 0, int64(db.Admin))); err != nil {
+		if strings.Contains(err.Error(), "UNIQUE constraint failed") {
+			errorHandler(w, http.StatusConflict, "username already in use", r.URL.Path)
+		} else {
+			errorHandler(w, http.StatusInternalServerError, err.Error(), r.URL.Path)
+		}
+		return
+	}
+
+	fmt.Fprintf(w, `{ "message": "successfully registered" }`)
 }
 
 func login(w http.ResponseWriter, r *http.Request) {
@@ -74,6 +93,8 @@ func login(w http.ResponseWriter, r *http.Request) {
 		errorHandler(w, http.StatusBadRequest, "", r.URL.Path)
 		return
 	}
+
+	expiresIn := utils.ClampCookieAge(*credentials.ExpiresIn)
 
 	if credentials.Username != "" && credentials.Password != "" {
 		access, userUUID, role := loginHelper(w, *credentials, db.Role(0))
@@ -92,7 +113,7 @@ func login(w http.ResponseWriter, r *http.Request) {
 			Value:    "Bearer " + token,
 			Domain:   config.Options.Domain,
 			Path:     "/",
-			MaxAge:   yearInSeconds,
+			MaxAge:   int(expiresIn),
 			Secure:   true,
 			HttpOnly: true,
 			SameSite: http.SameSiteNoneMode,
@@ -112,14 +133,13 @@ func login(w http.ResponseWriter, r *http.Request) {
 			Value:    "Passphrase " + credentials.Passphrase,
 			Domain:   config.Options.Domain,
 			Path:     "/",
-			MaxAge:   yearInSeconds,
+			MaxAge:   int(expiresIn),
 			Secure:   true,
 			HttpOnly: true,
 			SameSite: http.SameSiteNoneMode,
 		}
 		http.SetCookie(w, &passphraseCookie)
 
-		expiresIn := int64(yearInSeconds)
 		resultToJSON(w, LoginResponse{
 			UUID:      nil,
 			Role:      nil,

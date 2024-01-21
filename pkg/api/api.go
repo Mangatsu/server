@@ -76,7 +76,7 @@ func returnStatistics(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	fmt.Fprintf(w, `{ "message": "Statistics not implemented" }`)
+	fmt.Fprintf(w, `{ "message": "statistics not implemented" }`)
 }
 
 // Returns the root path as JSON.
@@ -102,6 +102,9 @@ func errorHandler(w http.ResponseWriter, status int, msg string, endpoint string
 	case http.StatusGone:
 		w.WriteHeader(status)
 		fmt.Fprintf(w, `{ "code": %d, "message": "gone" }`, status)
+	case http.StatusConflict:
+		w.WriteHeader(status)
+		fmt.Fprintf(w, `{ "code": %d, "message": "%s" }`, status, msg)
 	default:
 		w.WriteHeader(http.StatusInternalServerError)
 		fmt.Fprintf(w, `{ "status": %d, "message": "internal server error" }`, http.StatusInternalServerError)
