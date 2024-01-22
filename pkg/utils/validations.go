@@ -22,8 +22,12 @@ const minCookieAge = 60
 const maxCookieAge = 365 * 24 * 60 * 60 // year in seconds
 
 // ClampCookieAge returns a valid cookie age in seconds.
-func ClampCookieAge(seconds int64) int64 {
-	return Clamp(seconds, minCookieAge, maxCookieAge)
+func ClampCookieAge(seconds *int64) int64 {
+	if seconds == nil {
+		return maxCookieAge
+	}
+
+	return Clamp(*seconds, minCookieAge, maxCookieAge)
 }
 
 // IsValidSessionName checks if the session name is valid.

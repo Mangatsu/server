@@ -95,7 +95,7 @@ func login(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	expiresIn := utils.ClampCookieAge(*credentials.ExpiresIn)
+	expiresIn := utils.ClampCookieAge(credentials.ExpiresIn)
 
 	if credentials.Username != "" && credentials.Password != "" {
 		access, userUUID, role := loginHelper(w, *credentials, db.Role(0))
@@ -128,7 +128,12 @@ func login(w http.ResponseWriter, r *http.Request) {
 			ExpiresIn: credentials.ExpiresIn,
 		}, r.URL.Path)
 		return
-	} else if credentials.Passphrase == config.Credentials.Passphrase {
+	} else if credentials.Passphrase != "" {
+		if config.Credentials.Passphrase != credentials.Passphrase {
+			errorHandler(w, http.StatusUnauthorized, "", r.URL.Path)
+			return
+		}
+
 		passphraseCookie := http.Cookie{
 			Name:     "mtsu.jwt",
 			Value:    "Passphrase " + credentials.Passphrase,
