@@ -1,7 +1,6 @@
 package utils
 
 import (
-	"errors"
 	"github.com/Mangatsu/server/pkg/log"
 	"github.com/adrg/strutil"
 	"github.com/adrg/strutil/metrics"
@@ -46,8 +45,12 @@ func PeriodicTask(d time.Duration, f func()) {
 
 // PathExists checks if the given path exists.
 func PathExists(pathTo string) bool {
-	_, err := os.OpenFile(pathTo, os.O_RDONLY, 0444)
-	return !errors.Is(err, os.ErrNotExist)
+	_, err := os.Stat(pathTo)
+	if os.IsNotExist(err) {
+		return false
+	}
+
+	return err == nil
 }
 
 func FileSize(filePath string) (int64, error) {
