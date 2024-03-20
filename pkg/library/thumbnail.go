@@ -84,7 +84,7 @@ func ReadArchiveImages(archivePath string, galleryUUID string, onlyCover bool) {
 	if !utils.PathExists(galleryThumbnailPath) {
 		err := os.Mkdir(galleryThumbnailPath, os.ModePerm)
 
-		if err != nil {
+		if err != nil && !errors.Is(err, os.ErrExist) {
 			log.Z.Error("could not create thumbnail dir",
 				zap.String("path", galleryThumbnailPath),
 				zap.String("err", err.Error()))
