@@ -29,7 +29,7 @@ _~~Struck out~~ values have no effect yet._
     - Location of the data dir which includes the SQLite db and the cache for gallery images and thumbnails. Relative or absolute paths are accepted.
     - Doesn't need changing if using Docker Compose.
 - **MTSU_DISABLE_CACHE_SERVER**=false
-    - True to disable the internal cache server (serves media files and thumbnails). Useful if one wants to use the web server such as NGINX to serve the files.
+    - Set true to disable the internal cache server (serves media files and thumbnails). Useful if one wants to use the web server such as NGINX to serve the files.
 - **MTSU_CACHE_TTL**=336h
     - Cache time to live (for example `336h` (2 weeks), `8h30m`). If a gallery is not viewed for this time, it will be purged from the cache.
 - ~~**MTSU_CACHE_SIZE**~~=10000

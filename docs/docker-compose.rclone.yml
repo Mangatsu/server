@@ -41,6 +41,7 @@ services:
       NEXT_PUBLIC_MANGATSU_API_URL: https://mangatsu-api.example.com
       NEXT_MANGATSU_IMAGE_HOSTNAME: mangatsu-api.example.com
       PORT: 3030
+      NEXT_INTERNAL_MANGATSU_API_URL: http://mtsuserver:5050
 
 volumes:
   rclonevol:

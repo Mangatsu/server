@@ -65,12 +65,17 @@ services:
     restart: always
     environment:
       NODE_ENV: production
-      # URL to the backend server above.
+      # URL to the backend server above. If running locally, localhost can be used in the following way: http://localhost:5050
       NEXT_PUBLIC_MANGATSU_API_URL: https://mangatsu-api.example.com
-      # Hostname or the domain where images are hosted. Usually the same as the domain in the API URL.
-      NEXT_MANGATSU_IMAGE_HOSTNAME: mangatsu-api.example.com
+      # Internal URL to the backend server. Required when running both containers locally without external network.
+      # If not specified, some calls such as image URLs will be made through the public URL.
+      NEXT_INTERNAL_MANGATSU_API_URL: http://mtsuserver:5050
+      # Hostname or the domain where images are hosted.
+      # Usually the same as the domain in the internal (if specified) API URL, or otherwise the public API URL.
+      NEXT_MANGATSU_IMAGE_HOSTNAME: mtsuserver
       # If some other container is already using the same port, you can use this to avoid conflicts. Remember to change the first port in 3030:3030 too.
       PORT: 3030
+
     # Above environmental variables can also be loaded from a file:
     #env_file:
     #  - ./.env.web
