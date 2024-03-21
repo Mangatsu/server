@@ -71,7 +71,7 @@ services:
       NEXT_PUBLIC_MANGATSU_API_URL: https://mangatsu-api.example.com
       # Internal URL to the backend server. Required when running both containers locally without external network.
       # If not specified, some calls such as image URLs will be made through the public URL.
-      NEXT_INTERNAL_MANGATSU_API_URL: http://mtsuserver:5050
+      NEXT_PUBLIC_INTERNAL_MANGATSU_API_URL: http://mtsuserver:5050
       # Hostname or the domain where images are hosted.
       # Usually the same as the domain in the internal (if specified) API URL, or otherwise the public API URL.
       NEXT_MANGATSU_IMAGE_HOSTNAME: mtsuserver

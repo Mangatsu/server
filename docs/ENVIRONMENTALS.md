@@ -65,7 +65,7 @@ _~~Struck out~~ values have no effect yet._
 
 - **NEXT_PUBLIC_MANGATSU_API_URL**=https://mangatsu-api.example.com
     - URL to the backend API server.
-- **NEXT_INTERNAL_MANGATSU_API_URL**=http://mtsuserver:5050
+- **NEXT_PUBLIC_INTERNAL_MANGATSU_API_URL**=http://mtsuserver:5050
     - Internal URL to the backend server. Required when running both containers locally without external network.
     - For example, if both containers are running on the same network, the value should probably be "http://mtsuserver:5050".
 - **NEXT_MANGATSU_IMAGE_HOSTNAME**=mangatsu-api.example.com
