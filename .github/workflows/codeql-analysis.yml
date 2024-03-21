@@ -63,7 +63,7 @@ jobs:
     #    uses a compiled language
 
     - run: |
-       /usr/bin/env GOTOOLCHAIN=go1.22.1+auto go build
+       /usr/bin/env GOTOOLCHAIN=go1.22.1+auto go build github.com/Mangatsu/server/cmd/mangatsu-server
 
     - name: Perform CodeQL Analysis
       uses: github/codeql-action/analyze@v2
