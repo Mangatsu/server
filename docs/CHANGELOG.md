@@ -5,6 +5,30 @@ All notable changes of this project will be documented in this file.
 > The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and this project adheres
 > to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+
+## [0.7.5] - 2024-03-21
+
+### Added
+
+- MTSU_THUMBNAIL_FORMAT environmental variable. Currently only supports webp
+- AVIF to supported gallery images
+
+### Fixed
+
+- A rare occurrence if thumbnail generation failing
+- Checking file and dir path more reliably
+- Fetching random galleries with a seed did not return the same result
+
+### Changed
+
+- Go to 1.22
+- Updated dependencies
+- math/rand to math/rand/v2
+
+### Docs
+
+- Updated README, example docker-compose.yml files and example.env
+
 ## [0.7.4] - 2024-01-23
 
 ### Fixed
