@@ -42,6 +42,8 @@ services:
       # When false, connections from every origin is allowed.
       # https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Access-Control-Allow-Origin
       MTSU_STRICT_ACAO: 'false'
+      # Thumbnail image format: webp
+      MTSU_THUMBNAIL_FORMAT: webp
       # Usually the following three envs don't need changing as they are the container's internal hostname, port and data path.
       # In case of port conflict, change the port here and the first one above in the ports section.
       MTSU_HOSTNAME: mtsuserver

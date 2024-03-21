@@ -57,12 +57,18 @@ _~~Struck out~~ values have no effect yet._
     - **Currently, only affects the API path /register. Has no effect in the frontend.**
 - **MTSU_JWT_SECRET**=secret123
     - Secret to sign JWTs for login sessions in the backend. Recommended to change.
+- **MTSU_THUMBNAIL_FORMAT**=webp
+  - Supported formats: webp 
+  - AVIF support is planned. AVIF is said to take 20% longer to encode, but it compresses to 20% smaller size compared to WebP.
 
 ## 📝 Mangatsu Web - Configuration
 
 - **NEXT_PUBLIC_MANGATSU_API_URL**=https://mangatsu-api.example.com
     - URL to the backend API server.
+- **NEXT_INTERNAL_MANGATSU_API_URL**=http://mtsuserver:5050
+    - Internal URL to the backend server. Required when running both containers locally without external network.
+    - For example, if both containers are running on the same network, the value should probably be "http://mtsuserver:5050".
 - **NEXT_MANGATSU_IMAGE_HOSTNAME**=mangatsu-api.example.com
-    - Hostname or the domain where images are hosted. Usually the same as the domain in the API URL above.
+    - Hostname or the domain where images are hosted. Usually the same as the domain in the API URL.
 - **PORT**=3030
     - Port to run the web client on. If you change this and also use Docker Compose, remember to update the first port of frontend's ports in the `docker-compose.yml` file.

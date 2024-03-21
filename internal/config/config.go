@@ -27,6 +27,13 @@ const (
 	Public                = "public"
 )
 
+type ImageFormat string
+
+const (
+	WebP ImageFormat = "webp"
+	AVIF             = "avif"
+)
+
 type CacheOptions struct {
 	WebServer bool
 	TTL       time.Duration
@@ -34,15 +41,16 @@ type CacheOptions struct {
 }
 
 type OptionsModel struct {
-	Environment   log.Environment
-	Domain        string
-	Hostname      string
-	Port          string
-	StrictACAO    bool
-	Registrations bool
-	Visibility    Visibility
-	DB            DBOptions
-	Cache         CacheOptions
+	Environment     log.Environment
+	Domain          string
+	Hostname        string
+	Port            string
+	StrictACAO      bool
+	Registrations   bool
+	Visibility      Visibility
+	ThumbnailFormat ImageFormat
+	DB              DBOptions
+	Cache           CacheOptions
 }
 
 type CredentialsModel struct {
@@ -73,12 +81,13 @@ func LoadEnv() {
 // SetEnv sets the environment variables into Options and Credentials
 func SetEnv() {
 	Options = &OptionsModel{
-		Domain:        domain(),
-		Hostname:      hostname(),
-		Port:          port(),
-		StrictACAO:    acao(),
-		Registrations: registrationsEnabled(),
-		Visibility:    currentVisibility(),
+		Domain:          domain(),
+		Hostname:        hostname(),
+		Port:            port(),
+		StrictACAO:      acao(),
+		Registrations:   registrationsEnabled(),
+		Visibility:      currentVisibility(),
+		ThumbnailFormat: thumbnailFormat(),
 		DB: DBOptions{
 			Name:       dbName(),
 			Migrations: dbMigrationsEnabled(),
@@ -247,4 +256,13 @@ func cacheSize() int64 {
 	}
 
 	return size
+}
+
+func thumbnailFormat() ImageFormat {
+	// TODO: Add support for AVIF
+	//value := os.Getenv("MTSU_THUMBNAIL_FORMAT")
+	//if value == "avif" {
+	//	return AVIF
+	//}
+	return WebP
 }

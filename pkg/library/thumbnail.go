@@ -10,7 +10,6 @@ import (
 	"github.com/Mangatsu/server/pkg/db"
 	"github.com/Mangatsu/server/pkg/log"
 	"github.com/Mangatsu/server/pkg/utils"
-	"github.com/chai2010/webp"
 	"github.com/disintegration/imaging"
 	"github.com/mholt/archiver/v4"
 	"go.uber.org/zap"
@@ -170,14 +169,14 @@ func ReadArchiveImages(archivePath string, galleryUUID string, onlyCover bool) {
 		}
 
 		if onlyCover {
-			webpName := imgName + ".webp"
-			log.Z.Info("cover thumbnail generated", zap.String("img", webpName))
+			nameWithExt := imgName + "." + string(config.Options.ThumbnailFormat)
+			log.Z.Info("cover thumbnail generated", zap.String("img", nameWithExt))
 			cache.ProcessingStatusCache.AddThumbnailGeneratedCover()
 
-			if err := db.SetThumbnail(galleryUUID, webpName); err != nil {
+			if err := db.SetThumbnail(galleryUUID, nameWithExt); err != nil {
 				log.Z.Error("could not save cover thumbnail to db",
 					zap.String("uuid", galleryUUID),
-					zap.String("name", webpName),
+					zap.String("name", nameWithExt),
 					zap.String("err", err.Error()))
 				return err
 			}
@@ -205,7 +204,7 @@ func ReadArchiveImages(archivePath string, galleryUUID string, onlyCover bool) {
 	}
 }
 
-// generateThumbnail generates a thumbnail for a given image and saves it to cache as webp.
+// generateThumbnail generates a thumbnail for a given image and saves it to cache.
 func generateThumbnail(galleryUUID string, thumbnailPath string, imgBytes []byte, large bool) error {
 	srcImage, _, err := image.Decode(bytes.NewReader(imgBytes))
 	if err != nil {
@@ -221,36 +220,29 @@ func generateThumbnail(galleryUUID string, thumbnailPath string, imgBytes []byte
 	}
 
 	dstImage := imaging.Resize(srcImage, width, 0, imaging.Lanczos)
-
-	var buf bytes.Buffer
-	if err = webp.Encode(&buf, dstImage, &webp.Options{Lossless: false, Quality: 75}); err != nil {
-		log.Z.Debug("could not encode img",
+	buf, err := utils.EncodeImage(dstImage)
+	if err != nil {
+		log.Z.Debug("could not encode image",
+			zap.String("err", err.Error()),
 			zap.String("path", thumbnailPath),
-			zap.String("err", err.Error()))
+			zap.String("uuid", galleryUUID),
+		)
 		return err
 	}
 
-	// webp
-	err = os.WriteFile(config.BuildCachePath("thumbnails", galleryUUID, thumbnailPath+".webp"), buf.Bytes(), 0666)
+	err = os.WriteFile(
+		config.BuildCachePath("thumbnails", galleryUUID, thumbnailPath+"."+string(config.Options.ThumbnailFormat)),
+		buf.Bytes(),
+		0666,
+	)
 	if err != nil {
-		log.Z.Debug("could not write thumbnail",
+		log.Z.Debug("could not write image file",
+			zap.String("err", err.Error()),
 			zap.String("path", thumbnailPath),
-			zap.String("err", err.Error()))
+			zap.String("uuid", galleryUUID),
+		)
+		return err
 	}
-
-	// TODO: test how long it takes to generate webp thumbnails compared to jpg + size differences
-	//newImage, _ := os.Create("../cache/thumbnails/" + galleryUUID + "/" + name)
-	//defer func(newImage *os.File) {
-	//	err := newImage.Close()
-	//	if err != nil {
-	//		log.Error("Closing thumbnail: ", err)
-	//	}
-	//}(newImage)
-	//err = png.Encode(newImage, dstImage)
-	//if err != nil {
-	//	log.Error("Writing thumbnail: ", err)
-	//	return
-	//}
 
 	return err
 }
