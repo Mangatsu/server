@@ -3,7 +3,7 @@ package db
 import (
 	"database/sql"
 	"math"
-	"math/rand"
+	"math/rand/v2"
 	"time"
 
 	"github.com/Mangatsu/server/pkg/log"
@@ -46,8 +46,8 @@ type Categories struct {
 type Filters struct {
 	Order         Order
 	SortBy        SortBy
-	Limit         int64
-	Offset        int64
+	Limit         uint64
+	Offset        uint64
 	SearchTerm    string
 	Series        string
 	Category      string
@@ -55,7 +55,7 @@ type Filters struct {
 	NSFW          string
 	Tags          []model.Tag
 	Grouped       string
-	Seed          int64
+	Seed          uint64
 }
 
 type SortBy string
@@ -75,7 +75,7 @@ const (
 )
 
 // NewGallery creates a new gallery
-func NewGallery(archivePath string, libraryID int32, title string, series string, size int64, imageCount int64) (string, error) {
+func NewGallery(archivePath string, libraryID int32, title string, series string, size int64, imageCount uint64) (string, error) {
 	galleryUUID, err := uuid.NewRandom()
 	if err != nil {
 		return "", err
@@ -489,10 +489,10 @@ func constructGalleryFilters(filters Filters, hidden bool, userUUID *string) Boo
 }
 
 // GetGalleryCount returns the number of galleries that match the given filters.
-func GetGalleryCount(filters Filters, hidden bool, userUUID *string) (int64, error) {
+func GetGalleryCount(filters Filters, hidden bool, userUUID *string) (uint64, error) {
 	stmt := Gallery.SELECT(COUNT(Gallery.UUID)).WHERE(constructGalleryFilters(filters, hidden, userUUID))
 
-	var count []int64
+	var count []uint64
 	err := stmt.Query(db(), &count)
 	if count == nil {
 		return 0, err
@@ -537,26 +537,27 @@ func GetGalleries(filters Filters, hidden bool, userUUID *string, count bool) ([
 	}
 
 	shuffle := filters.Seed != 0 && filters.Limit > 0
-	var pages []int64
+	var pages []uint64
+	var random *rand.Rand
 	if shuffle {
-		rand.New(rand.NewSource(filters.Seed))
+		random = rand.New(rand.NewPCG(filters.Seed, 1))
 		galleryCount, err := GetGalleryCount(filters, hidden, userUUID)
 		if err != nil {
 			return nil, err
 		}
 
-		maxOffset := int64(math.Ceil(float64(galleryCount / filters.Limit)))
+		maxOffset := uint64(math.Ceil(float64(galleryCount / filters.Limit)))
 
-		pages = make([]int64, maxOffset+1)
+		pages = make([]uint64, maxOffset+1)
 		for i := range pages {
-			pages[i] = int64(i)
+			pages[i] = uint64(i)
 		}
 
-		rand.Shuffle(len(pages), func(i, j int) {
+		random.Shuffle(len(pages), func(i, j int) {
 			pages[i], pages[j] = pages[j], pages[i]
 		})
 
-		if filters.Offset < int64(len(pages)) {
+		if filters.Offset < uint64(len(pages)) {
 			filters.Offset = pages[filters.Offset]
 		} else {
 			filters.Offset = maxOffset + 1
@@ -564,11 +565,11 @@ func GetGalleries(filters Filters, hidden bool, userUUID *string, count bool) ([
 	}
 
 	if filters.Grouped == "true" {
-		filtersStmt = filtersStmt.WHERE(conditions).LIMIT(filters.Limit).OFFSET(filters.Offset).GROUP_BY(Raw(`IFNULL(series, uuid)`))
+		filtersStmt = filtersStmt.WHERE(conditions).LIMIT(int64(filters.Limit)).OFFSET(int64(filters.Offset)).GROUP_BY(Raw(`IFNULL(series, uuid)`))
 	} else if filters.Limit == 0 {
 		filtersStmt = filtersStmt.WHERE(conditions)
 	} else {
-		filtersStmt = filtersStmt.WHERE(conditions).LIMIT(filters.Limit).OFFSET(filters.Offset)
+		filtersStmt = filtersStmt.WHERE(conditions).LIMIT(int64(filters.Limit)).OFFSET(int64(filters.Offset))
 	}
 
 	galleryUUID := Gallery.UUID.From(filtersStmt.AsTable("galleries"))
@@ -620,7 +621,7 @@ func GetGalleries(filters Filters, hidden bool, userUUID *string, count bool) ([
 	err := galleriesStmt.Query(db(), &galleries)
 
 	if shuffle && galleries != nil {
-		rand.Shuffle(len(galleries), func(i, j int) {
+		random.Shuffle(len(galleries), func(i, j int) {
 			galleries[i], galleries[j] = galleries[j], galleries[i]
 		})
 	}

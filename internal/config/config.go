@@ -37,7 +37,7 @@ const (
 type CacheOptions struct {
 	WebServer bool
 	TTL       time.Duration
-	Size      int64
+	Size      uint64
 }
 
 type OptionsModel struct {
@@ -235,16 +235,16 @@ func cacheTTL() time.Duration {
 	return duration
 }
 
-func cacheSize() int64 {
-	defaultSize := int64(20000)
-	minSize := int64(100)
+func cacheSize() uint64 {
+	defaultSize := uint64(20000)
+	minSize := uint64(100)
 
 	value := os.Getenv("MTSU_CACHE_SIZE")
 	if value == "" {
 		return defaultSize
 	}
 
-	size, err := strconv.ParseInt(value, 10, 64)
+	size, err := strconv.ParseUint(value, 10, 64)
 	if err != nil {
 		log.Z.Error(value + " is not a valid TTL for MTSU_CACHE_SIZE. Defaulting to 20 000 MiB.")
 		return defaultSize

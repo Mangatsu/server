@@ -148,7 +148,7 @@ func returnGalleryCount(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	resultToJSON(w, struct{ Count int64 }{Count: count}, r.URL.Path)
+	resultToJSON(w, struct{ Count uint64 }{Count: count}, r.URL.Path)
 }
 
 // returnGallery returns one gallery as JSON.

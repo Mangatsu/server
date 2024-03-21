@@ -15,9 +15,9 @@ import (
 	"strings"
 )
 
-func countImages(archivePath string) (int64, error) {
+func countImages(archivePath string) (uint64, error) {
 	filesystem, err := archiver.FileSystem(nil, archivePath)
-	var fileCount int64
+	var fileCount uint64
 
 	err = fs.WalkDir(filesystem, ".", func(s string, d fs.DirEntry, err error) error {
 		if err != nil {

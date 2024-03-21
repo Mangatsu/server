@@ -35,21 +35,21 @@ func parseQueryParams(r *http.Request) db.Filters {
 		tags = append(tags, model.Tag{Namespace: tag[0], Name: tag[1]})
 	}
 
-	limit, err := strconv.ParseInt(r.URL.Query().Get("limit"), 10, 64)
+	limit, err := strconv.ParseUint(r.URL.Query().Get("limit"), 10, 64)
 	if err != nil {
 		limit = 50
 	} else {
-		limit = utils.Clamp(limit, 1, 100)
+		limit = utils.ClampU(limit, 1, 100)
 	}
 
-	offset, err := strconv.ParseInt(r.URL.Query().Get("offset"), 10, 64)
+	offset, err := strconv.ParseUint(r.URL.Query().Get("offset"), 10, 64)
 	if err != nil {
 		offset = 0
 	} else {
-		offset = utils.Clamp(offset, 0, math.MaxInt64)
+		offset = utils.ClampU(offset, 0, math.MaxUint64)
 	}
 
-	seed, err := strconv.ParseInt(r.URL.Query().Get("seed"), 10, 64)
+	seed, err := strconv.ParseUint(r.URL.Query().Get("seed"), 10, 64)
 	if err != nil {
 		seed = 0
 	}

@@ -33,6 +33,17 @@ func Clamp(value, min, max int64) int64 {
 	return value
 }
 
+// ClampU clamps the given unsigned value to the given range.
+func ClampU(value, min, max uint64) uint64 {
+	if value < min {
+		return min
+	}
+	if value > max {
+		return max
+	}
+	return value
+}
+
 // PeriodicTask loops the given function in separate thread between the given interval.
 func PeriodicTask(d time.Duration, f func()) {
 	go func() {
