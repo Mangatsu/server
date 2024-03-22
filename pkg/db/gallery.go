@@ -490,7 +490,26 @@ func constructGalleryFilters(filters Filters, hidden bool, userUUID *string) Boo
 
 // GetGalleryCount returns the number of galleries that match the given filters.
 func GetGalleryCount(filters Filters, hidden bool, userUUID *string) (uint64, error) {
-	stmt := Gallery.SELECT(COUNT(Gallery.UUID)).WHERE(constructGalleryFilters(filters, hidden, userUUID))
+	stmt := Gallery.SELECT(COUNT(Gallery.UUID).AS("GalleryCount")).WHERE(constructGalleryFilters(filters, hidden, userUUID))
+
+	var count []uint64
+	err := stmt.Query(db(), &count)
+	if count == nil {
+		return 0, err
+	}
+
+	return count[0], err
+}
+
+// getGalleryCountHelper returns the number of galleries that match the given filters for internal use.
+func getGalleryCountHelper(filters BoolExpression, uniqueSeries bool) (uint64, error) {
+	var stmt SelectStatement
+
+	if uniqueSeries {
+		stmt = Gallery.SELECT(COUNT(DISTINCT(Gallery.Series)).AS("GalleryCount")).WHERE(filters)
+	} else {
+		stmt = Gallery.SELECT(COUNT(Gallery.UUID).AS("GalleryCount")).WHERE(filters)
+	}
 
 	var count []uint64
 	err := stmt.Query(db(), &count)
@@ -502,51 +521,50 @@ func GetGalleryCount(filters Filters, hidden bool, userUUID *string) (uint64, er
 }
 
 // GetGalleries returns galleries based on the given filters.
-func GetGalleries(filters Filters, hidden bool, userUUID *string, count bool) ([]CombinedMetadata, error) {
+func GetGalleries(filters Filters, hidden bool, userUUID *string) ([]CombinedMetadata, uint64, error) {
+	doShuffle := filters.Seed != 0 && filters.Limit > 0
 	conditions := constructGalleryFilters(filters, hidden, userUUID)
 
-	var filtersStmt SelectStatement
-
-	if count {
-		filtersStmt = SELECT(COUNT(Gallery.UUID)).FROM(Gallery.Table).WHERE(conditions)
-
+	var totalGalleryCount uint64
+	var totalGalleryCountErr error
+	if filters.Grouped == "true" {
+		totalGalleryCount, totalGalleryCountErr = getGalleryCountHelper(conditions, true)
 	} else {
-		filtersStmt = SELECT(Gallery.AllColumns).FROM(Gallery.Table)
+		totalGalleryCount, totalGalleryCountErr = getGalleryCountHelper(conditions, false)
+	}
 
-		// TODO: Is there a way to do this without duplicating the switch statement?
-		if filters.Order == Desc {
-			switch filters.SortBy {
-			case TitleNative:
-				filtersStmt = filtersStmt.ORDER_BY(Gallery.TitleNative.DESC())
-			case UpdatedAt:
-				filtersStmt = filtersStmt.ORDER_BY(Gallery.UpdatedAt.DESC())
-			default:
-				filtersStmt = filtersStmt.ORDER_BY(Gallery.Title.DESC())
-			}
-		} else {
-			switch filters.SortBy {
-			case TitleNative:
-				filtersStmt = filtersStmt.ORDER_BY(Gallery.TitleNative.ASC())
-			case UpdatedAt:
-				filtersStmt = filtersStmt.ORDER_BY(Gallery.UpdatedAt.ASC())
-			default:
-				filtersStmt = filtersStmt.ORDER_BY(Gallery.Title.ASC())
+	if totalGalleryCountErr != nil {
+		return nil, 0, totalGalleryCountErr
+	}
 
-			}
+	filtersStmt := SELECT(Gallery.AllColumns).FROM(Gallery.Table)
+
+	if filters.Order == Desc {
+		switch filters.SortBy {
+		case TitleNative:
+			filtersStmt = filtersStmt.ORDER_BY(Gallery.TitleNative.DESC())
+		case UpdatedAt:
+			filtersStmt = filtersStmt.ORDER_BY(Gallery.UpdatedAt.DESC())
+		default:
+			filtersStmt = filtersStmt.ORDER_BY(Gallery.Title.DESC())
+		}
+	} else {
+		switch filters.SortBy {
+		case TitleNative:
+			filtersStmt = filtersStmt.ORDER_BY(Gallery.TitleNative.ASC())
+		case UpdatedAt:
+			filtersStmt = filtersStmt.ORDER_BY(Gallery.UpdatedAt.ASC())
+		default:
+			filtersStmt = filtersStmt.ORDER_BY(Gallery.Title.ASC())
+
 		}
 	}
 
-	shuffle := filters.Seed != 0 && filters.Limit > 0
 	var pages []uint64
 	var random *rand.Rand
-	if shuffle {
+	if doShuffle {
 		random = rand.New(rand.NewPCG(filters.Seed, 1))
-		galleryCount, err := GetGalleryCount(filters, hidden, userUUID)
-		if err != nil {
-			return nil, err
-		}
-
-		maxOffset := uint64(math.Ceil(float64(galleryCount / filters.Limit)))
+		maxOffset := uint64(math.Ceil(float64(totalGalleryCount / filters.Limit)))
 
 		pages = make([]uint64, maxOffset+1)
 		for i := range pages {
@@ -563,6 +581,9 @@ func GetGalleries(filters Filters, hidden bool, userUUID *string, count bool) ([
 			filters.Offset = maxOffset + 1
 		}
 	}
+
+	// Offset is multiplied by limit to get the correct offset
+	filters.Offset = filters.Offset * filters.Limit
 
 	if filters.Grouped == "true" {
 		filtersStmt = filtersStmt.WHERE(conditions).LIMIT(int64(filters.Limit)).OFFSET(int64(filters.Offset)).GROUP_BY(Raw(`IFNULL(series, uuid)`))
@@ -618,15 +639,17 @@ func GetGalleries(filters Filters, hidden bool, userUUID *string, count bool) ([
 	//println(galleriesStmt.DebugSql())
 
 	var galleries []CombinedMetadata
-	err := galleriesStmt.Query(db(), &galleries)
+	if err := galleriesStmt.Query(db(), &galleries); err != nil {
+		return nil, 0, err
+	}
 
-	if shuffle && galleries != nil {
+	if doShuffle && galleries != nil {
 		random.Shuffle(len(galleries), func(i, j int) {
 			galleries[i], galleries[j] = galleries[j], galleries[i]
 		})
 	}
 
-	return galleries, err
+	return galleries, totalGalleryCount, nil
 }
 
 // GetGallery returns a gallery based on the given UUID. If no UUID is given, a random gallery is returned.

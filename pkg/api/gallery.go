@@ -3,6 +3,7 @@ package api
 import (
 	"encoding/json"
 	"fmt"
+	"github.com/Mangatsu/server/pkg/utils"
 	"net/http"
 
 	"github.com/Mangatsu/server/internal/config"
@@ -15,9 +16,10 @@ import (
 )
 
 type MetadataResult struct {
-	Hidden      bool   `json:",omitempty"`
-	ArchivePath string `json:",omitempty"`
-	LibraryID   string `json:",omitempty"`
+	Hidden          bool    `json:",omitempty"`
+	ArchivePath     string  `json:",omitempty"`
+	LibraryID       string  `json:",omitempty"`
+	SubGalleryCount *uint64 `json:",omitempty"`
 	model.Gallery
 
 	Tags map[string][]string
@@ -74,7 +76,7 @@ func returnGalleries(w http.ResponseWriter, r *http.Request) {
 	}
 
 	queryParams := parseQueryParams(r)
-	galleries, err := db.GetGalleries(queryParams, true, userUUID, false)
+	galleries, totalCount, err := db.GetGalleries(queryParams, true, userUUID)
 	if handleResult(w, galleries, err, true, r.RequestURI) {
 		return
 	}
@@ -87,51 +89,50 @@ func returnGalleries(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 
-	// TODO: Only calculate the amount of sub galleries. No need to get every field.
 	grouped := queryParams.Grouped == "true"
-	groupedResult := map[string][]MetadataResult{}
+	groupedResult := utils.NewOrderedMap()
 	if grouped {
 		for _, gallery := range galleriesResult {
 			if gallery.Series != nil && *gallery.Series != "" {
-				subGalleries, err := db.GetGalleries(db.Filters{Series: *gallery.Series}, true, userUUID, false)
+				subGalleriesCount, err := db.GetGalleryCount(db.Filters{Series: *gallery.Series}, true, userUUID)
 				if err != nil {
-					log.Z.Debug("failed getting sub-galleries",
+					log.Z.Debug("failed getting sub gallery count",
 						zap.Stringp("name", gallery.Series),
 						zap.String("err", err.Error()))
 					continue
 				}
 
-				var subGalleriesResult []MetadataResult
-				if len(subGalleries) > 0 {
-					for _, subGallery := range subGalleries {
-						subGalleriesResult = append(subGalleriesResult, convertMetadata(subGallery))
-					}
-				}
-
-				groupedResult[*gallery.Series] = append(groupedResult[*gallery.Series], subGalleriesResult...)
+				gallery.SubGalleryCount = &subGalleriesCount
+				groupedResult.Set(*gallery.Series, gallery)
 			} else {
-				groupedResult[gallery.UUID] = append(groupedResult[gallery.UUID], gallery)
+				subGalleriesCount := uint64(1)
+				gallery.SubGalleryCount = &subGalleriesCount
+				groupedResult.Set(gallery.UUID, gallery)
 			}
 		}
 	}
 
 	if grouped {
 		resultToJSON(w, struct {
-			Data  map[string][]MetadataResult
-			Count int
+			Data       *utils.OrderedMap
+			Count      int
+			TotalCount uint64
 		}{
-			Data:  groupedResult,
-			Count: count,
+			Data:       groupedResult,
+			Count:      count,
+			TotalCount: totalCount,
 		}, r.RequestURI)
 		return
 	}
 
 	resultToJSON(w, struct {
-		Data  []MetadataResult
-		Count int
+		Data       []MetadataResult
+		Count      int
+		TotalCount uint64
 	}{
-		Data:  galleriesResult,
-		Count: count,
+		Data:       galleriesResult,
+		Count:      count,
+		TotalCount: totalCount,
 	}, r.RequestURI)
 }
 
