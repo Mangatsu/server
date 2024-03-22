@@ -2,6 +2,8 @@ package db
 
 import (
 	"database/sql"
+	"errors"
+	"github.com/Mangatsu/server/pkg/utils"
 	"math"
 	"math/rand/v2"
 	"time"
@@ -128,8 +130,11 @@ func UpdateGallery(gallery model.Gallery, tags []model.Tag, reference model.Refe
 		}
 	}
 
-	oldGallery, err := GetGallery(&gallery.UUID, nil)
+	prevGallery, err := GetGallery(&gallery.UUID, nil, &gallery.ArchivePath)
 	if err != nil {
+		if errors.Is(err, sql.ErrNoRows) {
+			return errors.New("gallery not found")
+		}
 		return err
 	}
 
@@ -137,78 +142,38 @@ func UpdateGallery(gallery model.Gallery, tags []model.Tag, reference model.Refe
 	if err != nil {
 		return err
 	}
-	defer rollbackTx(tx)
+
+	committed := false
+	defer func() {
+		if !committed {
+			rollbackTx(tx)
+		}
+	}()
 
 	var updateGalleryStmt UpdateStatement
 
-	gallery.UpdatedAt = now
 	if internalScan {
-		galleryModel := model.Gallery{
-			Title:           gallery.Title,
-			TitleNative:     gallery.TitleNative,
-			TitleTranslated: gallery.TitleTranslated,
-			Category:        gallery.Category,
-			Released:        gallery.Released,
-			Series:          gallery.Series,
-			Language:        gallery.Language,
-			Translated:      gallery.Translated,
-			Nsfw:            gallery.Nsfw,
-			ImageCount:      gallery.ImageCount,
-			ArchiveSize:     gallery.ArchiveSize,
-			ArchiveHash:     gallery.ArchiveHash,
-			UpdatedAt:       now,
-		}
-		updateGalleryStmt = Gallery.UPDATE(
-			Gallery.Title,
-			Gallery.TitleNative,
-			Gallery.TitleTranslated,
-			Gallery.Category,
-			Gallery.Released,
-			Gallery.Series,
-			Gallery.Language,
-			Gallery.Translated,
-			Gallery.Nsfw,
-			Gallery.ImageCount,
-			Gallery.ArchiveSize,
-			Gallery.ArchiveHash,
-			Gallery.UpdatedAt,
-		).MODEL(galleryModel)
+		galleryModel, galleryColumnList := ValidateGalleryInternal(prevGallery.Gallery, now)
 
-		updateGalleryStmt = updateGalleryStmt.WHERE(Gallery.ArchivePath.EQ(String(gallery.ArchivePath))).RETURNING(Gallery.UUID)
+		updateGalleryStmt = Gallery.
+			UPDATE(galleryColumnList).
+			MODEL(galleryModel).
+			WHERE(Gallery.ArchivePath.EQ(String(gallery.ArchivePath))).
+			RETURNING(Gallery.UUID)
 	} else {
-		newGallery := ValidateGallery(oldGallery.Gallery, gallery)
-		updateGalleryStmt = Gallery.UPDATE(
-			Gallery.Title,
-			Gallery.TitleNative,
-			Gallery.TitleTranslated,
-			Gallery.Category,
-			Gallery.Released,
-			Gallery.Series,
-			Gallery.Language,
-			Gallery.Nsfw,
-			Gallery.Hidden,
-			Gallery.Translated,
-			Gallery.UpdatedAt,
-		).SET(
-			newGallery.Title,
-			newGallery.TitleNative,
-			newGallery.TitleTranslated,
-			newGallery.Category,
-			newGallery.Released,
-			newGallery.Series,
-			newGallery.Language,
-			newGallery.Nsfw,
-			newGallery.Hidden,
-			newGallery.Translated,
-			gallery.UpdatedAt,
-		).WHERE(Gallery.UUID.EQ(String(gallery.UUID))).RETURNING(Gallery.UUID)
+		galleryModel, galleryColumnList := ValidateGallery(prevGallery.Gallery, gallery, now)
+
+		updateGalleryStmt = Gallery.
+			UPDATE(galleryColumnList).
+			MODEL(galleryModel).
+			WHERE(Gallery.UUID.EQ(String(gallery.UUID))).
+			RETURNING(Gallery.UUID)
 	}
 
 	var galleries []model.Gallery
 	if err = updateGalleryStmt.Query(tx, &galleries); err != nil {
 		return err
 	}
-
 	if len(galleries) == 0 {
 		return nil
 	}
@@ -219,7 +184,8 @@ func UpdateGallery(gallery model.Gallery, tags []model.Tag, reference model.Refe
 			insertTagGalleryStmt := GalleryTag.
 				INSERT(GalleryTag.TagID, GalleryTag.GalleryUUID).
 				VALUES(tagID, galleries[0].UUID).
-				ON_CONFLICT(GalleryTag.TagID, GalleryTag.GalleryUUID).DO_NOTHING()
+				ON_CONFLICT(GalleryTag.TagID, GalleryTag.GalleryUUID).
+				DO_NOTHING()
 
 			if _, err = insertTagGalleryStmt.Exec(tx); err != nil {
 				return err
@@ -227,99 +193,42 @@ func UpdateGallery(gallery model.Gallery, tags []model.Tag, reference model.Refe
 		}
 	}
 
-	// Inserts reference
-	if internalScan && reference != (model.Reference{}) {
-		var metaPath string
-		var metaMatch int32
-		var exhGid int32
-		var exhToken string
-		var urls string
-		if reference.MetaPath != nil {
-			metaPath = *reference.MetaPath
-		}
-		if reference.MetaMatch != nil {
-			metaMatch = *reference.MetaMatch
-		}
-		if reference.ExhGid != nil {
-			exhGid = *reference.ExhGid
-		}
-		if reference.ExhToken != nil {
-			exhToken = *reference.ExhToken
-		}
-		if reference.Urls != nil {
-			urls = *reference.Urls
-		}
+	// Used for skipping title parsing if it's already done
+	titleHash := utils.HashStringSHA1(gallery.Title)
+	reference.MetaTitleHash = &titleHash
 
-		newReference := model.Reference{
-			GalleryUUID:  galleries[0].UUID,
-			MetaPath:     reference.MetaPath,
-			MetaInternal: reference.MetaInternal,
-			MetaMatch:    reference.MetaMatch,
-			ExhGid:       reference.ExhGid,
-			ExhToken:     reference.ExhToken,
-			Urls:         reference.Urls,
-		}
+	// Inserts or updates reference
+	referenceModel := model.Reference{}
 
-		insertRefStmt := Reference.
-			INSERT(Reference.AllColumns).
-			MODEL(newReference).
-			ON_CONFLICT(Reference.GalleryUUID).DO_UPDATE(
-			SET(
-				Reference.MutableColumns.SET(ROW(
-					String(metaPath),
-					Bool(reference.MetaInternal),
-					Int32(metaMatch),
-					Int32(exhGid),
-					String(exhToken),
-					String(urls)),
-				),
+	if internalScan {
+		referenceModel = ValidateReferenceInternal(reference)
+	} else {
+		referenceModel = ValidateReference(reference)
+	}
+
+	referenceModel.GalleryUUID = galleries[0].UUID
+
+	rowValues, referenceUpdateColumnList, err := ConstructExpressions(referenceModel)
+	if err != nil {
+		log.Z.Debug("could not construct expressions", zap.String("err", err.Error()))
+		return err
+	}
+
+	insertRefStmt := Reference.
+		INSERT(referenceUpdateColumnList).
+		MODEL(referenceModel).
+		ON_CONFLICT(Reference.GalleryUUID).
+		DO_UPDATE(
+			SET(referenceUpdateColumnList.
+				SET(ROW(rowValues...)),
 			),
 		)
-		if _, err = insertRefStmt.Exec(tx); err != nil {
-			return err
-		}
-	} else if reference != (model.Reference{}) {
-		oldReference, err := GetReference(gallery.UUID)
-		if err != nil {
-			return err
-		}
-		newReference := ValidateReference(oldReference, reference)
-		var exhGid int32
-		var exhToken string
-		var anilistID int32
-		var urls string
-		if newReference.ExhGid != nil {
-			exhGid = *newReference.ExhGid
-		}
-		if newReference.ExhToken != nil {
-			exhToken = *newReference.ExhToken
-		}
-		if newReference.AnilistID != nil {
-			anilistID = *newReference.AnilistID
-		}
-		if newReference.Urls != nil {
-			urls = *newReference.Urls
-		}
-
-		insertRefStmt := Reference.
-			INSERT(Reference.AllColumns).
-			MODEL(newReference).
-			ON_CONFLICT(Reference.GalleryUUID).DO_UPDATE(
-			SET(
-				ColumnList{Reference.ExhGid, Reference.ExhToken, Reference.AnilistID, Reference.Urls}.SET(ROW(
-					Int32(exhGid),
-					String(exhToken),
-					Int32(anilistID),
-					String(urls)),
-				),
-			),
-		)
-		if _, err = insertRefStmt.Exec(tx); err != nil {
-			return err
-		}
+	if _, err = insertRefStmt.Exec(tx); err != nil {
+		return err
 	}
 
 	// Commits transaction. Rollbacks on error.
+	committed = true
 	err = tx.Commit()
 	return err
 }
@@ -653,7 +562,31 @@ func GetGalleries(filters Filters, hidden bool, userUUID *string) ([]CombinedMet
 }
 
 // GetGallery returns a gallery based on the given UUID. If no UUID is given, a random gallery is returned.
-func GetGallery(galleryUUID *string, userUUID *string) (CombinedMetadata, error) {
+func GetGallery(galleryUUID *string, userUUID *string, archivePath *string) (CombinedMetadata, error) {
+	if (galleryUUID == nil || *galleryUUID == "") && (archivePath == nil || *archivePath == "") {
+		return CombinedMetadata{}, errors.New("either galleryUUID or archivePath must be provided")
+	}
+
+	// If archivePath is provided, galleryUUID is fetched from the database.
+	if (galleryUUID == nil || *galleryUUID == "") && (archivePath != nil && *archivePath != "") {
+		stmt := SELECT(Gallery.UUID).FROM(Gallery).WHERE(Gallery.ArchivePath.EQ(String(*archivePath)))
+		var galleries []model.Gallery
+		if err := stmt.Query(db(), &galleries); err != nil {
+			log.Z.Debug("could not get gallery",
+				zap.Stringp("archivePath", archivePath),
+				zap.String("err", err.Error()))
+			return CombinedMetadata{}, err
+		}
+
+		if len(galleries) == 0 {
+			log.Z.Debug("no gallery found", zap.Stringp("archivePath", archivePath))
+			return CombinedMetadata{}, sql.ErrNoRows
+		}
+
+		galleryUUID = &galleries[0].UUID
+	}
+
+	// If userUUID is provided, a new user gallery entry is created.
 	if userUUID != nil && galleryUUID != nil {
 		if err := NewGalleryPref(*galleryUUID, *userUUID); err != nil {
 			log.Z.Debug("could not add user gallery entry",
@@ -719,6 +652,7 @@ func GetGallery(galleryUUID *string, userUUID *string) (CombinedMetadata, error)
 	}
 
 	if len(galleries) == 0 {
+		log.Z.Debug("no gallery found", zap.Stringp("uuid", galleryUUID))
 		return CombinedMetadata{}, sql.ErrNoRows
 	}
 
@@ -795,6 +729,37 @@ func GetSeries() ([]string, error) {
 
 	err := stmt.Query(db(), &series)
 	return series, err
+}
+
+// TitleHashMatch returns true if the title hash of the gallery matches the stored hash.
+func TitleHashMatch(galleryUUID string) bool {
+	stmt := SELECT(Gallery.UUID, Gallery.Title, Reference.MetaTitleHash).
+		FROM(Gallery.Table.
+			LEFT_JOIN(Reference, Reference.GalleryUUID.EQ(String(galleryUUID))),
+		).
+		WHERE(Gallery.UUID.EQ(String(galleryUUID))).
+		LIMIT(1)
+
+	var galleries []struct {
+		UUID          string
+		Title         string
+		MetaTitleHash *string
+	}
+	err := stmt.Query(db(), &galleries)
+	if err != nil {
+		log.Z.Debug("failed to query for title hash",
+			zap.String("uuid", galleryUUID),
+			zap.String("err", err.Error()))
+		return false
+	}
+
+	if galleries == nil || galleries[0].MetaTitleHash == nil {
+		return false
+	}
+
+	titleHash := utils.HashStringSHA1(galleries[0].Title)
+
+	return titleHash == *galleries[0].MetaTitleHash
 }
 
 // NeedsUpdate returns true if the gallery needs to be updated. Currently only the timestamp is checked.

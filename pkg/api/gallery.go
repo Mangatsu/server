@@ -162,7 +162,7 @@ func returnGallery(w http.ResponseWriter, r *http.Request) {
 	params := mux.Vars(r)
 	galleryUUID := params["uuid"]
 
-	gallery, err := db.GetGallery(&galleryUUID, userUUID)
+	gallery, err := db.GetGallery(&galleryUUID, userUUID, nil)
 	if handleResult(w, gallery, err, false, r.RequestURI) {
 		return
 	}
@@ -193,7 +193,7 @@ func returnRandomGallery(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	gallery, err := db.GetGallery(nil, userUUID)
+	gallery, err := db.GetGallery(nil, userUUID, nil)
 	if handleResult(w, gallery, err, false, r.URL.Path) {
 		return
 	}
