@@ -1,6 +1,8 @@
 package utils
 
 import (
+	"crypto/sha1"
+	"encoding/hex"
 	"github.com/Mangatsu/server/pkg/log"
 	"github.com/adrg/strutil"
 	"github.com/adrg/strutil/metrics"
@@ -96,4 +98,11 @@ func Similarity(a string, b string) float64 {
 	similarity := strutil.Similarity(a, b, sd)
 
 	return similarity
+}
+
+func HashStringSHA1(s string) string {
+	h := sha1.New()
+	h.Write([]byte(s))
+
+	return hex.EncodeToString(h.Sum(nil))
 }
