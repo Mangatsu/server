@@ -17,6 +17,15 @@ import (
 
 func countImages(archivePath string) (uint64, error) {
 	filesystem, err := archiver.FileSystem(nil, archivePath)
+	if err != nil {
+		log.Z.Error("could not open archive",
+			zap.String("path", archivePath),
+			zap.String("err", err.Error()),
+		)
+
+		return 0, err
+	}
+
 	var fileCount uint64
 
 	err = fs.WalkDir(filesystem, ".", func(s string, d fs.DirEntry, err error) error {

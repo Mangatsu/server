@@ -3,7 +3,6 @@ package metadata
 import (
 	"path"
 	"path/filepath"
-	"reflect"
 	"regexp"
 	"strconv"
 	"strings"
@@ -40,10 +39,19 @@ func ParseTitles(tryNative bool, overwrite bool) {
 
 	for _, library := range libraries {
 		for _, gallery := range library.Galleries {
+			if db.TitleHashMatch(gallery.UUID) {
+				continue
+			}
+
 			_, currentTags, err := db.GetTags(gallery.UUID, false)
-			currentReference, err := db.GetReference(gallery.UUID)
 			if err != nil {
 				log.Z.Error("tags could not be retrieved when parsing titles", zap.String("err", err.Error()))
+				continue
+			}
+
+			currentReference, err := db.GetReference(gallery.UUID)
+			if err != nil {
+				log.Z.Error("reference could not be retrieved when parsing titles", zap.String("err", err.Error()))
 				continue
 			}
 
@@ -67,15 +75,15 @@ func ParseTitles(tryNative bool, overwrite bool) {
 
 			titleMeta := ParseTitle(title)
 
-			if tryNative && reflect.ValueOf(titleMeta).IsZero() {
+			if tryNative && titleMeta == nil {
 				titleMeta = ParseTitle(*titleNative)
 			}
 
-			if reflect.ValueOf(titleMeta).IsZero() {
+			if titleMeta == nil {
 				titleMeta = ParseTitle(filename)
 			}
 
-			if !reflect.ValueOf(titleMeta).IsZero() {
+			if titleMeta != nil {
 				if titleMeta.Title != "" && (!hasTitleTranslated || overwrite) {
 					if gallery.Translated != nil && *gallery.Translated {
 						gallery.TitleTranslated = &titleMeta.Title
@@ -139,19 +147,21 @@ func ParseTitles(tryNative bool, overwrite bool) {
 				gallery.Category = &manga
 			}
 
-			err = db.UpdateGallery(gallery, currentTags, currentReference, true)
-			if err != nil {
+			if err = db.UpdateGallery(gallery, currentTags, currentReference, true); err != nil {
 				log.Z.Error("failed to update gallery based on its title",
 					zap.String("gallery", gallery.UUID),
 					zap.String("err", err.Error()))
 			}
+			log.Z.Info("metadata parsed based on title",
+				zap.String("uuid", gallery.UUID),
+				zap.String("title", gallery.Title))
 		}
 	}
 }
 
 // ParseTitle parses the filename or title following the standard:
 // (Release) [Circle (Artist)] Title (Series) [<usually> Language] or (Release) [Artist] Title (Series) [<usually> Language]
-func ParseTitle(title string) TitleMeta {
+func ParseTitle(title string) *TitleMeta {
 	match := nameRegex.FindStringSubmatch(title)
 	var artists []string
 	if match[3] != "" {
@@ -164,7 +174,7 @@ func ParseTitle(title string) TitleMeta {
 		}
 	}
 
-	return TitleMeta{
+	titleMeta := TitleMeta{
 		Released: strings.TrimSpace(match[1]),
 		Circle:   strings.TrimSpace(match[2]),
 		Artists:  strings.Split(strings.TrimSpace(match[3]), ", "),
@@ -172,6 +182,12 @@ func ParseTitle(title string) TitleMeta {
 		Series:   strings.TrimSpace(match[5]),
 		Language: strings.TrimSpace(match[6]),
 	}
+
+	if titleMeta.Released == "" && titleMeta.Circle == "" && len(titleMeta.Artists) == 0 && titleMeta.Title == "" && titleMeta.Series == "" && titleMeta.Language == "" {
+		return nil
+	}
+
+	return &titleMeta
 }
 
 func containsTag(tags []model.Tag, namespace string, name *string) bool {

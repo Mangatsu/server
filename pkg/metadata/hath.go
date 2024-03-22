@@ -2,30 +2,24 @@ package metadata
 
 import (
 	"bufio"
-	"os"
+	"bytes"
 	"strings"
 
 	"github.com/Mangatsu/server/pkg/types/sqlite/model"
 )
 
 // ParseHath parses given text file. Input file is expected to be in the H@H (Hath) format (galleryinfo.txt).
-func ParseHath(filePath string) (model.Gallery, []model.Tag, error) {
-	file, err := os.Open(filePath)
+func ParseHath(metaPath string, metaData []byte, internal bool) (model.Gallery, []model.Tag, model.Reference, error) {
 	gallery := model.Gallery{}
+	reference := model.Reference{
+		MetaPath:     &metaPath,
+		MetaInternal: internal,
+		Urls:         nil,
+	}
 	var tags []model.Tag
 
-	if err != nil {
-		return gallery, nil, err
-	}
-
-	defer func(file *os.File) {
-		err := file.Close()
-		if err != nil {
-			log.Z.Debug("failed to close Hath formatted file", zap.String("err", err.Error()))
-		}
-	}(file)
-
-	scanner := bufio.NewScanner(file)
+	buffer := bytes.NewBuffer(metaData)
+	scanner := bufio.NewScanner(buffer)
 
 	for scanner.Scan() {
 		line := scanner.Text()
@@ -59,5 +53,5 @@ func ParseHath(filePath string) (model.Gallery, []model.Tag, error) {
 		}
 	}
 
-	return gallery, tags, nil
+	return gallery, tags, reference, nil
 }

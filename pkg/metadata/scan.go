@@ -22,10 +22,16 @@ import (
 type MetaType string
 
 const (
-	XMeta    MetaType = "xmeta"
-	HathMeta          = "hathmeta"
-	EHDLMeta          = "ehdlmeta"
+	XMeta      MetaType = "xmeta"
+	HathMeta            = "hathmeta"
+	EHDLMeta            = "ehdlmeta"
+	FuzzyMatch          = "fuzzy"
 )
+
+type NoMatchPaths struct {
+	libraryPath string
+	fullPath    string
+}
 
 // matchInternalMeta reads the internal metadata (info.json, info.txt or galleryinfo.txt) from the given archive.
 func matchInternalMeta(metaTypes map[MetaType]bool, fullArchivePath string) ([]byte, string, MetaType) {
@@ -77,7 +83,6 @@ func matchExternalMeta(metaTypes map[MetaType]bool, fullArchivePath string, libr
 	externalJSON := constants.ArchiveExtensions.ReplaceAllString(fullArchivePath, ".json")
 
 	if !utils.PathExists(externalJSON) {
-		archivesNoMatch = append(archivesNoMatch, NoMatchPaths{libraryPath: libraryPath, fullPath: fullArchivePath})
 		return nil, ""
 	}
 
@@ -100,86 +105,106 @@ func ParseMetadata(metaTypes map[MetaType]bool) {
 		return
 	}
 
+	var archivesWithNoMatch []NoMatchPaths
+
 	for _, galleryLibrary := range libraries {
 		for _, gallery := range galleryLibrary.Galleries {
 			fullPath := config.BuildLibraryPath(galleryLibrary.Path, gallery.ArchivePath)
 
 			var metaData []byte
 			var metaPath string
-			internal := false
+			internalDataFound := false
 
 			// X, Hath, EHDL
 			metaData, metaPath, metaType := matchInternalMeta(metaTypes, fullPath)
 			if metaData != nil {
-				internal = true
+				internalDataFound = true
 			}
 
 			// X
-			if !internal {
+			if !internalDataFound {
 				metaData, metaPath = matchExternalMeta(metaTypes, fullPath, galleryLibrary.Path)
 				metaType = XMeta
 			}
 
-			if metaData != nil {
-				var newGallery model.Gallery
-				var tags []model.Tag
-				var reference model.Reference
-
-				switch metaType {
-				case XMeta:
-					if newGallery, tags, reference, err = ParseX(metaData, metaPath, gallery.ArchivePath, internal); err != nil {
-						log.Z.Debug("could not parse X meta",
-							zap.String("path", metaPath),
-							zap.String("err", err.Error()))
-
-						cache.ProcessingStatusCache.AddMetadataError(gallery.UUID, err.Error(), map[string]string{
-							"metaType": string(metaType),
-							"metaPath": metaPath,
-						})
-						continue
-					}
-				case EHDLMeta:
-					if newGallery, tags, err = ParseEHDL(metaPath); err != nil {
-						log.Z.Debug("could not parse EHDL meta",
-							zap.String("path", metaPath),
-							zap.String("err", err.Error()))
-
-						cache.ProcessingStatusCache.AddMetadataError(gallery.UUID, err.Error(), map[string]string{
-							"metaType": string(metaType),
-							"metaPath": metaPath,
-						})
-						continue
-					}
-				case HathMeta:
-					if newGallery, tags, err = ParseHath(metaPath); err != nil {
-						log.Z.Debug("could not parse Hath meta",
-							zap.String("path", metaPath),
-							zap.String("err", err.Error()))
-
-						cache.ProcessingStatusCache.AddMetadataError(gallery.UUID, err.Error(), map[string]string{
-							"metaType": string(metaType),
-							"metaPath": metaPath,
-						})
-						continue
-					}
+			if metaData == nil {
+				if metaTypes[FuzzyMatch] {
+					archivesWithNoMatch = append(archivesWithNoMatch, NoMatchPaths{libraryPath: galleryLibrary.Path, fullPath: fullPath})
 				}
+				continue
+			}
 
-				if err = db.UpdateGallery(newGallery, tags, reference, true); err != nil {
-					log.Z.Debug("could not tag gallery",
-						zap.String("path", gallery.ArchivePath),
+			var newGallery model.Gallery
+			var tags []model.Tag
+			var reference model.Reference
+
+			switch metaType {
+			case XMeta:
+				if newGallery, tags, reference, err = ParseX(metaData, metaPath, gallery.ArchivePath, internalDataFound); err != nil {
+					log.Z.Debug("could not parse X meta",
+						zap.String("path", metaPath),
 						zap.String("err", err.Error()))
 
-					cache.ProcessingStatusCache.AddMetadataError(newGallery.UUID, err.Error(), map[string]string{
-						"path": gallery.ArchivePath,
+					cache.ProcessingStatusCache.AddMetadataError(gallery.UUID, err.Error(), map[string]string{
+						"metaType": string(metaType),
+						"metaPath": metaPath,
+					})
+					continue
+				}
+			case EHDLMeta:
+				if newGallery, tags, reference, err = ParseEHDL(metaPath, metaData, internalDataFound); err != nil {
+					log.Z.Debug("could not parse EHDL meta",
+						zap.String("path", metaPath),
+						zap.String("err", err.Error()))
+
+					cache.ProcessingStatusCache.AddMetadataError(gallery.UUID, err.Error(), map[string]string{
+						"metaType": string(metaType),
+						"metaPath": metaPath,
+					})
+					continue
+				}
+			case HathMeta:
+				if newGallery, tags, reference, err = ParseHath(metaPath, metaData, internalDataFound); err != nil {
+					log.Z.Debug("could not parse Hath meta",
+						zap.String("path", metaPath),
+						zap.String("err", err.Error()))
+
+					cache.ProcessingStatusCache.AddMetadataError(gallery.UUID, err.Error(), map[string]string{
+						"metaType": string(metaType),
+						"metaPath": metaPath,
 					})
 					continue
 				}
 			}
+
+			// Adds the UUID and archive path to the new gallery.
+			newGallery.UUID = gallery.UUID
+			newGallery.ArchivePath = gallery.ArchivePath
+
+			err = db.UpdateGallery(newGallery, tags, reference, true)
+			if err != nil {
+				log.Z.Debug("could not tag gallery",
+					zap.String("path", gallery.ArchivePath),
+					zap.String("err", err.Error()))
+
+				cache.ProcessingStatusCache.AddMetadataError(newGallery.UUID, err.Error(), map[string]string{
+					"path": gallery.ArchivePath,
+				})
+				continue
+			}
+
+			log.Z.Info("metadata parsed",
+				zap.String("metaType", string(metaType)),
+				zap.String("uuid", gallery.UUID),
+				zap.String("title", gallery.Title),
+				zap.String("path", gallery.ArchivePath),
+				zap.String("metaPath", metaPath),
+			)
 		}
 	}
 
 	// Fuzzy parsing for all archives that didn't have an exact match.
-	for _, noMatch := range archivesNoMatch {
+	for _, noMatch := range archivesWithNoMatch {
 		onlyDir := filepath.Dir(noMatch.fullPath)
 		files, err := os.ReadDir(onlyDir)
 		if err != nil {
@@ -191,7 +216,7 @@ func ParseMetadata(metaTypes map[MetaType]bool) {
 		for _, f := range files {
 			r, exhGallery := fuzzyMatchExternalMeta(noMatch.fullPath, noMatch.libraryPath, f)
 
-			if r.MatchedArchivePath != "" && r.MetaTitleMatch || r.Similarity > 0.70 {
+			if r.MatchedArchivePath != "" && r.MetaTitleMatch || r.Similarity > config.Options.GalleryOptions.FuzzySearchSimilarity {
 				gallery, tags, reference := convertExh(exhGallery, r.MatchedArchivePath, r.RelativeMetaPath, false)
 
 				if !r.MetaTitleMatch {

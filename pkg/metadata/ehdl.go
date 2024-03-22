@@ -2,7 +2,7 @@ package metadata
 
 import (
 	"bufio"
-	"os"
+	"bytes"
 	"regexp"
 	"strconv"
 	"strings"
@@ -17,24 +17,17 @@ var sizeRegex = regexp.MustCompile(`File Size:\s*(\d+(?:\.\d+)?)`)
 
 // ParseEHDL parses given text file. Input file is expected to be in the H@H (Hath) format (galleryinfo.txt).
 // Input file is expected to be in the E-Hentai-Downloader format (info.txt).
-func ParseEHDL(filePath string) (model.Gallery, []model.Tag, error) {
-	file, err := os.Open(filePath)
+func ParseEHDL(metaPath string, metaData []byte, internal bool) (model.Gallery, []model.Tag, model.Reference, error) {
 	gallery := model.Gallery{}
-	reference := model.Reference{}
+	reference := model.Reference{
+		MetaPath:     &metaPath,
+		MetaInternal: internal,
+		Urls:         nil,
+	}
 	var tags []model.Tag
 
-	if err != nil {
-		return gallery, nil, err
-	}
-
-	defer func(file *os.File) {
-		err := file.Close()
-		if err != nil {
-			log.Z.Debug("failed to close EHDL formatted file", zap.String("err", err.Error()))
-		}
-	}(file)
-
-	scanner := bufio.NewScanner(file)
+	buffer := bytes.NewBuffer(metaData)
+	scanner := bufio.NewScanner(buffer)
 	lineNumber := -1
 
 	for scanner.Scan() {
@@ -126,5 +119,5 @@ func ParseEHDL(filePath string) (model.Gallery, []model.Tag, error) {
 		}
 	}
 
-	return gallery, tags, nil
+	return gallery, tags, reference, nil
 }

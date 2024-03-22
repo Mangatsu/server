@@ -58,13 +58,6 @@ type XMetadata struct {
 
 var metaExtensions = regexp.MustCompile(`\.json$`)
 
-type NoMatchPaths struct {
-	libraryPath string
-	fullPath    string
-}
-
-var archivesNoMatch []NoMatchPaths
-
 // unmarshalExhJSON parses ExH JSON bytes into XMetadata.
 func unmarshalExhJSON(byteValue []byte) (XMetadata, error) {
 	var gallery XMetadata

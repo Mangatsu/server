@@ -56,11 +56,13 @@ func findMetadata(w http.ResponseWriter, r *http.Request) {
 	x := r.URL.Query().Get("x")
 	ehdl := r.URL.Query().Get("ehdl")
 	hath := r.URL.Query().Get("hath")
+	fuzzy := r.URL.Query().Get("fuzzy")
 
 	metaTypes := make(map[metadata.MetaType]bool)
 	metaTypes[metadata.XMeta] = x == "true"
 	metaTypes[metadata.EHDLMeta] = ehdl == "true"
 	metaTypes[metadata.HathMeta] = hath == "true"
+	metaTypes[metadata.FuzzyMatch] = fuzzy == "true"
 	go metadata.ParseMetadata(metaTypes)
 
 	if title == "true" {
