@@ -16,7 +16,7 @@ var Gallery = newGalleryTable("", "gallery", "")
 type galleryTable struct {
 	sqlite.Table
 
-	// Columns
+	//Columns
 	UUID            sqlite.ColumnString
 	LibraryID       sqlite.ColumnInteger
 	ArchivePath     sqlite.ColumnString
@@ -57,16 +57,6 @@ func (a GalleryTable) AS(alias string) *GalleryTable {
 // Schema creates new GalleryTable with assigned schema name
 func (a GalleryTable) FromSchema(schemaName string) *GalleryTable {
 	return newGalleryTable(schemaName, a.TableName(), a.Alias())
-}
-
-// WithPrefix creates new GalleryTable with assigned table prefix
-func (a GalleryTable) WithPrefix(prefix string) *GalleryTable {
-	return newGalleryTable(a.SchemaName(), prefix+a.TableName(), a.TableName())
-}
-
-// WithSuffix creates new GalleryTable with assigned table suffix
-func (a GalleryTable) WithSuffix(suffix string) *GalleryTable {
-	return newGalleryTable(a.SchemaName(), a.TableName()+suffix, a.TableName())
 }
 
 func newGalleryTable(schemaName, tableName, alias string) *GalleryTable {

@@ -6,7 +6,7 @@ import (
 	"github.com/Mangatsu/server/pkg/constants"
 	"github.com/Mangatsu/server/pkg/db"
 	"github.com/Mangatsu/server/pkg/log"
-	"github.com/Mangatsu/server/pkg/types/model"
+	"github.com/Mangatsu/server/pkg/types/sqlite/model"
 	"github.com/Mangatsu/server/pkg/utils"
 	"go.uber.org/zap"
 	"os"
@@ -202,6 +202,8 @@ func ParseX(metaData []byte, metaPath string, archivePath string, internal bool)
 	if err != nil {
 		return model.Gallery{}, nil, model.Reference{}, err
 	}
+
 	gallery, tags, reference := convertExh(exhGallery, archivePath, metaPath, internal)
+
 	return gallery, tags, reference, nil
 }

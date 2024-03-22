@@ -10,7 +10,7 @@ import (
 	"github.com/Mangatsu/server/pkg/cache"
 	"github.com/Mangatsu/server/pkg/db"
 	"github.com/Mangatsu/server/pkg/log"
-	"github.com/Mangatsu/server/pkg/types/model"
+	"github.com/Mangatsu/server/pkg/types/sqlite/model"
 	"github.com/gorilla/mux"
 	"go.uber.org/zap"
 )

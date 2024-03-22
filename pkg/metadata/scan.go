@@ -13,7 +13,7 @@ import (
 	"github.com/Mangatsu/server/pkg/db"
 	"github.com/Mangatsu/server/pkg/library"
 	"github.com/Mangatsu/server/pkg/log"
-	"github.com/Mangatsu/server/pkg/types/model"
+	"github.com/Mangatsu/server/pkg/types/sqlite/model"
 	"github.com/Mangatsu/server/pkg/utils"
 	"github.com/mholt/archiver/v4"
 	"go.uber.org/zap"

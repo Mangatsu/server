@@ -8,8 +8,7 @@ import (
 	"strings"
 
 	"github.com/Mangatsu/server/pkg/log"
-	"github.com/Mangatsu/server/pkg/types/model"
-	"go.uber.org/zap"
+	"github.com/Mangatsu/server/pkg/types/sqlite/model"
 )
 
 var exhURLRegex = regexp.MustCompile(`https://\w+\.\w+/g/(\d+)/[a-z0-9]+`)

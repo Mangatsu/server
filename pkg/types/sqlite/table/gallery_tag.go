@@ -16,7 +16,7 @@ var GalleryTag = newGalleryTagTable("", "gallery_tag", "")
 type galleryTagTable struct {
 	sqlite.Table
 
-	// Columns
+	//Columns
 	GalleryUUID sqlite.ColumnString
 	TagID       sqlite.ColumnInteger
 
@@ -38,16 +38,6 @@ func (a GalleryTagTable) AS(alias string) *GalleryTagTable {
 // Schema creates new GalleryTagTable with assigned schema name
 func (a GalleryTagTable) FromSchema(schemaName string) *GalleryTagTable {
 	return newGalleryTagTable(schemaName, a.TableName(), a.Alias())
-}
-
-// WithPrefix creates new GalleryTagTable with assigned table prefix
-func (a GalleryTagTable) WithPrefix(prefix string) *GalleryTagTable {
-	return newGalleryTagTable(a.SchemaName(), prefix+a.TableName(), a.TableName())
-}
-
-// WithSuffix creates new GalleryTagTable with assigned table suffix
-func (a GalleryTagTable) WithSuffix(suffix string) *GalleryTagTable {
-	return newGalleryTagTable(a.SchemaName(), a.TableName()+suffix, a.TableName())
 }
 
 func newGalleryTagTable(schemaName, tableName, alias string) *GalleryTagTable {

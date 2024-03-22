@@ -16,7 +16,7 @@ var GalleryPref = newGalleryPrefTable("", "gallery_pref", "")
 type galleryPrefTable struct {
 	sqlite.Table
 
-	// Columns
+	//Columns
 	UserUUID      sqlite.ColumnString
 	GalleryUUID   sqlite.ColumnString
 	Progress      sqlite.ColumnInteger
@@ -41,16 +41,6 @@ func (a GalleryPrefTable) AS(alias string) *GalleryPrefTable {
 // Schema creates new GalleryPrefTable with assigned schema name
 func (a GalleryPrefTable) FromSchema(schemaName string) *GalleryPrefTable {
 	return newGalleryPrefTable(schemaName, a.TableName(), a.Alias())
-}
-
-// WithPrefix creates new GalleryPrefTable with assigned table prefix
-func (a GalleryPrefTable) WithPrefix(prefix string) *GalleryPrefTable {
-	return newGalleryPrefTable(a.SchemaName(), prefix+a.TableName(), a.TableName())
-}
-
-// WithSuffix creates new GalleryPrefTable with assigned table suffix
-func (a GalleryPrefTable) WithSuffix(suffix string) *GalleryPrefTable {
-	return newGalleryPrefTable(a.SchemaName(), a.TableName()+suffix, a.TableName())
 }
 
 func newGalleryPrefTable(schemaName, tableName, alias string) *GalleryPrefTable {

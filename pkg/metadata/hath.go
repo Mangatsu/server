@@ -5,9 +5,7 @@ import (
 	"os"
 	"strings"
 
-	"github.com/Mangatsu/server/pkg/log"
-	"github.com/Mangatsu/server/pkg/types/model"
-	"go.uber.org/zap"
+	"github.com/Mangatsu/server/pkg/types/sqlite/model"
 )
 
 // ParseHath parses given text file. Input file is expected to be in the H@H (Hath) format (galleryinfo.txt).

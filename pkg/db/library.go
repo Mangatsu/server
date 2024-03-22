@@ -3,8 +3,8 @@ package db
 import (
 	"github.com/Mangatsu/server/internal/config"
 	"github.com/Mangatsu/server/pkg/log"
-	"github.com/Mangatsu/server/pkg/types/model"
-	. "github.com/Mangatsu/server/pkg/types/table"
+	"github.com/Mangatsu/server/pkg/types/sqlite/model"
+	. "github.com/Mangatsu/server/pkg/types/sqlite/table"
 	. "github.com/go-jet/jet/v2/sqlite"
 	"go.uber.org/zap"
 )

@@ -16,7 +16,7 @@ var Library = newLibraryTable("", "library", "")
 type libraryTable struct {
 	sqlite.Table
 
-	// Columns
+	//Columns
 	ID     sqlite.ColumnInteger
 	Path   sqlite.ColumnString
 	Layout sqlite.ColumnString
@@ -39,16 +39,6 @@ func (a LibraryTable) AS(alias string) *LibraryTable {
 // Schema creates new LibraryTable with assigned schema name
 func (a LibraryTable) FromSchema(schemaName string) *LibraryTable {
 	return newLibraryTable(schemaName, a.TableName(), a.Alias())
-}
-
-// WithPrefix creates new LibraryTable with assigned table prefix
-func (a LibraryTable) WithPrefix(prefix string) *LibraryTable {
-	return newLibraryTable(a.SchemaName(), prefix+a.TableName(), a.TableName())
-}
-
-// WithSuffix creates new LibraryTable with assigned table suffix
-func (a LibraryTable) WithSuffix(suffix string) *LibraryTable {
-	return newLibraryTable(a.SchemaName(), a.TableName()+suffix, a.TableName())
 }
 
 func newLibraryTable(schemaName, tableName, alias string) *LibraryTable {

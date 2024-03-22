@@ -16,7 +16,7 @@ var Tag = newTagTable("", "tag", "")
 type tagTable struct {
 	sqlite.Table
 
-	// Columns
+	//Columns
 	ID        sqlite.ColumnInteger
 	Namespace sqlite.ColumnString
 	Name      sqlite.ColumnString
@@ -39,16 +39,6 @@ func (a TagTable) AS(alias string) *TagTable {
 // Schema creates new TagTable with assigned schema name
 func (a TagTable) FromSchema(schemaName string) *TagTable {
 	return newTagTable(schemaName, a.TableName(), a.Alias())
-}
-
-// WithPrefix creates new TagTable with assigned table prefix
-func (a TagTable) WithPrefix(prefix string) *TagTable {
-	return newTagTable(a.SchemaName(), prefix+a.TableName(), a.TableName())
-}
-
-// WithSuffix creates new TagTable with assigned table suffix
-func (a TagTable) WithSuffix(suffix string) *TagTable {
-	return newTagTable(a.SchemaName(), a.TableName()+suffix, a.TableName())
 }
 
 func newTagTable(schemaName, tableName, alias string) *TagTable {
