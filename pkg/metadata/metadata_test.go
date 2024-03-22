@@ -2,6 +2,7 @@ package metadata
 
 import (
 	"github.com/Mangatsu/server/pkg/utils"
+	"os"
 	"testing"
 )
 
@@ -103,7 +104,15 @@ func TestParseX(t *testing.T) {
 }
 
 func TestParseHath(t *testing.T) {
-	gotGallery, gotTags, err := ParseHath("../../testdata/hath.txt")
+	filepath := "../../testdata/hath.txt"
+
+	buf, err := os.ReadFile(filepath)
+	if err != nil {
+		t.Error("Error reading hath.txt:", err)
+		return
+	}
+
+	gotGallery, gotTags, _, err := ParseHath(filepath, buf, false)
 	if err != nil {
 		t.Error("Error parsing galleryinfo.txt:", err)
 		return
@@ -128,7 +137,15 @@ func TestParseHath(t *testing.T) {
 }
 
 func TestParseEHDL(t *testing.T) {
-	gotGallery, gotTags, err := ParseEHDL("../../testdata/ehdl.txt")
+	filepath := "../../testdata/ehdl.txt"
+
+	buf, err := os.ReadFile(filepath)
+	if err != nil {
+		t.Error("Error reading ehdl.txt:", err)
+		return
+	}
+
+	gotGallery, gotTags, _, err := ParseEHDL(filepath, buf, false)
 	if err != nil {
 		t.Error("Error parsing ehdl.txt:", err)
 		return
