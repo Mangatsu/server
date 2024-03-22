@@ -26,7 +26,7 @@ func EncodeImage(dstImage *image.NRGBA) (*bytes.Buffer, error) {
 	var buf bytes.Buffer
 	var err error
 
-	switch config.Options.ThumbnailFormat {
+	switch config.Options.GalleryOptions.ThumbnailFormat {
 	case config.WebP:
 		err = webp.Encode(&buf, dstImage, &webp.Options{Lossless: false, Quality: 75})
 	case config.AVIF:

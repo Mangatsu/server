@@ -40,17 +40,22 @@ type CacheOptions struct {
 	Size      uint64
 }
 
+type GalleryOptions struct {
+	ThumbnailFormat       ImageFormat
+	FuzzySearchSimilarity float64
+}
+
 type OptionsModel struct {
-	Environment     log.Environment
-	Domain          string
-	Hostname        string
-	Port            string
-	StrictACAO      bool
-	Registrations   bool
-	Visibility      Visibility
-	ThumbnailFormat ImageFormat
-	DB              DBOptions
-	Cache           CacheOptions
+	Environment    log.Environment
+	Domain         string
+	Hostname       string
+	Port           string
+	StrictACAO     bool
+	Registrations  bool
+	Visibility     Visibility
+	DB             DBOptions
+	Cache          CacheOptions
+	GalleryOptions GalleryOptions
 }
 
 type CredentialsModel struct {
@@ -81,13 +86,12 @@ func LoadEnv() {
 // SetEnv sets the environment variables into Options and Credentials
 func SetEnv() {
 	Options = &OptionsModel{
-		Domain:          domain(),
-		Hostname:        hostname(),
-		Port:            port(),
-		StrictACAO:      acao(),
-		Registrations:   registrationsEnabled(),
-		Visibility:      currentVisibility(),
-		ThumbnailFormat: thumbnailFormat(),
+		Domain:        domain(),
+		Hostname:      hostname(),
+		Port:          port(),
+		StrictACAO:    acao(),
+		Registrations: registrationsEnabled(),
+		Visibility:    currentVisibility(),
 		DB: DBOptions{
 			Name:       dbName(),
 			Migrations: dbMigrationsEnabled(),
@@ -96,6 +100,10 @@ func SetEnv() {
 			WebServer: cacheServerEnabled(),
 			TTL:       cacheTTL(),
 			Size:      cacheSize(),
+		},
+		GalleryOptions: GalleryOptions{
+			ThumbnailFormat:       thumbnailFormat(),
+			FuzzySearchSimilarity: fuzzySearchSimilarity(),
 		},
 	}
 
@@ -265,4 +273,24 @@ func thumbnailFormat() ImageFormat {
 	//	return AVIF
 	//}
 	return WebP
+}
+
+func fuzzySearchSimilarity() float64 {
+	value := os.Getenv("MTSU_FUZZY_SEARCH_SIMILARITY")
+	if value == "" {
+		return 0.7
+	}
+
+	similarity, err := strconv.ParseFloat(value, 64)
+	if err != nil {
+		log.Z.Error(value + " is not a valid similarity value for MTSU_FUZZY_SEARCH_SIMILARITY. Defaulting to 0.7.")
+		return 0.7
+	}
+	if similarity < 0.1 {
+		return 0.1
+	}
+	if similarity > 1 {
+		return 1
+	}
+	return similarity
 }
