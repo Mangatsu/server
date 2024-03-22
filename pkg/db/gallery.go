@@ -733,7 +733,7 @@ func GetSeries() ([]string, error) {
 
 // TitleHashMatch returns true if the title hash of the gallery matches the stored hash.
 func TitleHashMatch(galleryUUID string) bool {
-	stmt := SELECT(Gallery.UUID, Gallery.Title, Reference.MetaTitleHash).
+	stmt := SELECT(Gallery.UUID.AS("UUID"), Gallery.Title.AS("Title"), Reference.MetaTitleHash.AS("MetaTitleHash")).
 		FROM(Gallery.Table.
 			LEFT_JOIN(Reference, Reference.GalleryUUID.EQ(String(galleryUUID))),
 		).

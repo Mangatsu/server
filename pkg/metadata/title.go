@@ -152,7 +152,7 @@ func ParseTitles(tryNative bool, overwrite bool) {
 					zap.String("gallery", gallery.UUID),
 					zap.String("err", err.Error()))
 			}
-			log.Z.Info("metadata parsed based on title",
+			log.Z.Info("metadata parsed based from the title",
 				zap.String("uuid", gallery.UUID),
 				zap.String("title", gallery.Title))
 		}
