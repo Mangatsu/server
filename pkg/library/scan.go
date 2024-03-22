@@ -117,9 +117,9 @@ func walk(libraryPath string, libraryID int32, libraryLayout config.Layout) fs.W
 
 		} else {
 			// Generates cover thumbnail
-			go ReadArchiveImages(fullPath, uuid, true)
+			go GenerateCoverThumbnail(fullPath, uuid)
 
-			log.Z.Debug("added gallery", zap.String("path", relativePath))
+			log.Z.Info("added gallery", zap.String("path", relativePath), zap.String("uuid", uuid))
 
 			cache.ProcessingStatusCache.AddScanFoundGallery(uuid)
 		}
