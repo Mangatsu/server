@@ -60,6 +60,10 @@ func thumbnailWalker(wg *sync.WaitGroup, onlyCover bool) {
 		return
 	}
 
+	// Create a buffered channel that will block after 'n' sends
+	// Replace 'n' with the number of simultaneous goroutines you want to allow
+	semaphore := make(chan struct{}, 3)
+
 	for _, library := range libraries {
 		for _, gallery := range library.Galleries {
 			wg.Add(1)
@@ -68,12 +72,16 @@ func thumbnailWalker(wg *sync.WaitGroup, onlyCover bool) {
 			gallery := gallery // Loop variables captured by 'func' literals in 'go' statements might have unexpected values
 
 			go func() {
+				semaphore <- struct{}{}
+
 				defer wg.Done()
 				if onlyCover {
 					GenerateCoverThumbnail(fullPath, gallery.UUID)
 				} else {
 					GeneratePageThumbnails(fullPath, gallery.UUID)
 				}
+
+				<-semaphore
 			}()
 		}
 	}
