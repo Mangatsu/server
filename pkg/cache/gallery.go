@@ -1,6 +1,8 @@
 package cache
 
 import (
+	"errors"
+	"io/fs"
 	"os"
 	"path"
 	"sync"
@@ -106,7 +108,7 @@ func remove(galleryUUID string) error {
 
 	galleryPath := config.BuildCachePath(galleryUUID)
 	if err := os.RemoveAll(galleryPath); err != nil {
-		if os.IsNotExist(err) {
+		if errors.Is(err, fs.ErrNotExist) {
 			delete(galleryCache.Store, galleryUUID)
 		}
 		return err

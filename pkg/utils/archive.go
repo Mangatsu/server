@@ -1,6 +1,7 @@
 package utils
 
 import (
+	"errors"
 	"github.com/Mangatsu/server/pkg/constants"
 	"github.com/Mangatsu/server/pkg/log"
 	"github.com/mholt/archiver/v4"
@@ -23,10 +24,13 @@ func UniversalExtract(dst string, archivePath string) ([]string, int) {
 	}
 
 	if err = os.Mkdir(dst, os.ModePerm); err != nil {
-		log.Z.Error("failed to create a dir for gallery",
-			zap.String("path", dst),
-			zap.String("err", err.Error()))
-		return nil, 0
+		if !errors.Is(err, fs.ErrNotExist) {
+			log.Z.Error("failed to create a dir for gallery",
+				zap.String("path", dst),
+				zap.String("err", err.Error()))
+			return nil, 0
+
+		}
 	}
 
 	var files []string
@@ -44,6 +48,9 @@ func UniversalExtract(dst string, archivePath string) ([]string, int) {
 
 		if d.IsDir() {
 			err = os.Mkdir(dstPath, os.ModePerm)
+			if errors.Is(err, fs.ErrNotExist) {
+				return nil
+			}
 			return err
 		}
 

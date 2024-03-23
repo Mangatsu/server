@@ -1,6 +1,8 @@
 package config
 
 import (
+	"errors"
+	"io/fs"
 	"os"
 	"path"
 	"path/filepath"
@@ -41,7 +43,7 @@ func ParseBasePaths() []Library {
 		if layoutAndPath[1] == "" {
 			log.Z.Fatal("Paths in MTSU_BASE_PATHS cannot be empty")
 		}
-		if _, err := os.Stat(layoutAndPath[1]); os.IsNotExist(err) {
+		if _, err := os.Stat(layoutAndPath[1]); errors.Is(err, fs.ErrNotExist) {
 			log.Z.Fatal("Path in MTSU_BASE_PATHS not found: " + layoutAndPath[1])
 		}
 

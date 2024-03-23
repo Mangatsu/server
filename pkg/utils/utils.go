@@ -3,10 +3,12 @@ package utils
 import (
 	"crypto/sha1"
 	"encoding/hex"
+	"errors"
 	"github.com/Mangatsu/server/pkg/log"
 	"github.com/adrg/strutil"
 	"github.com/adrg/strutil/metrics"
 	"go.uber.org/zap"
+	"io/fs"
 	"os"
 	"path/filepath"
 	"time"
@@ -59,7 +61,7 @@ func PeriodicTask(d time.Duration, f func()) {
 // PathExists checks if the given path exists.
 func PathExists(pathTo string) bool {
 	_, err := os.Stat(pathTo)
-	if os.IsNotExist(err) {
+	if errors.Is(err, fs.ErrNotExist) {
 		return false
 	}
 
