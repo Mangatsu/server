@@ -112,9 +112,9 @@ func TestParseHath(t *testing.T) {
 		return
 	}
 
-	gotGallery, gotTags, _, err := ParseHath(filepath, buf, false)
+	gotGallery, gotTags, gotReference, err := ParseHath(filepath, buf, false)
 	if err != nil {
-		t.Error("Error parsing galleryinfo.txt:", err)
+		t.Error("Error parsing hath.txt:", err)
 		return
 	}
 
@@ -134,6 +134,19 @@ func TestParseHath(t *testing.T) {
 			t.Error("parsed tags didn't match expected results: ", wantTags[gotTag.Namespace], " - ", gotTag.Name)
 		}
 	}
+
+	if gotReference.GalleryUUID != "" ||
+		*gotReference.MetaPath != filepath ||
+		gotReference.MetaInternal != false ||
+		gotReference.MetaTitleHash != nil ||
+		gotReference.MetaMatch != nil ||
+		gotReference.ExhToken != nil ||
+		gotReference.ExhGid != nil ||
+		gotReference.AnilistID != nil ||
+		gotReference.Urls != nil {
+		t.Error("parsed reference didn't match the expected result")
+	}
+
 }
 
 func TestParseEHDL(t *testing.T) {
@@ -145,13 +158,12 @@ func TestParseEHDL(t *testing.T) {
 		return
 	}
 
-	gotGallery, gotTags, _, err := ParseEHDL(filepath, buf, false)
+	gotGallery, gotTags, gotReference, err := ParseEHDL(filepath, buf, false)
 	if err != nil {
 		t.Error("Error parsing ehdl.txt:", err)
 		return
 	}
 
-	println("gotGallery.ArchiveSize:", *gotGallery.ArchiveSize)
 	if gotGallery.Title != "[CRAZY CIRCLE (Hana)] Oppai Oppai Oppai" ||
 		*gotGallery.TitleNative != "[CRAZY CIRCLE (はな)] おっぱいおっぱいおっぱい" ||
 		*gotGallery.Category != "doujinshi" ||
@@ -172,5 +184,17 @@ func TestParseEHDL(t *testing.T) {
 		if wantTags[gotTag.Name] != gotTag.Namespace {
 			t.Error("parsed tags didn't match expected results: ", wantTags[gotTag.Namespace], " - ", gotTag.Name)
 		}
+	}
+
+	if gotReference.GalleryUUID != "" ||
+		*gotReference.MetaPath != filepath ||
+		gotReference.MetaInternal != false ||
+		gotReference.MetaTitleHash != nil ||
+		gotReference.MetaMatch != nil ||
+		gotReference.ExhToken != nil ||
+		gotReference.ExhGid != nil ||
+		gotReference.AnilistID != nil ||
+		gotReference.Urls != nil {
+		t.Error("parsed reference didn't match the expected result")
 	}
 }
