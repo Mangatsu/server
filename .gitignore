@@ -12,3 +12,5 @@ docker-compose.yml
 # testing
 test.http
 coverage.out
+testdata/images/result/*
+!testdata/images/result/.gitkeep
