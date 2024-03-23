@@ -1,6 +1,7 @@
 package metadata
 
 import (
+	"github.com/Mangatsu/server/pkg/constants"
 	"path"
 	"path/filepath"
 	"regexp"
@@ -129,7 +130,7 @@ func ParseTitles(tryNative bool, overwrite bool) {
 
 				// Set as language if it's not already set and is found in the list predefined of languages.
 				if titleMeta.Language != "" && (!hasLanguage || overwrite) {
-					if languages[strings.ToLower(titleMeta.Language)] {
+					if constants.Languages[strings.ToLower(titleMeta.Language)] {
 						gallery.Language = &titleMeta.Language
 					} else if match, err := regexp.MatchString(`\d+`, titleMeta.Language); err == nil && match {
 						exhGid, err := strconv.ParseInt(titleMeta.Language, 10, 32)

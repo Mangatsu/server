@@ -1,6 +1,8 @@
-package metadata
+package constants
 
-var languages = map[string]bool{
+// Languages is a map of languages that are supported by the application.
+// TODO: Add more, and convert to international language codes.
+var Languages = map[string]bool{
 	"afrikaans":  true,
 	"albanian":   true,
 	"arabic":     true,
@@ -84,4 +86,13 @@ var languages = map[string]bool{
 	"welsh":      true,
 	"yiddish":    true,
 	"zulu":       true,
+}
+
+// LTRLanguages is a list of languages that are written from left to right. TODO: Add more.
+var LTRLanguages = []string{
+	"arabic",
+	"hebrew",
+	"japanese",
+	"persian",
+	"urdu",
 }
