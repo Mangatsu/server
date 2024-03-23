@@ -10,7 +10,6 @@ import (
 	"github.com/Mangatsu/server/pkg/db"
 	"github.com/Mangatsu/server/pkg/log"
 	"github.com/Mangatsu/server/pkg/utils"
-	"github.com/disintegration/imaging"
 	"github.com/mholt/archiver/v4"
 	"go.uber.org/zap"
 	"image"
@@ -253,7 +252,14 @@ func GenerateCoverThumbnail(archivePath string, galleryUUID string) {
 func generateThumbnail(galleryUUID string, imageName string, imgBytes []byte, cover bool) error {
 	srcImage, _, err := image.Decode(bytes.NewReader(imgBytes))
 	if err != nil {
-		log.Z.Debug("could not decode img",
+		log.Z.Error("could not decode img",
+			zap.String("imageName", imageName),
+			zap.String("err", err.Error()))
+		return err
+	}
+
+	if srcImage, err = utils.ConvertImageToNRGBA(srcImage); err != nil {
+		log.Z.Error("could not convert image to NRGBA",
 			zap.String("imageName", imageName),
 			zap.String("err", err.Error()))
 		return err
@@ -261,15 +267,28 @@ func generateThumbnail(galleryUUID string, imageName string, imgBytes []byte, co
 
 	var thumbnailPath string
 	var width int
+	ltr, cropLandscape := false, false
+
 	if cover {
-		width = 512
+		width = utils.DEFAULT_THUMB_COVER_WIDTH
 		thumbnailPath = config.BuildCachePath("thumbnails", galleryUUID, imageName)
+
+		// Calculates if image is wider than it is tall
+		cropLandscape = srcImage.Bounds().Dx() > srcImage.Bounds().Dy()
+		if cropLandscape {
+			if ltr, err = db.IsLTR(galleryUUID); err != nil {
+				log.Z.Debug("error getting LTR status for gallery",
+					zap.String("uuid", galleryUUID),
+					zap.String("err", err.Error()))
+			}
+			log.Z.Debug("cover is landscape", zap.String("uuid", galleryUUID), zap.Bool("ltr", ltr))
+		}
 	} else {
-		width = 256
+		width = utils.DEFAULT_THUMB_PAGE_WIDTH
 		thumbnailPath = config.BuildCachePath("thumbnails", galleryUUID, "p", imageName) // p for pages
 	}
 
-	dstImage := imaging.Resize(srcImage, width, 0, imaging.Lanczos)
+	dstImage := utils.TransformImage(srcImage.(*image.NRGBA), width, cropLandscape, ltr)
 	buf, err := utils.EncodeImage(dstImage)
 	if err != nil {
 		log.Z.Debug("could not encode image",

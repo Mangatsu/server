@@ -3,9 +3,13 @@ package db
 import (
 	"database/sql"
 	"errors"
+	"github.com/Mangatsu/server/internal/config"
+	"github.com/Mangatsu/server/pkg/constants"
 	"github.com/Mangatsu/server/pkg/utils"
 	"math"
 	"math/rand/v2"
+	"slices"
+	"strings"
 	"time"
 
 	"github.com/Mangatsu/server/pkg/log"
@@ -681,6 +685,28 @@ func GetReference(galleryUUID string) (model.Reference, error) {
 	}
 
 	return references[0], nil
+}
+
+func IsLTR(galleryUUID string) (bool, error) {
+	stmt := SELECT(Gallery.UUID.AS("UUID"), Gallery.Language.AS("Language")).
+		FROM(Gallery).
+		WHERE(Gallery.UUID.EQ(String(galleryUUID)))
+
+	var galleries []struct {
+		UUID     string
+		Language *string
+	}
+
+	err := stmt.Query(db(), &galleries)
+	if err != nil || len(galleries) == 0 {
+		return config.Options.GalleryOptions.LTR, err
+	}
+
+	if galleries[0].Language == nil || *galleries[0].Language == "" {
+		return config.Options.GalleryOptions.LTR, nil
+	}
+
+	return slices.Contains(constants.LTRLanguages, strings.ToLower(*galleries[0].Language)), nil
 }
 
 // GetTags returns all tags.
