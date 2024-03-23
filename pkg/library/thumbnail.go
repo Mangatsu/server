@@ -135,7 +135,7 @@ func GeneratePageThumbnails(archivePath string, galleryUUID string) {
 		}
 
 		if d.IsDir() {
-			cacheInnerDir := config.BuildCachePath("thumbnails", "p", galleryUUID, d.Name())
+			cacheInnerDir := config.BuildCachePath("thumbnails", galleryUUID, "p", d.Name())
 
 			if !utils.PathExists(cacheInnerDir) {
 				if err = os.Mkdir(cacheInnerDir, os.ModePerm); err != nil {
@@ -266,7 +266,7 @@ func generateThumbnail(galleryUUID string, imageName string, imgBytes []byte, co
 		thumbnailPath = config.BuildCachePath("thumbnails", galleryUUID, imageName)
 	} else {
 		width = 256
-		thumbnailPath = config.BuildCachePath("thumbnails", "p", galleryUUID, imageName) // p for pages
+		thumbnailPath = config.BuildCachePath("thumbnails", galleryUUID, "p", imageName) // p for pages
 	}
 
 	dstImage := imaging.Resize(srcImage, width, 0, imaging.Lanczos)
