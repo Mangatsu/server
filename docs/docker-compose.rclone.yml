@@ -25,6 +25,7 @@ services:
       MTSU_STRICT_ACAO: 'false'
       MTSU_THUMBNAIL_FORMAT: webp
       MTSU_FUZZY_SEARCH_SIMILARITY: 0.7
+      MTSU_LTR: 'true'
       MTSU_HOSTNAME: mtsuserver
       MTSU_PORT: 5050
       MTSU_DATA_PATH: /data

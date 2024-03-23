@@ -43,6 +43,7 @@ type CacheOptions struct {
 type GalleryOptions struct {
 	ThumbnailFormat       ImageFormat
 	FuzzySearchSimilarity float64
+	LTR                   bool
 }
 
 type OptionsModel struct {
@@ -104,6 +105,7 @@ func SetEnv() {
 		GalleryOptions: GalleryOptions{
 			ThumbnailFormat:       thumbnailFormat(),
 			FuzzySearchSimilarity: fuzzySearchSimilarity(),
+			LTR:                   defaultLTR(),
 		},
 	}
 
@@ -293,4 +295,12 @@ func fuzzySearchSimilarity() float64 {
 		return 1
 	}
 	return similarity
+}
+
+func defaultLTR() bool {
+	value := os.Getenv("MTSU_LTR")
+	if value == "false" {
+		return false
+	}
+	return true
 }

@@ -47,6 +47,8 @@ services:
       # Similarity threshold for the fuzzy match for gallery and metadata filenames.
       # The higher the value, the more similar the results has to be to match. 0.1 - 1.0.
       MTSU_FUZZY_SEARCH_SIMILARITY: 0.7
+      # Set to false to use right-to-left (RTL) default for galleries. Otherwise, defaults to left-to-right (like Japanese manga).
+      MTSU_LTR: 'true'
       # Usually the following three envs don't need changing as they are the container's internal hostname, port and data path.
       # In case of port conflict, change the port here and the first one above in the ports section.
       MTSU_HOSTNAME: mtsuserver

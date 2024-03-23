@@ -60,6 +60,8 @@ _~~Struck out~~ values have no effect yet._
 - **MTSU_THUMBNAIL_FORMAT**=webp
   - Supported formats: webp 
   - AVIF support is planned. AVIF is said to take 20% longer to encode, but it compresses to 20% smaller size compared to WebP.
+- **MTSU_LTR**=true
+    - Set to false to use right-to-left (RTL) default for galleries. Otherwise, defaults to left-to-right (like Japanese manga).
 
 ## 📝 Mangatsu Web - Configuration
 
