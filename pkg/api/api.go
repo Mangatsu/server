@@ -64,7 +64,7 @@ func returnInfo(w http.ResponseWriter, r *http.Request) {
 		Registrations bool
 	}{
 		APIVersion:    1,
-		ServerVersion: "0.7.5",
+		ServerVersion: "0.8.0",
 		Visibility:    config.Options.Visibility,
 		Registrations: config.Options.Registrations,
 	}, r.URL.Path)

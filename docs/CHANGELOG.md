@@ -5,6 +5,39 @@ All notable changes of this project will be documented in this file.
 > The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and this project adheres
 > to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.8.0] - 2024-03-23
+
+### Added
+
+- Crop gallery covers to fit the aspect ratio of the thumbnail (2:3) better. Also, when it comes to multipage images, Mangatsu tries to find the cover.
+- Returning the total count (TotalCount) of galleries when fetching (helps with pagination)
+- meta_title_hash column to save the hash of the gallery title. Helps to save time and resources when parsing titles for metadata
+- MTSU_FUZZY_SEARCH_SIMILARITY environmental variable to set the similarity threshold for fuzzy search. Default is 0.7 (70%)
+- MTSU_LTR environmental variable. For now used for the default to crop gallery covers when needed. Otherwise, the language of the gallery title is used to determine it
+- fuzzy (true|false) query parameter to enable or disable fuzzy search when starting metadata task
+
+### Fixed
+
+- Shuffling not working when fetching grouped galleries
+- Paging when shuffling enabled (was returning the same first page)
+- Various issues with updating galleries
+- Crash when trying to count images of an archive that could not be opened
+- A rare error when DB UPDATE was rollbacked
+- DB lock when creating thumbnails with semaphore
+
+### Changed
+
+- Improve performance when fetching galleries by constructing SQL filters only once
+- Return OrderedMap ({ []uuid, []{uuid: gallery} }) instead of a normal mapped results ([]{uuid: gallery}) for grouped galleries
+- Store page thumbnails in thumbnails/[gallery uuid]/p/ directory instead of thumbnails/[gallery uuid]/. Cover is stored as thumbnails/[gallery uuid]/cover.[ext]
+- Refactored the way galleries are fetched, updated and deleted
+- Better gallery validation when updating
+- Improve metadata parsing logic and performance
+- Improve gallery update and fetch logic
+
+### Docs
+
+- Changed NEXT_INTERNAL_MANGATSU_API_URL to NEXT_PUBLIC_INTERNAL_MANGATSU_API_URL
 
 ## [0.7.5] - 2024-03-21
 
@@ -33,7 +66,7 @@ All notable changes of this project will be documented in this file.
 
 ### Fixed
 
-- Server crash (nil pointer dereference) when trying to login anonymously without cookie age
+- Server crash (nil pointer dereference) when trying to log in anonymously without cookie age
 
 ## [0.7.3] - 2024-01-22
 
