@@ -84,7 +84,7 @@ func register(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	fmt.Fprintf(w, `{ "message": "successfully registered" }`)
+	fmt.Fprintf(w, `{ "Message": "successfully registered" }`)
 }
 
 func login(w http.ResponseWriter, r *http.Request) {
@@ -181,7 +181,7 @@ func logout(w http.ResponseWriter, r *http.Request) {
 	}
 	http.SetCookie(w, &cookie)
 
-	fmt.Fprint(w, `{ "message": "successfully logged out" }`)
+	fmt.Fprint(w, `{ "Message": "successfully logged out" }`)
 }
 
 // updateUser can be used to update role, password or username of users. Role can only be changed by admins.
@@ -220,7 +220,7 @@ func updateUser(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	fmt.Fprint(w, `{ "message": "successfully updated user" }`)
+	fmt.Fprint(w, `{ "Message": "successfully updated user" }`)
 }
 
 // returnUsers returns all users in the database. Only for admins. Never returns the hashed password.
@@ -351,7 +351,7 @@ func setFavorite(w http.ResponseWriter, r *http.Request) {
 		errorHandler(w, http.StatusInternalServerError, err.Error(), r.URL.Path)
 		return
 	}
-	fmt.Fprintf(w, `{ "message": "favorite group updated" }`)
+	fmt.Fprintf(w, `{ "Message": "favorite group updated" }`)
 }
 
 func updateProgress(w http.ResponseWriter, r *http.Request) {
@@ -371,5 +371,5 @@ func updateProgress(w http.ResponseWriter, r *http.Request) {
 		errorHandler(w, http.StatusInternalServerError, err.Error(), r.URL.Path)
 		return
 	}
-	fmt.Fprintf(w, `{ "message": "progress updated" }`)
+	fmt.Fprintf(w, `{ "Message": "progress updated" }`)
 }

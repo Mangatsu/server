@@ -19,7 +19,7 @@ func scanLibraries(w http.ResponseWriter, r *http.Request) {
 	go library.ScanArchives()
 
 	w.Header().Set("Content-Type", "application/json;charset=UTF-8")
-	fmt.Fprintf(w, `{ "message": "started scanning for new archives." }`)
+	fmt.Fprintf(w, `{ "Message": "started scanning for new archives." }`)
 }
 
 func returnProcessingStatus(w http.ResponseWriter, r *http.Request) {
@@ -43,7 +43,7 @@ func generateThumbnails(w http.ResponseWriter, r *http.Request) {
 	go library.GenerateThumbnails(pages == "true", force == "true")
 
 	w.Header().Set("Content-Type", "application/json;charset=UTF-8")
-	fmt.Fprintf(w, `{ "message": "started generateting thumbnails. Prioritizing covers." }`)
+	fmt.Fprintf(w, `{ "Message": "started generateting thumbnails. Prioritizing covers." }`)
 }
 
 func findMetadata(w http.ResponseWriter, r *http.Request) {
@@ -71,7 +71,7 @@ func findMetadata(w http.ResponseWriter, r *http.Request) {
 
 	w.Header().Set("Content-Type", "application/json;charset=UTF-8")
 	if metaTypes[metadata.XMeta] || metaTypes[metadata.EHDLMeta] || metaTypes[metadata.HathMeta] || title == "true" {
-		fmt.Fprintf(w, `{ "message": "started parsing given sources" }`)
+		fmt.Fprintf(w, `{ "Message": "started parsing given sources" }`)
 		return
 	}
 

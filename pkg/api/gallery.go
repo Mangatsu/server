@@ -319,5 +319,5 @@ func updateGallery(w http.ResponseWriter, r *http.Request) {
 		errorHandler(w, http.StatusInternalServerError, err.Error(), r.URL.Path)
 		return
 	}
-	fmt.Fprintf(w, `{ "message": "gallery updated" }`)
+	fmt.Fprintf(w, `{ "Message": "gallery updated" }`)
 }

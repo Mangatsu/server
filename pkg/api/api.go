@@ -76,12 +76,12 @@ func returnStatistics(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	fmt.Fprintf(w, `{ "message": "statistics not implemented" }`)
+	fmt.Fprintf(w, `{ "Message": "statistics not implemented" }`)
 }
 
 // Returns the root path as JSON.
 func returnRoot(w http.ResponseWriter, _ *http.Request) {
-	fmt.Fprintf(w, `{ "message": "Mangatsu API available at /api" }`)
+	fmt.Fprintf(w, `{ "Message": "Mangatsu API available at /api" }`)
 }
 
 // Handles errors. Argument msg is only used with 400 and 500.
@@ -89,25 +89,25 @@ func errorHandler(w http.ResponseWriter, status int, msg string, endpoint string
 	switch status {
 	case http.StatusNotFound:
 		w.WriteHeader(status)
-		fmt.Fprintf(w, `{ "code": %d, "message": "not found" }`, status)
+		fmt.Fprintf(w, `{ "Code": %d, "Message": "not found" }`, status)
 	case http.StatusBadRequest:
 		w.WriteHeader(status)
-		fmt.Fprintf(w, `{ "code": %d, "message": "%s" }`, status, msg)
+		fmt.Fprintf(w, `{ "Code": %d, "Message": "%s" }`, status, msg)
 	case http.StatusForbidden:
 		w.WriteHeader(status)
-		fmt.Fprintf(w, `{ "code": %d, "message": "forbidden" }`, status)
+		fmt.Fprintf(w, `{ "Code": %d, "Message": "forbidden" }`, status)
 	case http.StatusUnauthorized:
 		w.WriteHeader(status)
-		fmt.Fprintf(w, `{ "code": %d, "message": "unauthorized" }`, status)
+		fmt.Fprintf(w, `{ "Code": %d, "Message": "unauthorized" }`, status)
 	case http.StatusGone:
 		w.WriteHeader(status)
-		fmt.Fprintf(w, `{ "code": %d, "message": "gone" }`, status)
+		fmt.Fprintf(w, `{ "Code": %d, "Message": "gone" }`, status)
 	case http.StatusConflict:
 		w.WriteHeader(status)
-		fmt.Fprintf(w, `{ "code": %d, "message": "%s" }`, status, msg)
+		fmt.Fprintf(w, `{ "Code": %d, "Message": "%s" }`, status, msg)
 	default:
 		w.WriteHeader(http.StatusInternalServerError)
-		fmt.Fprintf(w, `{ "status": %d, "message": "internal server error" }`, http.StatusInternalServerError)
+		fmt.Fprintf(w, `{ "status": %d, "Message": "internal server error" }`, http.StatusInternalServerError)
 		log.Z.Error(msg, zap.Int("status", status))
 		return
 	}
