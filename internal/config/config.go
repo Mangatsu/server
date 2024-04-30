@@ -2,6 +2,7 @@ package config
 
 import (
 	"fmt"
+	"net/http"
 	"os"
 	"strconv"
 	"time"
@@ -51,6 +52,8 @@ type OptionsModel struct {
 	Domain         string
 	Hostname       string
 	Port           string
+	Secure         bool
+	SameSiteMode   http.SameSite
 	StrictACAO     bool
 	Registrations  bool
 	Visibility     Visibility
@@ -90,6 +93,8 @@ func SetEnv() {
 		Domain:        domain(),
 		Hostname:      hostname(),
 		Port:          port(),
+		Secure:        secure(),
+		SameSiteMode:  sameSiteMode(),
 		StrictACAO:    acao(),
 		Registrations: registrationsEnabled(),
 		Visibility:    currentVisibility(),
@@ -168,6 +173,17 @@ func port() string {
 		return "5050"
 	}
 	return value
+}
+
+func secure() bool {
+	return os.Getenv("MTSU_SECURE") == "true"
+}
+
+func sameSiteMode() http.SameSite {
+	if secure() {
+		return http.SameSiteNoneMode
+	}
+	return http.SameSiteLaxMode
 }
 
 func acao() bool {

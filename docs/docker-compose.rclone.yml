@@ -23,6 +23,7 @@ services:
       MTSU_JWT_SECRET: 9Wag7sMvKl3aF6K5lwIg6TI42ia2f6BstZAVrdJIq8Mp38lnl7UzQMC1qjKyZCBzHFGbbqsA0gKcHqDuyXQAhWoJ0lcx4K5q
       MTSU_DOMAIN: example.org
       MTSU_STRICT_ACAO: 'false'
+      MTSU_SECURE: 'true'
       MTSU_THUMBNAIL_FORMAT: webp
       MTSU_FUZZY_SEARCH_SIMILARITY: 0.7
       MTSU_LTR: 'true'

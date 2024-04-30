@@ -115,9 +115,9 @@ func login(w http.ResponseWriter, r *http.Request) {
 			Domain:   config.Options.Domain,
 			Path:     "/",
 			MaxAge:   int(expiresIn),
-			Secure:   true,
+			Secure:   config.Options.Secure,
 			HttpOnly: true,
-			SameSite: http.SameSiteNoneMode,
+			SameSite: config.Options.SameSiteMode,
 		}
 
 		http.SetCookie(w, &jwtCookie)
@@ -140,9 +140,9 @@ func login(w http.ResponseWriter, r *http.Request) {
 			Domain:   config.Options.Domain,
 			Path:     "/",
 			MaxAge:   int(expiresIn),
-			Secure:   true,
+			Secure:   config.Options.Secure,
 			HttpOnly: true,
-			SameSite: http.SameSiteNoneMode,
+			SameSite: config.Options.SameSiteMode,
 		}
 		http.SetCookie(w, &passphraseCookie)
 
@@ -175,9 +175,9 @@ func logout(w http.ResponseWriter, r *http.Request) {
 		Domain:   config.Options.Domain,
 		Path:     "/",
 		MaxAge:   0,
-		Secure:   true,
+		Secure:   config.Options.Secure,
 		HttpOnly: true,
-		SameSite: http.SameSiteNoneMode,
+		SameSite: config.Options.SameSiteMode,
 	}
 	http.SetCookie(w, &cookie)
 
