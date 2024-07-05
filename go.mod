@@ -16,7 +16,7 @@ require (
 	github.com/mattn/go-sqlite3 v1.14.22
 	github.com/mholt/archiver/v4 v4.0.0-alpha.8
 	github.com/pressly/goose/v3 v3.19.2
-	github.com/rs/cors v1.10.1
+	github.com/rs/cors v1.11.0
 	github.com/weppos/publicsuffix-go v0.30.2
 	go.uber.org/zap v1.27.0
 	golang.org/x/crypto v0.21.0
